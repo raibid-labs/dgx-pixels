@@ -53,15 +53,49 @@ See [Implementation Plan](docs/06-implementation-plan.md) for detailed setup ins
 
 ## Architecture
 
-DGX-Pixels offers three architecture proposals:
+DGX-Pixels offers multiple architecture proposals:
 
 1. **Rapid Prototyping** (1-2 weeks): Simple CLI + Automatic1111 for quick validation
-2. **Balanced Production** (4-6 weeks): ComfyUI + FastAPI + MCP integration (recommended)
-3. **Advanced Enterprise** (8-12 weeks): Full microservices with Kubernetes, MLOps, and web UI
+2. **Balanced Production** (4-6 weeks): ComfyUI + FastAPI + MCP integration
+3. **🆕 Rust TUI + Python** (5-6 weeks): Fast TUI with side-by-side model comparison **(NEW RECOMMENDED)**
+4. **Advanced Enterprise** (8-12 weeks): Full microservices with Kubernetes, MLOps, and web UI
 
 See [Architecture Proposals](docs/02-architecture-proposals.md) for detailed comparisons.
 
-### Recommended Stack (Balanced)
+### NEW: Rust TUI + Python Backend (Recommended)
+
+**Hybrid architecture combining Rust's performance with Python's AI ecosystem:**
+
+```
+┌──────────────────────────────────────┐
+│       NVIDIA DGX-Spark                │
+│  ┌───────────────────┐                │
+│  │  Rust TUI         │ 60 FPS, 12MB   │
+│  │  - ratatui        │ Sixel preview  │
+│  │  - Live updates   │ Comparison UI  │
+│  └────────┬──────────┘                │
+│           │ ZeroMQ <1ms                │
+│  ┌────────▼──────────┐                │
+│  │  Python Worker    │ Job queue      │
+│  │  - ZMQ server     │ Progress pub   │
+│  └────────┬──────────┘                │
+│           │ HTTP/WS                    │
+│  ┌────────▼──────────┐                │
+│  │  ComfyUI          │ SDXL + LoRAs   │
+│  │  - Multiple models│ Workflows      │
+│  └───────────────────┘                │
+└──────────────────────────────────────┘
+```
+
+**Key Features**:
+- **Side-by-side model comparison**: Test pre-trained vs custom LoRAs simultaneously
+- **60+ FPS TUI**: Fast, responsive terminal interface
+- **<1ms IPC**: ZeroMQ for near-instant communication
+- **Leverages playbooks**: Uses dgx-spark-playbooks ComfyUI setup
+
+See [Rust-Python Architecture](docs/07-rust-python-architecture.md) and [TUI Design](docs/08-tui-design.md).
+
+### Alternative: Balanced Production Stack
 
 ```
 ┌─────────────────────────────────────┐
@@ -95,11 +129,17 @@ See [Architecture Proposals](docs/02-architecture-proposals.md) for detailed com
 ### Core Documentation
 
 1. **[Research Findings](docs/01-research-findings.md)** - Comprehensive research on AI pixel art generation, DGX-Spark capabilities, and integration technologies
-2. **[Architecture Proposals](docs/02-architecture-proposals.md)** - Three detailed architecture proposals with pros/cons/timelines
+2. **[Architecture Proposals](docs/02-architecture-proposals.md)** - Four detailed architecture proposals with pros/cons/timelines
 3. **[Technology Deep Dive](docs/03-technology-deep-dive.md)** - In-depth technical documentation on SDXL, LoRA, ComfyUI, and optimizations
 4. **[Bevy Integration](docs/04-bevy-integration.md)** - Complete guide for integrating with Bevy game engine
 5. **[Training Roadmap](docs/05-training-roadmap.md)** - Strategy for training custom models and maintaining quality
 6. **[Implementation Plan](docs/06-implementation-plan.md)** - Step-by-step implementation guide for all architecture paths
+
+### NEW: Rust + Python Stack
+
+7. **[Rust-Python Architecture](docs/07-rust-python-architecture.md)** - Hybrid Rust TUI + Python backend design with ZeroMQ IPC
+8. **[TUI Design](docs/08-tui-design.md)** - Complete TUI mockups, workflows, and side-by-side model comparison
+9. **[Playbook Contribution](docs/11-playbook-contribution.md)** - Contributing to dgx-spark-playbooks repository
 
 ### Quick Links
 

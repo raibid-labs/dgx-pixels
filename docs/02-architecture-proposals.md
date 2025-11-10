@@ -867,37 +867,327 @@ Each engine gets:
 
 ---
 
+# Proposal 2B: Rust TUI + Python Backend (NEW RECOMMENDED)
+
+## Philosophy
+
+Combine **Rust's performance and type safety** for the user interface with **Python's ML ecosystem** for AI workloads. This hybrid approach delivers a responsive, low-latency TUI while leveraging mature AI libraries. Supports side-by-side comparison of pre-trained and custom models.
+
+## Architecture Diagram
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                    NVIDIA DGX-Spark                          │
+├──────────────────────────────────────────────────────────────┤
+│                                                               │
+│  ┌─────────────────────┐                                     │
+│  │   Rust TUI App      │  12MB, 60+ FPS                      │
+│  │   - ratatui         │  Sixel image preview               │
+│  │   - ZMQ client      │  Keyboard-driven                    │
+│  │   - Live preview    │  Model comparison                  │
+│  └──────┬──────────────┘                                     │
+│         │ ZeroMQ (REQ-REP + PUB-SUB)                         │
+│         │ tcp://localhost:5555-5556                          │
+│         │ <1ms latency                                       │
+│         │                                                     │
+│  ┌──────▼──────────────┐                                     │
+│  │  Python Worker      │  150MB baseline                     │
+│  │  - ZMQ server       │  Job queue mgmt                     │
+│  │  - ComfyUI client   │  Progress pub/sub                  │
+│  │  - Model registry   │  LoRA management                    │
+│  └──────┬──────────────┘                                     │
+│         │ HTTP/WebSocket                                     │
+│         │                                                     │
+│  ┌──────▼──────────────┐                                     │
+│  │   ComfyUI           │  8GB+ (with models)                 │
+│  │   - SDXL base       │  Multiple checkpoints               │
+│  │   - Custom LoRAs    │  Workflow templates                │
+│  │   - Pre-trained     │  Side-by-side gen                  │
+│  └─────────────────────┘                                     │
+│                                                               │
+└──────────────────────────────────────────────────────────────┘
+         │ MCP Protocol (optional)
+         ▼
+  ┌───────────────┐
+  │  bevy_brp_mcp │
+  │  Bevy Project │
+  └───────────────┘
+```
+
+## Key Innovation: Side-by-Side Models
+
+**Pre-trained AND Custom Models Coexist**:
+- Load multiple models simultaneously
+- Compare outputs in real-time
+- Vote/rate preferred results
+- Track which model wins for different prompts
+- Build model preference history
+
+**Example Workflow**:
+```
+1. User enters prompt: "knight character sprite"
+2. Presses [C] for Compare Mode
+3. Selects 3 models:
+   - SDXL Base (pre-trained)
+   - SDXL + 16bit_rpg (custom LoRA)
+   - SDXL + fantasy_char (custom LoRA)
+4. TUI generates with all 3 in parallel
+5. Results displayed side-by-side
+6. User selects best → tracked for analytics
+```
+
+See `docs/08-tui-design.md` for complete TUI mockups.
+
+## Components
+
+### 1. Rust TUI (ratatui)
+
+**Features**:
+- 60+ FPS rendering
+- <50ms input latency
+- Sixel/halfblock image preview
+- Real-time progress bars
+- Model comparison interface
+- GPU metrics dashboard
+- Gallery browser
+
+**Dependencies**:
+```toml
+[dependencies]
+ratatui = "0.29"
+crossterm = "0.28"
+zmq = "0.10"
+rmp-serde = "1.3"  # MsgPack serialization
+tokio = { version = "1", features = ["full"] }
+image = "0.25"
+ratatui-image = "2.0"
+serde = { version = "1.0", features = ["derive"] }
+```
+
+**Memory Usage**: ~12MB (vs 50-100MB for Python TUI)
+
+### 2. Python Worker (ZeroMQ Server)
+
+**Responsibilities**:
+- Receive generation requests
+- Queue management
+- ComfyUI orchestration
+- Progress publishing
+- Model registry
+- Result delivery
+
+**Communication**:
+- **REQ-REP**: Commands (generate, status, list models)
+- **PUB-SUB**: Real-time updates (progress, previews, metrics)
+- **Serialization**: MsgPack (faster than JSON)
+
+See `docs/07-rust-python-architecture.md` for detailed communication patterns.
+
+### 3. ComfyUI + Model Library
+
+**Base Models**:
+- SDXL 1.0 base (~8GB)
+- Pre-trained pixel art checkpoints (~2GB each)
+
+**LoRA Collection**:
+- Custom trained LoRAs (400MB each)
+- Organized by style (16bit, 32bit, 8bit)
+- Version controlled with metadata
+
+**Workflow Templates**:
+- Single sprite generation
+- Animation frame batch
+- Tileset generation (seamless)
+- Side-by-side comparison
+
+### 4. Optional: PyO3 Native Extensions
+
+For performance-critical paths:
+```rust
+// Rust implementation of color quantization
+#[pyfunction]
+fn quantize_colors_fast(img: &[u8], colors: usize) -> PyResult<Vec<u8>> {
+    // 10-100x faster than PIL
+}
+```
+
+Built with maturin, deployed as Python module.
+
+## Implementation Steps
+
+### Phase 1: Core (Weeks 1-2)
+1. Install ComfyUI using dgx-spark-playbooks
+2. Download SDXL + pixel art models
+3. Implement Python ZeroMQ worker
+4. Test generation via Python CLI
+
+### Phase 2: Rust TUI (Weeks 2-3)
+1. Create Rust project structure
+2. Implement ZeroMQ client
+3. Build basic TUI screens:
+   - Generation
+   - Queue
+   - Models
+4. Add image preview (ratatui-image)
+
+### Phase 3: Model Management (Week 3-4)
+1. LoRA loading/unloading
+2. Model comparison workflow
+3. Comparison result tracking
+4. Model performance analytics
+
+### Phase 4: Training Integration (Week 4-5)
+1. Set up Kohya_ss
+2. Train first custom LoRA
+3. A/B test vs pre-trained
+4. Document training workflow
+
+### Phase 5: Polish & Deploy (Week 5-6)
+1. MCP integration for Bevy
+2. Gallery and asset management
+3. Configuration system
+4. Documentation and examples
+
+## Pros
+
+**Performance**:
+- TUI: 60+ FPS, <10MB memory
+- Communication: <1ms latency (ZeroMQ)
+- No Python GIL bottlenecks in UI
+
+**Developer Experience**:
+- Type-safe Rust for UI logic
+- Python flexibility for AI
+- Best tool for each job
+- Clean separation of concerns
+
+**User Experience**:
+- Fast, responsive interface
+- Real-time previews
+- Side-by-side model comparison
+- Keyboard-driven workflow
+
+**Flexibility**:
+- Pre-trained models for quick start
+- Custom training for production quality
+- Compare models objectively
+- Track model performance
+
+**Integration**:
+- Leverages dgx-spark-playbooks (ComfyUI)
+- Can contribute back as new playbook
+- Reuses community workflows
+
+## Cons
+
+- **Two languages**: Rust + Python to maintain
+- **Learning curve**: Rust for contributors
+- **Build complexity**: Cargo + maturin setup
+- **Debugging**: Cross-language can be tricky
+
+## When to Use
+
+**Perfect for**:
+- Solo developers or small teams (2-5)
+- Need fast, responsive interface
+- Want to compare models scientifically
+- Comfortable with terminal UIs
+- Value performance and efficiency
+
+**Not ideal if**:
+- Team requires web UI
+- Need multi-tenant support
+- Have Python-only developers
+- Need Windows support (Rust TUI limited)
+
+## Performance Expectations
+
+**On NVIDIA DGX-Spark**:
+- **TUI Startup**: <300ms (vs 2-3s Python)
+- **Generation**: 12-15s per sprite (SDXL + LoRA)
+- **Model Comparison**: 36-45s for 3 models
+- **Memory**: ~20GB total (8GB models + 12GB overhead)
+- **Concurrent**: 1 active + 5 queued jobs
+
+**Side-by-Side Comparison**:
+- Generate 2-4 models in sequence
+- Each takes 12-15s
+- Total: 24-60s for full comparison
+- Results cached for instant re-comparison
+
+## Migration Path
+
+**From Proposal 1**:
+- Keep A1111/ComfyUI backend
+- Replace Python CLI with Rust TUI
+- Add model comparison features
+
+**To Proposal 3**:
+- Rust TUI remains as client
+- Backend scales to microservices
+- Add web UI for team members
+
+---
+
 # Recommendation
 
-## For Most Use Cases: **Proposal 2 (Balanced)**
+## NEW Default: **Proposal 2B (Rust TUI + Python)**
 
-**Rationale:**
-- Best balance of features vs. complexity
-- LoRA training enables custom styles
-- MCP integration provides automation
-- 4-6 week timeline is reasonable
-- Can scale to small-medium teams
-- Migration path to Proposal 3 if needed
+**Rationale**:
+- **Best performance**: 60 FPS TUI, <1ms IPC
+- **Side-by-side models**: Compare pre-trained vs custom scientifically
+- **Developer friendly**: Leverages existing playbooks
+- **Production ready**: 5-6 weeks to MVP
+- **Scales well**: Can add services later
+- **Modern stack**: Rust + Python + ZeroMQ is proven
+
+**Feature Comparison**:
+- ✅ Custom training (LoRA)
+- ✅ Model comparison (unique!)
+- ✅ Fast, responsive UI
+- ✅ Low resource overhead
+- ✅ MCP integration
+- ✅ Open source everything
 
 **Start with Proposal 1 if:**
-- You need proof-of-concept quickly
-- Budget/time extremely limited
-- Solo developer
-- Uncertain about requirements
+- Need to validate concept in <1 week
+- Python-only team
+- Just want to test pre-trained models
+
+**Use Proposal 2 (Original) if:**
+- Prefer web UI over TUI
+- Don't need model comparison
+- Team unfamiliar with Rust
 
 **Choose Proposal 3 if:**
-- Large studio with dedicated infra team
-- Multiple projects sharing infrastructure
-- High volume asset generation
-- Budget for 3+ month development
-- Need enterprise features (multi-tenancy, audit, etc.)
+- Large studio with dedicated infra team (50+ devs)
+- Multiple concurrent projects
+- High volume asset generation (thousands/week)
+- Budget for 8-12 week development
+- Need enterprise features (multi-tenancy, audit trails, etc.)
+
+## Updated Comparison Matrix (with Proposal 2B)
+
+| Feature | Proposal 1 | Proposal 2 | **Proposal 2B** | Proposal 3 |
+|---------|-----------|-----------|-----------------|-----------|
+| **Time to MVP** | 1-2 weeks | 4-6 weeks | **5-6 weeks** | 8-12 weeks |
+| **UI Type** | Python CLI | Web/ComfyUI | **Rust TUI** | Web + TUI |
+| **Performance** | Medium | Medium | **High (60 FPS)** | High |
+| **Model Comparison** | No | Manual | **Built-in** | Advanced |
+| **Memory (UI)** | 50MB | 100MB+ | **12MB** | Varies |
+| **Training** | No | LoRA | **LoRA + Comparison** | Full pipeline |
+| **Bevy Integration** | Manual | MCP | **MCP** | Full automation |
+| **For Teams** | Solo | 2-10 | **2-5** | 50+ |
 
 ## Next Steps
 
-1. **Review with stakeholders**
-2. **Select architecture proposal**
-3. **Create detailed implementation plan**
-4. **Set up development environment**
-5. **Begin implementation**
+1. **Review proposals** and new Proposal 2B
+2. **Consider team skills** (Rust vs Python preference)
+3. **Evaluate TUI vs web UI** requirements
+4. **Select architecture proposal**
+5. **Follow implementation plan**:
+   - Proposal 1: `docs/06-implementation-plan.md` § Path A
+   - Proposal 2B: `docs/07-rust-python-architecture.md` + `docs/08-tui-design.md`
+   - Proposal 3: `docs/06-implementation-plan.md` § Path C
 
-See `03-implementation-plan.md` for detailed next steps based on selected proposal.
+See `docs/11-playbook-contribution.md` for contributing to dgx-spark-playbooks.
