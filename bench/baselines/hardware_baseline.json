@@ -1,0 +1,56 @@
+{
+  "version": "1.0",
+  "timestamp": "2025-11-10T19:30:00Z",
+  "hostname": "dgx-spark-01",
+  "gpu": {
+    "model": "GB10",
+    "count": 1,
+    "memory_gb": 119,
+    "compute_capability": "12.1",
+    "cuda_version": "13.0.88",
+    "driver_version": "580.95.05",
+    "architecture": "Grace Blackwell",
+    "name": "NVIDIA GB10"
+  },
+  "cpu": {
+    "model": "Cortex-X925",
+    "architecture": "aarch64",
+    "cores": 20,
+    "threads": 20,
+    "vendor": "NVIDIA",
+    "frequency_mhz": {
+      "min": 1000,
+      "max": 3000
+    }
+  },
+  "memory": {
+    "type": "unified",
+    "total_gb": 119,
+    "available_gb": 100,
+    "used_gb": 19,
+    "bandwidth_gbs": 435
+  },
+  "storage": {
+    "root": {
+      "mount": "/",
+      "size_gb": 3755,
+      "used_gb": 558,
+      "available_gb": 3197,
+      "io_throughput_gbs": 8.0
+    }
+  },
+  "network": {
+    "interfaces": [
+      {"name": "rocep1s0f0", "type": "RoCE", "speed_gbps": 100, "index": 0},
+      {"name": "rocep1s0f1", "type": "RoCE", "speed_gbps": 100, "index": 1},
+      {"name": "roceP2p1s0f0", "type": "RoCE", "speed_gbps": 100, "index": 2},
+      {"name": "roceP2p1s0f1", "type": "RoCE", "speed_gbps": 100, "index": 3}
+    ]
+  },
+  "topology": {
+    "numa_nodes": 1,
+    "gpu_numa_id": "N/A",
+    "pci_topology": "Single GPU system",
+    "topology_matrix": "See docs/topology.txt for full nvidia-smi topo output"
+  }
+}

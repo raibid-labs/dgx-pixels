@@ -40,20 +40,25 @@ export def dgx-gpu-stats [] {
     }
 
     try {
+        # Parse CSV output directly from nvidia-smi
         let stats = (
-            nvidia-smi --query-gpu=index,name,memory.total,memory.used,memory.free,utilization.gpu,utilization.memory,temperature.gpu,power.draw,power.limit
-            --format=csv,noheader,nounits
+            ^nvidia-smi --query-gpu=index,name,memory.total,memory.used,memory.free,utilization.gpu,utilization.memory,temperature.gpu,power.draw,power.limit --format=csv,noheader,nounits
             | from csv --noheaders
             | rename gpu_id name memory_total_mb memory_used_mb memory_free_mb gpu_util_pct memory_util_pct temp_c power_draw_w power_limit_w
-            | update gpu_id { into int }
-            | update memory_total_mb { into int }
-            | update memory_used_mb { into int }
-            | update memory_free_mb { into int }
-            | update gpu_util_pct { into int }
-            | update memory_util_pct { into int }
-            | update temp_c { into int }
-            | update power_draw_w { into float }
-            | update power_limit_w { into float }
+            | each {|row|
+                {
+                    gpu_id: (try { $row.gpu_id | into int } catch { 0 })
+                    name: ($row.name | str trim)
+                    memory_total_mb: (try { $row.memory_total_mb | into int } catch { 0 })
+                    memory_used_mb: (try { $row.memory_used_mb | into int } catch { 0 })
+                    memory_free_mb: (try { $row.memory_free_mb | into int } catch { 0 })
+                    gpu_util_pct: (try { $row.gpu_util_pct | into int } catch { 0 })
+                    memory_util_pct: (try { $row.memory_util_pct | into int } catch { 0 })
+                    temp_c: (try { $row.temp_c | into int } catch { 0 })
+                    power_draw_w: (try { $row.power_draw_w | into float } catch { 0.0 })
+                    power_limit_w: (try { $row.power_limit_w | into float } catch { 0.0 })
+                }
+            }
         )
 
         log-success $"Retrieved stats for ($stats | length) GPU(s)"
@@ -114,7 +119,7 @@ export def dgx-validate-hardware [] {
     let gpu_result = (do {
         try {
             let gpu_info = (
-                nvidia-smi --query-gpu=name,memory.total,count
+                ^nvidia-smi --query-gpu=name,memory.total,count
                 --format=csv,noheader
                 | lines
                 | first
@@ -137,13 +142,31 @@ export def dgx-validate-hardware [] {
                 log-warning $"GPU detected but not Grace Blackwell: ($gpu_name)"
             }
 
-            let memory_gb = (
-                $memory_total
-                | str replace " MiB" ""
-                | into float
-                | $in / 1024
-                | math round
-            )
+            # Handle unified memory architecture where GPU memory shows as [N/A]
+            let memory_gb = if ($memory_total | str contains "N/A") {
+                # Use system memory from free command for unified architecture
+                let mem_output = (try { ^free -g } catch { "" })
+                if ($mem_output | is-not-empty) {
+                    let mem_lines = ($mem_output | lines)
+                    let mem_line = ($mem_lines | where {|line| $line | str starts-with "Mem:"} | first)
+                    if ($mem_line != null) {
+                        let mem_parts = ($mem_line | split row --regex '\s+')
+                        ($mem_parts | get 1 | into int)
+                    } else {
+                        128  # Default for DGX-Spark
+                    }
+                } else {
+                    128  # Default for DGX-Spark
+                }
+            } else {
+                (
+                    $memory_total
+                    | str replace " MiB" ""
+                    | into float
+                    | $in / 1024
+                    | math round
+                )
+            }
 
             if $memory_gb >= 120 {
                 log-success $"Memory capacity: ($memory_gb)GB"
@@ -151,7 +174,7 @@ export def dgx-validate-hardware [] {
                 log-warning $"Memory capacity ($memory_gb)GB is less than expected 128GB"
             }
 
-            let gpu_count = (nvidia-smi --query-gpu=count --format=csv,noheader | lines | length)
+            let gpu_count = (^nvidia-smi --query-gpu=count --format=csv,noheader | lines | length)
 
             {
                 success: true
@@ -194,7 +217,7 @@ export def dgx-validate-hardware [] {
     # Check for unified memory
     let has_unified_memory = (do {
         try {
-            let topology = (nvidia-smi topo -m | complete)
+            let topology = (^nvidia-smi topo -m | complete)
             let has_unified = (($topology.stdout | str contains -i "nvlink") or ($topology.stdout | str contains -i "unified"))
 
             if $has_unified {
@@ -346,7 +369,7 @@ export def dgx-export-topology [
     }
 
     try {
-        let topology = (nvidia-smi topo -m)
+        let topology = (^nvidia-smi topo -m)
 
         if ($output_file != null) {
             $topology | save -f $output_file
@@ -457,7 +480,7 @@ export def dgx-check-tensor-cores [] {
         try {
             # Get compute capability
             let compute_cap = (
-                nvidia-smi --query-gpu=compute_cap
+                ^nvidia-smi --query-gpu=compute_cap
                 --format=csv,noheader
                 | str trim
             )
@@ -531,7 +554,7 @@ export def dgx-get-cuda-version [] {
     let driver_version = if (command-exists "nvidia-smi") {
         (do {
             try {
-                nvidia-smi --query-gpu=driver_version
+                ^nvidia-smi --query-gpu=driver_version
                 --format=csv,noheader
                 | lines
                 | first
