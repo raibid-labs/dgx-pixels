@@ -126,9 +126,30 @@ df -h | grep -E "/$|/home"
 
 ---
 
-## Baseline Measurements (To Be Populated)
+## Baseline Measurements
 
-Run `/repro/run.sh` to generate baseline metrics:
+**Baseline Captured**: 2025-11-10 (WS-01: Hardware Baselines)
+**Baseline File**: `bench/baselines/hardware_baseline.json`
+**Topology File**: `docs/topology.txt`
+**Verification Script**: `repro/hardware_verification.nu`
+
+### Verified Hardware Specifications
+
+| Component | Specification | Verified Value |
+|-----------|--------------|----------------|
+| **GPU Model** | NVIDIA GB10 (Grace Blackwell) | ✅ Confirmed |
+| **GPU Compute** | 12.1 | ✅ Confirmed |
+| **Unified Memory** | 128GB (shared CPU+GPU) | ✅ 119GB available |
+| **CPU Architecture** | ARM Grace (Cortex-X925) | ✅ Confirmed |
+| **CPU Cores** | 20 cores | ✅ Confirmed |
+| **CUDA Version** | 13.0.88 | ✅ Confirmed |
+| **Driver Version** | 580.95.05+ | ✅ 580.95.05 |
+| **Storage** | 500GB+ | ✅ 3755GB total |
+| **Network** | RoCE NICs | ✅ 4× 100Gbps RoCE |
+
+### Performance Baselines (To Be Measured in WS-03)
+
+Run `just bench` to generate inference baseline metrics:
 
 | Test | Throughput | Latency (p95) | VRAM Peak | Notes |
 |------|------------|---------------|-----------|-------|
@@ -139,4 +160,4 @@ Run `/repro/run.sh` to generate baseline metrics:
 ---
 
 **Last Updated:** 2025-11-10
-**Verified By:** Claude Code (automated hardware scan)
+**Verified By:** WS-01 Hardware Baselines (automated hardware scan)
