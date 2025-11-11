@@ -266,7 +266,7 @@ Before marking WS-XX complete:
 
 ## Completion Summary Template
 
-After completing workstream, create `docs/workstreams/WS-XX/COMPLETION_SUMMARY.md`:
+After completing workstream, create `docs/orchestration/workstreams/wsXX/COMPLETION_SUMMARY.md`:
 
 ```markdown
 # WS-XX: [Workstream Name] - Completion Summary
@@ -332,7 +332,7 @@ After completing workstream, create `docs/workstreams/WS-XX/COMPLETION_SUMMARY.m
 ## References
 
 - Architecture: docs/02-architecture-proposals.md
-- Roadmap: ROADMAP.md
+- Roadmap: docs/ROADMAP.md
 - Metrics: docs/metrics.md
 - Hardware: docs/hardware.md
 - [Other relevant docs]

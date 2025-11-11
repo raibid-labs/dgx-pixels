@@ -9,7 +9,7 @@
 
 ## Context
 
-GPT-5's RFD feedback (see `/RFD_gpt5_dgx_pixels.md`) provided valuable architectural guidance but was based on an incorrect hardware assumption. The feedback assumed we were targeting a **DGX B200** system (8× B200 GPUs, dual x86 EPYC CPUs, 2TB DDR5, NVSwitch, etc.).
+GPT-5's RFD feedback (see `docs/rfds/gpt5-dgx-pixels.md`) provided valuable architectural guidance but was based on an incorrect hardware assumption. The feedback assumed we were targeting a **DGX B200** system (8× B200 GPUs, dual x86 EPYC CPUs, 2TB DDR5, NVSwitch, etc.).
 
 After verifying the actual hardware, we confirmed this system is a **DGX-Spark** with a **GB10 Grace Blackwell Superchip**, which is fundamentally different.
 
@@ -121,7 +121,7 @@ The GB10's unified memory architecture provides unique advantages:
 
 ## Updated Roadmap Alignment
 
-See `/ROADMAP.md` for revised milestones:
+See `docs/ROADMAP.md` for revised milestones:
 - M0: Hardware verification ✅
 - M1: Single-GPU SDXL optimization with unified memory
 - M2: Rust TUI leveraging zero-copy image preview
@@ -133,10 +133,10 @@ See `/ROADMAP.md` for revised milestones:
 
 ## References
 
-- GPT-5 RFD: `/RFD_gpt5_dgx_pixels.md`
-- Hardware verification: `/docs/hardware.md`
-- Revised roadmap: `/ROADMAP.md`
-- Metrics framework: `/docs/metrics.md`
+- GPT-5 RFD: `docs/rfds/gpt5-dgx-pixels.md`
+- Hardware verification: `docs/hardware.md`
+- Revised roadmap: `docs/ROADMAP.md`
+- Metrics framework: `docs/metrics.md`
 
 ---
 

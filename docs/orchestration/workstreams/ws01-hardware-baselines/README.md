@@ -447,7 +447,7 @@ Before marking WS-01 complete:
 - [ ] All acceptance criteria verified
 - [ ] No TBD placeholders in documentation
 - [ ] CI integration script created
-- [ ] Completion summary created (`docs/workstreams/WS-01-hardware-baselines/COMPLETION_SUMMARY.md`)
+- [ ] Completion summary created (`docs/orchestration/workstreams/ws01-hardware-baselines/COMPLETION_SUMMARY.md`)
 - [ ] GitHub issue PIXELS-001 closed with summary link
 
 ---
@@ -517,14 +517,14 @@ Before marking WS-01 complete:
 - GitHub Issue: #PIXELS-001 (Hardware Baseline Capture)
 - GitHub Issue: #PIXELS-002 (ARM Architecture Validation)
 - Related Workstreams: WS-02, WS-03, WS-04, WS-05
-- Related Docs: `docs/hardware.md`, `ROADMAP.md`
+- Related Docs: `docs/hardware.md`, `docs/ROADMAP.md`
 
 ---
 
 ## References
 
 - Architecture: `docs/02-architecture-proposals.md` (Proposal 2B)
-- Roadmap: `ROADMAP.md` (M0 - Foundation & Reproducibility)
+- Roadmap: `docs/ROADMAP.md` (M0 - Foundation & Reproducibility)
 - Hardware: `docs/hardware.md` (DGX-Spark GB10 specifications)
 - Metrics: `docs/metrics.md` (Performance targets)
 - NVIDIA GB10 Specs: [DGX-Spark Documentation]

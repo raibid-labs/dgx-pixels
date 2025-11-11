@@ -30,7 +30,7 @@ DGX-Pixels has been decomposed into **18 workstreams** organized under **4 domai
 ### Meta Orchestrator (Top Level)
 
 **Role**: Orchestrator of orchestrators - coordinates 4 domain orchestrators
-**Location**: `docs/META_ORCHESTRATOR.md`
+**Location**: `docs/orchestration/meta-orchestrator.md`
 **Responsibilities**:
 - Spawn domain orchestrators sequentially (based on phase gates)
 - Monitor cross-domain dependencies
@@ -48,10 +48,10 @@ DGX-Pixels has been decomposed into **18 workstreams** organized under **4 domai
 | **Integration** | WS-13 to WS-18 | M4, M5 | Weeks 7-12 | backend-architect, devops-automator, frontend-developer |
 
 **Locations**:
-- `docs/orchestrators/FOUNDATION_ORCHESTRATOR.md`
-- `docs/orchestrators/MODEL_ORCHESTRATOR.md`
-- `docs/orchestrators/INTERFACE_ORCHESTRATOR.md`
-- `docs/orchestrators/INTEGRATION_ORCHESTRATOR.md`
+- `docs/orchestration/orchestrators/foundation.md`
+- `docs/orchestration/orchestrators/model.md`
+- `docs/orchestration/orchestrators/interface.md`
+- `docs/orchestration/orchestrators/integration.md`
 
 ---
 
@@ -202,22 +202,22 @@ With buffers and parallel work: **12 weeks**
 ### Created Files (Ready for Use)
 
 ```
-docs/
-├── META_ORCHESTRATOR.md                   # Top-level orchestration (600 lines)
-├── WORKSTREAM_PLAN.md                      # All 18 workstreams (1,100 lines)
-├── PROJECT_ORCHESTRATION_SUMMARY.md        # This document (summary)
+docs/orchestration/
+├── meta-orchestrator.md                   # Top-level orchestration (600 lines)
+├── workstream-plan.md                      # All 18 workstreams (1,100 lines)
+├── project-summary.md                      # This document (summary)
 ├── orchestrators/                          # Domain orchestrator specs
-│   ├── FOUNDATION_ORCHESTRATOR.md          # (500 lines)
-│   ├── MODEL_ORCHESTRATOR.md               # (457 lines)
-│   ├── INTERFACE_ORCHESTRATOR.md           # (488 lines)
-│   └── INTEGRATION_ORCHESTRATOR.md         # (527 lines)
+│   ├── foundation.md                       # (500 lines)
+│   ├── model.md                            # (457 lines)
+│   ├── interface.md                        # (488 lines)
+│   └── integration.md                      # (527 lines)
 └── workstreams/                            # Individual workstream specs
-    ├── WORKSTREAM_TEMPLATE.md              # Template for all workstreams (330 lines)
-    ├── WS-01-hardware-baselines/
+    ├── template.md                         # Template for all workstreams (330 lines)
+    ├── ws01-hardware-baselines/
     │   └── README.md                       # Complete spec (537 lines)
-    ├── WS-08-rust-tui-core/
+    ├── ws08-rust-tui-core/
     │   └── README.md                       # Complete spec (647 lines)
-    └── WS-13-fastmcp-server/
+    └── ws13-fastmcp-server/
         └── README.md                       # Complete spec (729 lines)
 ```
 
@@ -233,7 +233,7 @@ docs/
 ✅ **WS-13**: FastMCP Server (729 lines)
 
 ### Remaining Specifications (15)
-The template (`WORKSTREAM_TEMPLATE.md`) is ready. Remaining workstreams can be generated using:
+The template (`template.md`) is ready. Remaining workstreams can be generated using:
 
 ```bash
 # Generate remaining workstream specs from template
@@ -250,11 +250,11 @@ The template (`WORKSTREAM_TEMPLATE.md`) is ready. Remaining workstreams can be g
 
 ### Option 1: Review-First Approach (Recommended)
 
-1. **Review this summary** (`docs/PROJECT_ORCHESTRATION_SUMMARY.md`)
-2. **Review Meta Orchestrator** (`docs/META_ORCHESTRATOR.md`)
-3. **Review Workstream Plan** (`docs/WORKSTREAM_PLAN.md`)
-4. **Review Foundation Orchestrator** (`docs/orchestrators/FOUNDATION_ORCHESTRATOR.md`)
-5. **Review WS-01 spec** (`docs/workstreams/WS-01-hardware-baselines/README.md`)
+1. **Review this summary** (`docs/orchestration/project-summary.md`)
+2. **Review Meta Orchestrator** (`docs/orchestration/meta-orchestrator.md`)
+3. **Review Workstream Plan** (`docs/orchestration/workstream-plan.md`)
+4. **Review Foundation Orchestrator** (`docs/orchestration/orchestrators/foundation.md`)
+5. **Review WS-01 spec** (`docs/orchestration/workstreams/ws01-hardware-baselines/README.md`)
 6. **Provide feedback** on approach, structure, timeline
 7. **Generate GitHub issues** (after approval)
 8. **Spawn Foundation Orchestrator** (after issues created)
@@ -265,7 +265,7 @@ The template (`WORKSTREAM_TEMPLATE.md`) is ready. Remaining workstreams can be g
 cd /home/beengud/raibid-labs/dgx-pixels
 
 # 1. Review summary (this document)
-cat docs/PROJECT_ORCHESTRATION_SUMMARY.md
+cat docs/orchestration/project-summary.md
 
 # 2. Generate all remaining workstream specs
 ./scripts/generate_workstream_specs.sh  # (to be created)
@@ -329,7 +329,7 @@ P0/P1/P2
 X-Y days
 
 ## Specification
-See: `docs/workstreams/WS-XX-name/README.md`
+See: `docs/orchestration/workstreams/wsXX-name/README.md`
 ```
 
 ### Issue Labels
@@ -458,10 +458,10 @@ Each workstream succeeds when:
 
 1. **User Review** (you):
    - [ ] Review this summary document
-   - [ ] Review `docs/META_ORCHESTRATOR.md`
-   - [ ] Review `docs/WORKSTREAM_PLAN.md`
-   - [ ] Review `docs/orchestrators/FOUNDATION_ORCHESTRATOR.md`
-   - [ ] Review `docs/workstreams/WS-01-hardware-baselines/README.md`
+   - [ ] Review `docs/orchestration/meta-orchestrator.md`
+   - [ ] Review `docs/orchestration/workstream-plan.md`
+   - [ ] Review `docs/orchestration/orchestrators/foundation.md`
+   - [ ] Review `docs/orchestration/workstreams/ws01-hardware-baselines/README.md`
    - [ ] Provide feedback on structure, approach, timeline
 
 2. **Generate Remaining Workstream Specs** (if approved):
@@ -494,7 +494,7 @@ Each workstream succeeds when:
 
 ### Medium Term (Weeks 3-12)
 
-Follow the orchestration plan in `docs/META_ORCHESTRATOR.md` and `docs/WORKSTREAM_PLAN.md`.
+Follow the orchestration plan in `docs/orchestration/meta-orchestrator.md` and `docs/orchestration/workstream-plan.md`.
 
 ---
 

@@ -39,11 +39,11 @@ Establish ComfyUI inference pipeline, optimize SDXL generation for GB10 hardware
 # Day 1-5: ComfyUI Setup (CRITICAL PATH - blocks Interface WS-10)
 npx claude-flow@alpha spawn agent ai-engineer \
   --workstream WS-04 \
-  --spec docs/workstreams/WS-04-comfyui-setup/README.md \
+  --spec docs/orchestration/workstreams/ws04-comfyui-setup/README.md \
   --priority P0 \
   --depends WS-01 \
   --context "ARM64 architecture, unified memory, dgx-spark-playbooks integration" \
-  --output docs/workstreams/WS-04-comfyui-setup/COMPLETION_SUMMARY.md
+  --output docs/orchestration/workstreams/ws04-comfyui-setup/COMPLETION_SUMMARY.md
 ```
 
 ### Week 3-4: SDXL Optimization (WS-05)
@@ -52,11 +52,11 @@ npx claude-flow@alpha spawn agent ai-engineer \
 # Day 6-12: SDXL Inference Optimization (blocks WS-06, WS-10, WS-16)
 npx claude-flow@alpha spawn agent ai-engineer \
   --workstream WS-05 \
-  --spec docs/workstreams/WS-05-sdxl-optimization/README.md \
+  --spec docs/orchestration/workstreams/ws05-sdxl-optimization/README.md \
   --priority P0 \
   --depends WS-04 \
   --context "Target: ≤3s per 1024x1024, ≥15 img/min batch, FP16, xformers" \
-  --output docs/workstreams/WS-05-sdxl-optimization/COMPLETION_SUMMARY.md
+  --output docs/orchestration/workstreams/ws05-sdxl-optimization/COMPLETION_SUMMARY.md
 ```
 
 ### Week 4-5: LoRA Training + Dataset Tools (Parallel)
@@ -65,20 +65,20 @@ npx claude-flow@alpha spawn agent ai-engineer \
 # Day 13-22: LoRA Training Pipeline (blocks WS-12 side-by-side comparison)
 npx claude-flow@alpha spawn agent ai-engineer \
   --workstream WS-06 \
-  --spec docs/workstreams/WS-06-lora-training/README.md \
+  --spec docs/orchestration/workstreams/ws06-lora-training/README.md \
   --priority P1 \
   --depends WS-05 \
   --context "50 images, 3000 steps, ≤4 hours, Kohya_ss or Diffusers, FP16" \
-  --output docs/workstreams/WS-06-lora-training/COMPLETION_SUMMARY.md
+  --output docs/orchestration/workstreams/ws06-lora-training/COMPLETION_SUMMARY.md
 
 # Day 13-18: Dataset Tools (parallel with WS-06)
 npx claude-flow@alpha spawn agent ai-engineer \
   --workstream WS-07 \
-  --spec docs/workstreams/WS-07-dataset-tools/README.md \
+  --spec docs/orchestration/workstreams/ws07-dataset-tools/README.md \
   --priority P1 \
   --depends WS-05 \
   --context "BLIP auto-captioning, augmentation, LPIPS/SSIM/CLIP quality metrics" \
-  --output docs/workstreams/WS-07-dataset-tools/COMPLETION_SUMMARY.md
+  --output docs/orchestration/workstreams/ws07-dataset-tools/COMPLETION_SUMMARY.md
 ```
 
 ---
@@ -450,7 +450,7 @@ Before marking Model Orchestrator complete:
 
 # Or manually:
 cd /home/beengud/raibid-labs/dgx-pixels
-cat docs/orchestrators/MODEL_ORCHESTRATOR.md
+cat docs/orchestration/orchestrators/model.md
 ./scripts/spawn_agent.sh ai-engineer WS-04
 ```
 

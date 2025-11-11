@@ -845,9 +845,9 @@ Any delay in critical path workstreams adds to timeline.
 ## Next Steps
 
 1. **Review this plan** with user
-2. **Create individual workstream specs** in `docs/workstreams/WS-##/README.md`
-3. **Create domain orchestrator specs** in `docs/orchestrators/`
+2. **Create individual workstream specs** in `docs/orchestration/workstreams/ws##-name/README.md`
+3. **Create domain orchestrator specs** in `docs/orchestration/orchestrators/`
 4. **Generate GitHub issues** from workstream specs
 5. **Initialize Meta Orchestrator** and spawn Foundation Orchestrator
 
-**Ready to proceed?** See `docs/META_ORCHESTRATOR.md` for orchestration details.
+**Ready to proceed?** See `docs/orchestration/meta-orchestrator.md` for orchestration details.

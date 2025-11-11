@@ -148,8 +148,8 @@ See [Rust-Python Architecture](docs/07-rust-python-architecture.md) and [TUI Des
 
 10. **[Hardware Specification](docs/hardware.md)** - Verified DGX-Spark GB10 specifications and topology
 11. **[Metrics Framework](docs/metrics.md)** - Performance, quality, and observability metrics
-12. **[Roadmap](ROADMAP.md)** - Milestone-based development roadmap (M0-M5)
-13. **[RFD: GPT-5 Feedback](RFD_gpt5_dgx_pixels.md)** - External review and recommendations
+12. **[Roadmap](docs/ROADMAP.md)** - Milestone-based development roadmap (M0-M5)
+13. **[RFD: GPT-5 Feedback](docs/rfds/gpt5-dgx-pixels.md)** - External review and recommendations
 14. **[ADR 0001](docs/adr/0001-dgx-spark-not-b200.md)** - Hardware clarification: DGX-Spark vs DGX B200
 
 ### Quick Links
@@ -303,7 +303,7 @@ dgx-pixels/
 
 ## Roadmap
 
-See [ROADMAP.md](ROADMAP.md) for the complete milestone-based development plan.
+See [ROADMAP.md](docs/ROADMAP.md) for the complete milestone-based development plan.
 
 ### Current Milestones
 

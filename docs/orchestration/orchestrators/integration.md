@@ -41,11 +41,11 @@ Integrate DGX-Pixels with Bevy game engine via MCP, implement production deploym
 # Day 1-6: FastMCP Server (needs WS-10 backend)
 npx claude-flow@alpha spawn agent backend-architect \
   --workstream WS-13 \
-  --spec docs/workstreams/WS-13-fastmcp-server/README.md \
+  --spec docs/orchestration/workstreams/ws13-fastmcp-server-server/README.md \
   --priority P0 \
   --depends WS-10 \
   --context "FastMCP library, stdio/SSE, integrate with backend worker, <200ms" \
-  --output docs/workstreams/WS-13-fastmcp-server/COMPLETION_SUMMARY.md
+  --output docs/orchestration/workstreams/ws13-fastmcp-server-server/COMPLETION_SUMMARY.md
 ```
 
 ### Week 7-8: Bevy Integration (WS-14)
@@ -54,11 +54,11 @@ npx claude-flow@alpha spawn agent backend-architect \
 # Day 7-13: Bevy Plugin Integration
 npx claude-flow@alpha spawn agent rust-pro \
   --workstream WS-14 \
-  --spec docs/workstreams/WS-14-bevy-integration/README.md \
+  --spec docs/orchestration/workstreams/ws14-bevy-integration/README.md \
   --priority P0 \
   --depends WS-13 \
   --context "bevy_brp_mcp plugin, asset hot-reload, example game" \
-  --output docs/workstreams/WS-14-bevy-integration/COMPLETION_SUMMARY.md
+  --output docs/orchestration/workstreams/ws14-bevy-integration/COMPLETION_SUMMARY.md
 ```
 
 ### Week 8: Asset Pipeline (WS-15)
@@ -67,11 +67,11 @@ npx claude-flow@alpha spawn agent rust-pro \
 # Day 14-18: Asset Deployment Pipeline
 npx claude-flow@alpha spawn agent devops-automator \
   --workstream WS-15 \
-  --spec docs/workstreams/WS-15-asset-pipeline/README.md \
+  --spec docs/orchestration/workstreams/ws15-asset-pipeline/README.md \
   --priority P1 \
   --depends "WS-13,WS-14" \
   --context "PNG format, assets/ structure, manifest generation, validation" \
-  --output docs/workstreams/WS-15-asset-pipeline/COMPLETION_SUMMARY.md
+  --output docs/orchestration/workstreams/ws15-asset-pipeline/COMPLETION_SUMMARY.md
 ```
 
 ### Week 7-8: Observability (WS-16, Parallel)
@@ -80,11 +80,11 @@ npx claude-flow@alpha spawn agent devops-automator \
 # Day 1-6: DCGM Metrics & Observability (parallel with WS-13/14)
 npx claude-flow@alpha spawn agent infrastructure-maintainer \
   --workstream WS-16 \
-  --spec docs/workstreams/WS-16-observability/README.md \
+  --spec docs/orchestration/workstreams/ws16-observability/README.md \
   --priority P1 \
   --depends WS-05 \
   --context "DCGM exporter, Prometheus, Grafana, alerting, 30-day retention" \
-  --output docs/workstreams/WS-16-observability/COMPLETION_SUMMARY.md
+  --output docs/orchestration/workstreams/ws16-observability/COMPLETION_SUMMARY.md
 ```
 
 ### Week 8-9: Docker Deployment (WS-17, Parallel)
@@ -93,11 +93,11 @@ npx claude-flow@alpha spawn agent infrastructure-maintainer \
 # Day 7-11: Docker Compose Deployment (parallel with WS-14/15)
 npx claude-flow@alpha spawn agent devops-automator \
   --workstream WS-17 \
-  --spec docs/workstreams/WS-17-docker-deployment/README.md \
+  --spec docs/orchestration/workstreams/ws17-docker-deployment/README.md \
   --priority P1 \
   --depends "WS-10,WS-16" \
   --context "NVIDIA runtime, volume mounts, health checks, <60s startup" \
-  --output docs/workstreams/WS-17-docker-deployment/COMPLETION_SUMMARY.md
+  --output docs/orchestration/workstreams/ws17-docker-deployment/COMPLETION_SUMMARY.md
 ```
 
 ### Week 10-12: CI/CD (WS-18)
@@ -106,11 +106,11 @@ npx claude-flow@alpha spawn agent devops-automator \
 # Day 19-26: CI/CD Pipeline
 npx claude-flow@alpha spawn agent devops-automator \
   --workstream WS-18 \
-  --spec docs/workstreams/WS-18-cicd/README.md \
+  --spec docs/orchestration/workstreams/ws18-cicd-pipeline/README.md \
   --priority P2 \
   --depends WS-17 \
   --context "GitHub Actions, ARM runners, test automation, Docker builds" \
-  --output docs/workstreams/WS-18-cicd/COMPLETION_SUMMARY.md
+  --output docs/orchestration/workstreams/ws18-cicd-pipeline/COMPLETION_SUMMARY.md
 ```
 
 ---
@@ -517,7 +517,7 @@ Before marking Integration Orchestrator complete:
 
 # Or manually:
 cd /home/beengud/raibid-labs/dgx-pixels
-cat docs/orchestrators/INTEGRATION_ORCHESTRATOR.md
+cat docs/orchestration/orchestrators/integration.md
 ./scripts/spawn_agent.sh backend-architect WS-13
 ./scripts/spawn_agent.sh infrastructure-maintainer WS-16  # Parallel
 ```

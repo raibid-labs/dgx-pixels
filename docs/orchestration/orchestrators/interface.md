@@ -40,11 +40,11 @@ Build Rust TUI application, implement ZeroMQ IPC layer, create Python backend wo
 # Day 1-8: Rust TUI Core (can start after WS-01)
 npx claude-flow@alpha spawn agent rust-pro \
   --workstream WS-08 \
-  --spec docs/workstreams/WS-08-rust-tui/README.md \
+  --spec docs/orchestration/workstreams/ws08-rust-tui-core/README.md \
   --priority P0 \
   --depends WS-01 \
   --context "ARM64 target, ratatui, 60+ FPS, tokio async, TDD" \
-  --output docs/workstreams/WS-08-rust-tui/COMPLETION_SUMMARY.md
+  --output docs/orchestration/workstreams/ws08-rust-tui-core/COMPLETION_SUMMARY.md
 ```
 
 ### Week 4: IPC Layer (WS-09)
@@ -53,11 +53,11 @@ npx claude-flow@alpha spawn agent rust-pro \
 # Day 9-13: ZeroMQ IPC Layer
 npx claude-flow@alpha spawn agent rust-pro \
   --workstream WS-09 \
-  --spec docs/workstreams/WS-09-zeromq-ipc/README.md \
+  --spec docs/orchestration/workstreams/ws09-zeromq-ipc/README.md \
   --priority P0 \
   --depends WS-08 \
   --context "<1ms latency REQ-REP, <100μs PUB-SUB, MsgPack, ARM zmq" \
-  --output docs/workstreams/WS-09-zeromq-ipc/COMPLETION_SUMMARY.md
+  --output docs/orchestration/workstreams/ws09-zeromq-ipc/COMPLETION_SUMMARY.md
 ```
 
 ### Week 4: Backend Worker (WS-10)
@@ -66,11 +66,11 @@ npx claude-flow@alpha spawn agent rust-pro \
 # Day 14-19: Python Backend Worker (needs WS-04 ComfyUI + WS-09 IPC)
 npx claude-flow@alpha spawn agent python-pro \
   --workstream WS-10 \
-  --spec docs/workstreams/WS-10-python-backend/README.md \
+  --spec docs/orchestration/workstreams/ws10-python-backend/README.md \
   --priority P0 \
   --depends "WS-04,WS-09" \
   --context "ComfyUI API client, ZeroMQ server, asyncio, job queue" \
-  --output docs/workstreams/WS-10-python-backend/COMPLETION_SUMMARY.md
+  --output docs/orchestration/workstreams/ws10-python-backend/COMPLETION_SUMMARY.md
 ```
 
 ### Week 5-6: Preview + Comparison (Parallel)
@@ -79,20 +79,20 @@ npx claude-flow@alpha spawn agent python-pro \
 # Day 20-23: Sixel Image Preview (parallel with WS-12)
 npx claude-flow@alpha spawn agent rust-pro \
   --workstream WS-11 \
-  --spec docs/workstreams/WS-11-sixel-preview/README.md \
+  --spec docs/orchestration/workstreams/ws11-sixel-preview/README.md \
   --priority P1 \
   --depends "WS-08,WS-10" \
   --context "Sixel protocol, <100ms render, terminal detection, zero-copy" \
-  --output docs/workstreams/WS-11-sixel-preview/COMPLETION_SUMMARY.md
+  --output docs/orchestration/workstreams/ws11-sixel-preview/COMPLETION_SUMMARY.md
 
 # Day 20-24: Side-by-Side Model Comparison (needs WS-06 LoRA for testing)
 npx claude-flow@alpha spawn agent rust-pro \
   --workstream WS-12 \
-  --spec docs/workstreams/WS-12-model-comparison/README.md \
+  --spec docs/orchestration/workstreams/ws12-model-comparison/README.md \
   --priority P1 \
   --depends "WS-10,WS-11" \
   --context "Multi-model generation, 2-4 models parallel, preference tracking" \
-  --output docs/workstreams/WS-12-model-comparison/COMPLETION_SUMMARY.md
+  --output docs/orchestration/workstreams/ws12-model-comparison/COMPLETION_SUMMARY.md
 ```
 
 ---
@@ -479,7 +479,7 @@ Before marking Interface Orchestrator complete:
 
 # Or manually:
 cd /home/beengud/raibid-labs/dgx-pixels
-cat docs/orchestrators/INTERFACE_ORCHESTRATOR.md
+cat docs/orchestration/orchestrators/interface.md
 ./scripts/spawn_agent.sh rust-pro WS-08
 ```
 

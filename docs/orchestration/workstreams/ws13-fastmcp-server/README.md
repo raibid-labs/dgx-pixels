@@ -576,7 +576,7 @@ Before marking WS-13 complete:
 - [ ] Example MCP client working (`examples/mcp_client.py`)
 - [ ] Tested with real backend worker (WS-10)
 - [ ] Code quality checks passing (ruff, mypy)
-- [ ] Completion summary created (`docs/workstreams/WS-13-fastmcp-server/COMPLETION_SUMMARY.md`)
+- [ ] Completion summary created (`docs/orchestration/workstreams/ws13-fastmcp-server/COMPLETION_SUMMARY.md`)
 - [ ] GitHub issue PIXELS-040 closed with summary link
 
 ---
@@ -717,7 +717,7 @@ asyncio.run(main())
 
 - Architecture: `docs/07-rust-python-architecture.md` (MCP Integration)
 - Bevy Integration: `docs/04-bevy-integration.md` (MCP patterns)
-- Roadmap: `ROADMAP.md` (M4 - Bevy Integration)
+- Roadmap: `docs/ROADMAP.md` (M4 - Bevy Integration)
 - MCP Specification: https://modelcontextprotocol.io/
 - FastMCP Documentation: https://github.com/jlowin/fastmcp
 - bevy_brp_mcp: https://github.com/bevyengine/bevy/tree/main/crates/bevy_brp_mcp

@@ -14,7 +14,7 @@
 - Next steps
 
 ### For Orchestrators
-👉 **Meta Orchestrator**: `../META_ORCHESTRATOR.md`
+👉 **Meta Orchestrator**: `../meta-orchestrator.md`
 - Top-level coordination
 - Phase gates
 - Cross-orchestrator dependencies
@@ -26,7 +26,7 @@
 - Integration Orchestrator (M4, M5, Weeks 7-12)
 
 ### For Workstreams
-👉 **Master Plan**: `../WORKSTREAM_PLAN.md`
+👉 **Master Plan**: `../workstream-plan.md`
 - All 18 workstreams listed
 - Dependencies and timelines
 - Success metrics
@@ -87,7 +87,7 @@
    ```bash
    npx claude-flow@alpha spawn agent [agent-type] \
      --workstream WS-XX \
-     --spec docs/workstreams/WS-XX-name/README.md
+     --spec docs/orchestration/workstreams/wsXX-name/README.md
    ```
 
 2. **Monitor progress**:
@@ -112,7 +112,7 @@
 
 1. **Copy the template**:
    ```bash
-   cp WORKSTREAM_TEMPLATE.md WS-XX-new-workstream/README.md
+   cp template.md wsXX-new-workstream/README.md
    ```
 
 2. **Fill in all sections**:
@@ -133,7 +133,7 @@
 
 ## Template
 
-📄 **WORKSTREAM_TEMPLATE.md** - Use this to create new workstream specifications
+📄 **template.md** - Use this to create new workstream specifications
 
 The template includes:
 - Complete structure for all sections
@@ -210,7 +210,7 @@ Track workstream completion here (or use GitHub Issues):
 
 ## Help & Support
 
-- **Questions about orchestration?** See `../META_ORCHESTRATOR.md`
+- **Questions about orchestration?** See `../meta-orchestrator.md`
 - **Questions about a specific workstream?** Read the workstream's `README.md`
 - **Questions about the overall project?** See `../PROJECT_ORCHESTRATION_SUMMARY.md`
 - **Questions about hardware?** See `../hardware.md`

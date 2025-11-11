@@ -42,8 +42,8 @@ The `docs/` directory contains comprehensive research and planning:
 - **hardware.md**: Verified DGX-Spark GB10 hardware specifications, topology, and performance characteristics
 - **metrics.md**: Performance, quality, and observability metrics framework (adapted for single-GPU)
 - **adr/0001-dgx-spark-not-b200.md**: Architecture Decision Record explaining hardware differences
-- **ROADMAP.md**: Milestone-based development roadmap (M0-M5)
-- **RFD_gpt5_dgx_pixels.md**: External review feedback (note: assumes DGX B200, not applicable to our GB10)
+- **docs/ROADMAP.md**: Milestone-based development roadmap (M0-M5)
+- **docs/rfds/gpt5-dgx-pixels.md**: External review feedback (note: assumes DGX B200, not applicable to our GB10)
 
 **Critical**: Read relevant documentation before implementing any component. The research phase identified best practices, pitfalls, and optimal approaches.
 
@@ -216,22 +216,103 @@ See `docs/04-bevy-integration.md` for complete patterns and code examples.
 8. **Don't ignore ARM compatibility** - Verify all dependencies support ARM64 architecture
 9. **Don't waste unified memory** - Exploit zero-copy transfers, avoid unnecessary cudaMemcpy calls
 
-## Development Workflow (Once Implemented)
+## Development Workflow
 
-The intended workflow (not yet implemented):
+### Agent Workflow (Automated)
+
+When agents implement workstreams, they follow this workflow:
+
+1. **Create Branch**: `just branch WS-XX` or `gh-create-branch "wsXX-name"`
+2. **Implement Changes**: Follow TDD (tests first!)
+3. **Run Quality Checks**: `just ci` (fmt, lint, test)
+4. **Create PR**: `just pr "Title"` or `gh-create-pr "Title"`
+5. **Rebase onto Main**: `gh-rebase-main` (before merge)
+6. **Auto-merge**: `gh-auto-merge --merge-method squash` (after CI passes)
+
+### Manual Workflow (Human Developers)
+
+See `CONTRIBUTING.md` for detailed manual workflow guidelines.
+
+### Project Commands (justfile)
+
+The project uses `just` for task automation. Key commands:
 
 ```bash
-# Option 1: CLI
-dgx-pixels generate character "medieval knight"
-dgx-pixels batch prompts.txt --output ./assets/
+# Setup
+just init              # Initialize project (first time)
+just validate-gpu      # Verify DGX-Spark hardware
 
-# Option 2: API
-curl -X POST http://localhost:8000/api/v1/generate \
-  -d '{"prompt": "knight sprite", "style": "16bit"}'
+# Development
+just tui               # Run Rust TUI (debug)
+just backend           # Start Python backend worker
+just comfyui           # Start ComfyUI server
 
-# Option 3: MCP (automated)
-# AI assistant calls generate_and_deploy() tool
-# Assets appear directly in Bevy project
+# Testing
+just test              # Run all tests
+just test-coverage     # Run tests with coverage
+just ci                # Run all CI checks (fmt, lint, test)
+
+# Code Quality
+just fmt               # Format Rust code
+just lint              # Run Rust clippy
+just fmt-python        # Format Python code
+
+# Models
+just models-list       # List available models
+just download-model    # Download SDXL base model
+just train-lora DATASET  # Train LoRA on dataset
+
+# Monitoring
+just gpu-status        # Show GPU stats
+just gpu-watch         # Monitor GPU (live)
+just hw-info           # Show all hardware info
+
+# Git
+just status            # Show git status
+just branch WS-XX      # Create branch for workstream
+just pr "Title"        # Create pull request
+just rebase            # Rebase onto main
+
+# Documentation
+just docs              # Generate and open Rust docs
+just docs-serve        # Serve docs locally
+
+# Full list
+just --list            # Show all available commands
+```
+
+### Nushell Scripts
+
+The project uses nushell for automation scripts:
+
+**Location**: `scripts/nu/`
+
+**Modules**:
+- `config.nu` - Project config, logging, utilities
+- `modules/comfyui.nu` - ComfyUI API wrapper
+- `modules/dgx.nu` - DGX-Spark hardware utilities
+- `modules/github.nu` - GitHub automation (PR, branch, merge)
+
+**Usage**:
+```nushell
+# Load config
+use scripts/nu/config.nu *
+
+# Check hardware
+use scripts/nu/modules/dgx.nu *
+dgx-validate-hardware
+dgx-gpu-stats
+
+# GitHub automation
+use scripts/nu/modules/github.nu *
+gh-create-branch "feature/new-tui"
+gh-create-pr "Add new TUI feature" --draft
+gh-auto-merge --merge-method squash
+
+# ComfyUI integration
+use scripts/nu/modules/comfyui.nu *
+comfyui-health-check
+comfyui-generate (open workflows/sprite-gen.json)
 ```
 
 ## Testing Strategy (To Be Implemented)
@@ -248,7 +329,7 @@ When building the system:
 Before implementing any component:
 
 - **HARDWARE FIRST**: Read `docs/hardware.md` and `docs/adr/0001-dgx-spark-not-b200.md` to understand single-GPU unified memory architecture
-- **Roadmap**: Read `ROADMAP.md` for milestone-based development plan (M0-M5)
+- **Roadmap**: Read `docs/ROADMAP.md` for milestone-based development plan (M0-M5)
 - **Metrics**: Read `docs/metrics.md` for performance targets and benchmarking strategy
 - **Architecture decision**: Read `docs/02-architecture-proposals.md` § Comparison Matrix and Proposal 2B
 - **SDXL + LoRA**: Read `docs/03-technology-deep-dive.md` § Stable Diffusion XL and LoRA sections
@@ -263,18 +344,65 @@ Before implementing any component:
 
 ## Next Steps (For First Implementation)
 
-1. Review all docs in `docs/` directory
-2. Decide on architecture proposal (Proposal 2B: Rust+Python recommended for best developer experience)
-3. Follow implementation guide for chosen path:
-   - **Proposal 2B**: See `docs/07-rust-python-architecture.md` and `docs/08-tui-design.md`
-   - **Proposal 2**: See `docs/06-implementation-plan.md` § Balanced Production
-   - **Proposal 1**: See `docs/06-implementation-plan.md` § Rapid Prototyping
-4. Set up DGX-Spark environment (ComfyUI via dgx-spark-playbooks)
-5. Download base models and test generation
-6. Build TUI/CLI/API layer (architecture-dependent)
-7. Implement Bevy integration
-8. Collect training data and train first LoRA
-9. Use side-by-side comparison to validate training improvements (Proposal 2B)
+### 1. Review Documentation
+
+Start with the orchestration summary:
+```bash
+cat docs/orchestration/project-summary.md
+```
+
+Key documents:
+- **Architecture**: `docs/02-architecture-proposals.md` (choose Proposal 2B recommended)
+- **Hardware**: `docs/hardware.md` (understand GB10 unified memory)
+- **Roadmap**: `docs/ROADMAP.md` (M0-M5 milestones)
+- **Orchestration**: `docs/orchestration/meta-orchestrator.md` (coordination strategy)
+- **Workstreams**: `docs/orchestration/workstream-plan.md` (all 18 workstreams)
+
+### 2. Initialize Project
+
+```bash
+# Clone and setup
+git clone https://github.com/raibid-labs/dgx-pixels.git
+cd dgx-pixels
+
+# Initialize project
+just init
+
+# Validate hardware
+just validate-gpu
+
+# View hardware info
+just hw-info
+```
+
+### 3. Start with Foundation Orchestrator (M0)
+
+The project uses **orchestrated workstreams**. Start with Foundation:
+
+```bash
+# Review Foundation Orchestrator
+cat docs/orchestration/orchestrators/foundation.md
+
+# Review first workstream (WS-01)
+cat docs/orchestration/workstreams/ws01-hardware-baselines/README.md
+
+# Create branch for WS-01
+just branch WS-01
+
+# Implement following the workstream spec
+# (See CONTRIBUTING.md for detailed workflow)
+```
+
+### 4. Follow Orchestration Plan
+
+After M0 completes, proceed through:
+- **M1**: Model Orchestrator (ComfyUI, SDXL optimization)
+- **M2**: Interface Orchestrator (Rust TUI, ZeroMQ, backend)
+- **M3**: Model Orchestrator (LoRA training)
+- **M4**: Integration Orchestrator (Bevy, MCP)
+- **M5**: Integration Orchestrator (observability, deployment)
+
+See `docs/orchestration/meta-orchestrator.md` for coordination details.
 
 Do not skip steps or mix architecture proposals - the plans are sequential and architecture-specific.
 

@@ -112,7 +112,7 @@ Deploy via `make demo/<name>` or `docker compose`.
 1. Approve this RFD and link follow-up PRs.  
 2. Implement minimal `/repro` and `/bench` backbone first.  
 3. Update README to reflect hardware + metrics clarity.  
-4. Open ADRs and formal `/ROADMAP.md`.  
+4. Open ADRs and formal `docs/ROADMAP.md`.  
 5. Schedule design review after M1 completion.
 
 ---

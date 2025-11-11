@@ -34,17 +34,17 @@ Establish hardware baseline, reproducibility framework, and benchmarking infrast
 # Day 1-4: Hardware Baselines (CRITICAL PATH)
 npx claude-flow@alpha spawn agent devops-automator \
   --workstream WS-01 \
-  --spec docs/workstreams/WS-01-hardware-baselines/README.md \
+  --spec docs/orchestration/workstreams/ws01-hardware-baselines/README.md \
   --priority P0 \
-  --output docs/workstreams/WS-01-hardware-baselines/COMPLETION_SUMMARY.md
+  --output docs/orchestration/workstreams/ws01-hardware-baselines/COMPLETION_SUMMARY.md
 
 # Day 5-9: Reproducibility Framework (depends on WS-01)
 npx claude-flow@alpha spawn agent devops-automator \
   --workstream WS-02 \
-  --spec docs/workstreams/WS-02-reproducibility/README.md \
+  --spec docs/orchestration/workstreams/ws02-reproducibility/README.md \
   --priority P0 \
   --depends WS-01 \
-  --output docs/workstreams/WS-02-reproducibility/COMPLETION_SUMMARY.md
+  --output docs/orchestration/workstreams/ws02-reproducibility/COMPLETION_SUMMARY.md
 ```
 
 ### Week 2: WS-03 (can overlap with WS-02)
@@ -53,10 +53,10 @@ npx claude-flow@alpha spawn agent devops-automator \
 # Day 6-10: Benchmark Suite (depends on WS-01, can run parallel with WS-02)
 npx claude-flow@alpha spawn agent performance-benchmarker \
   --workstream WS-03 \
-  --spec docs/workstreams/WS-03-benchmark-suite/README.md \
+  --spec docs/orchestration/workstreams/ws03-benchmark-suite/README.md \
   --priority P1 \
   --depends WS-01 \
-  --output docs/workstreams/WS-03-benchmark-suite/COMPLETION_SUMMARY.md
+  --output docs/orchestration/workstreams/ws03-benchmark-suite/COMPLETION_SUMMARY.md
 ```
 
 ---
@@ -270,7 +270,7 @@ Before marking Foundation Orchestrator complete:
 
 # Or manually:
 cd /home/beengud/raibid-labs/dgx-pixels
-cat docs/orchestrators/FOUNDATION_ORCHESTRATOR.md
+cat docs/orchestration/orchestrators/foundation.md
 ./scripts/spawn_agent.sh devops-automator WS-01
 ```
 

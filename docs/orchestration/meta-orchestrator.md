@@ -36,22 +36,22 @@ DGX-Pixels is a large project (M0-M5 milestones, 12+ week timeline) that require
 ```bash
 # Phase 1: Foundation (Week 1-2)
 claude-flow spawn orchestrator "Foundation Orchestrator" \
-  --spec docs/orchestrators/FOUNDATION_ORCHESTRATOR.md \
+  --spec docs/orchestration/orchestrators/foundation.md \
   --milestone M0
 
 # Phase 2A: Models (Week 3-5)
 claude-flow spawn orchestrator "Model Orchestrator" \
-  --spec docs/orchestrators/MODEL_ORCHESTRATOR.md \
+  --spec docs/orchestration/orchestrators/model.md \
   --milestone M1,M3
 
 # Phase 2B: Interface (Week 3-6)
 claude-flow spawn orchestrator "Interface Orchestrator" \
-  --spec docs/orchestrators/INTERFACE_ORCHESTRATOR.md \
+  --spec docs/orchestration/orchestrators/interface.md \
   --milestone M2
 
 # Phase 3: Integration & Production (Week 7-12)
 claude-flow spawn orchestrator "Integration Orchestrator" \
-  --spec docs/orchestrators/INTEGRATION_ORCHESTRATOR.md \
+  --spec docs/orchestration/orchestrators/integration.md \
   --milestone M4,M5
 ```
 
@@ -240,7 +240,7 @@ claude-flow spawn orchestrator integration \
 **2. Workstream Exceeds Timeline** (>150% estimated time):
 - Meta Orchestrator analyzes root cause
 - Options: Re-scope, add resources, defer to next phase
-- Update ROADMAP.md and notify user
+- Update docs/ROADMAP.md and notify user
 
 **3. Phase Gate Failure** (acceptance criteria not met):
 - Meta Orchestrator halts dependent orchestrators
@@ -260,9 +260,9 @@ claude-flow spawn orchestrator integration \
 
 ```bash
 # 1. Verify foundation documents exist
-ls docs/WORKSTREAM_PLAN.md
-ls docs/orchestrators/*.md
-ls docs/workstreams/WS-*/README.md
+ls docs/orchestration/workstream-plan.md
+ls docs/orchestration/orchestrators/*.md
+ls docs/orchestration/workstreams/ws*/README.md
 
 # 2. Verify hardware and dependencies
 ./repro/verify_hardware.sh
@@ -303,7 +303,7 @@ claude-flow spawn orchestrator foundation
 1. Verify all acceptance criteria met
 2. Generate project completion report
 3. Archive orchestration logs
-4. Update ROADMAP.md with actuals
+4. Update docs/ROADMAP.md with actuals
 
 ### Shutdown (End of Project)
 
@@ -329,19 +329,20 @@ git commit -m "Project complete: DGX-Pixels MVP"
 ```
 dgx-pixels/
 ├── docs/
-│   ├── META_ORCHESTRATOR.md              # This file
-│   ├── WORKSTREAM_PLAN.md                 # All workstreams master plan
-│   ├── MVP_SCOPE.md                       # Scope definition
-│   ├── orchestrators/                     # Domain orchestrators
-│   │   ├── FOUNDATION_ORCHESTRATOR.md
-│   │   ├── MODEL_ORCHESTRATOR.md
-│   │   ├── INTERFACE_ORCHESTRATOR.md
-│   │   └── INTEGRATION_ORCHESTRATOR.md
-│   └── workstreams/                       # Individual workstream specs
-│       ├── START_HERE.md
-│       ├── WS-01-hardware-baselines/
-│       ├── WS-02-reproducibility/
-│       └── ...
+│   ├── orchestration/
+│   │   ├── meta-orchestrator.md              # This file
+│   │   ├── workstream-plan.md                 # All workstreams master plan
+│   │   ├── project-summary.md                 # Summary document
+│   │   ├── orchestrators/                     # Domain orchestrators
+│   │   │   ├── foundation.md
+│   │   │   ├── model.md
+│   │   │   ├── interface.md
+│   │   │   └── integration.md
+│   │   └── workstreams/                       # Individual workstream specs
+│   │       ├── start-here.md
+│   │       ├── ws01-hardware-baselines/
+│   │       ├── ws02-reproducibility/
+│   │       └── ...
 ├── .orchestration/                        # Runtime tracking (gitignored)
 │   ├── logs/
 │   ├── status/
@@ -388,9 +389,9 @@ Based on raibid-labs patterns and workstream requirements:
 ## Quick Start for User
 
 ```bash
-# 1. Review this document and WORKSTREAM_PLAN.md
-cat docs/META_ORCHESTRATOR.md
-cat docs/WORKSTREAM_PLAN.md
+# 1. Review this document and workstream-plan.md
+cat docs/orchestration/meta-orchestrator.md
+cat docs/orchestration/workstream-plan.md
 
 # 2. Verify hardware setup
 ./repro/verify_hardware.sh
@@ -411,10 +412,10 @@ cat .orchestration/reports/week_01_status.md
 ---
 
 **Next Steps**:
-1. Review `WORKSTREAM_PLAN.md` for detailed workstream breakdown
-2. Review `docs/orchestrators/` for domain orchestrator specifications
-3. Review `docs/workstreams/START_HERE.md` for workstream entry point
-4. Approve META_ORCHESTRATOR approach
+1. Review `docs/orchestration/workstream-plan.md` for detailed workstream breakdown
+2. Review `docs/orchestration/orchestrators/` for domain orchestrator specifications
+3. Review `docs/orchestration/workstreams/start-here.md` for workstream entry point
+4. Approve meta-orchestrator approach
 5. Begin Foundation Orchestrator spawn
 
 **Questions for User**:

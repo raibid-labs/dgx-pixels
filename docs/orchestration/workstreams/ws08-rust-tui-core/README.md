@@ -585,7 +585,7 @@ Before marking WS-08 complete:
 - [ ] Binary size ≤ 15MB
 - [ ] Documentation written (README, rustdoc, architecture doc)
 - [ ] Manual testing complete (all screens navigable)
-- [ ] Completion summary created (`docs/workstreams/WS-08-rust-tui-core/COMPLETION_SUMMARY.md`)
+- [ ] Completion summary created (`docs/orchestration/workstreams/ws08-rust-tui-core/COMPLETION_SUMMARY.md`)
 - [ ] GitHub issue PIXELS-023 closed with summary link
 
 ---
@@ -635,7 +635,7 @@ tail -f ~/.local/share/dgx-pixels/logs/dgx-pixels-tui.log
 
 - Architecture: `docs/07-rust-python-architecture.md` (Rust TUI + Python Backend)
 - TUI Design: `docs/08-tui-design.md` (Screen mockups and workflows)
-- Roadmap: `ROADMAP.md` (M2 - Interactive TUI)
+- Roadmap: `docs/ROADMAP.md` (M2 - Interactive TUI)
 - ratatui Documentation: https://ratatui.rs/
 - crossterm Documentation: https://docs.rs/crossterm/
 - Tokio Documentation: https://tokio.rs/
