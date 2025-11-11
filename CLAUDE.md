@@ -14,7 +14,9 @@ The project is in its research and planning phase. All documentation is complete
 
 These are non-negotiable requirements that must be respected in all implementations:
 
-1. **Hardware**: Must run on NVIDIA DGX-Spark (GB10 Grace Blackwell Superchip, 128GB unified memory, 1000 TOPS)
+1. **Hardware**: Must run on NVIDIA DGX-Spark (GB10 Grace Blackwell Superchip, **single GPU**, 128GB unified memory, 1000 TOPS, ARM CPU)
+   - **VERIFIED**: See `docs/hardware.md` for actual hardware specifications
+   - **IMPORTANT**: This is NOT a multi-GPU DGX B200 system (see `docs/adr/0001-dgx-spark-not-b200.md`)
 2. **Open Source Only**: All tools, libraries, and models must be open source (no proprietary APIs or closed models)
 3. **Bevy Integration**: Primary target is Bevy game engine with MCP server integration
 4. **Technology Stack**: Rust TUI (ratatui) + Python AI Backend + Stable Diffusion XL + LoRA fine-tuning + ComfyUI + ZeroMQ IPC
@@ -31,12 +33,21 @@ The `docs/` directory contains comprehensive research and planning:
 - **05-training-roadmap.md**: 12-week training strategy for custom LoRA models
 - **06-implementation-plan.md**: Step-by-step implementation guides for architecture paths
 
-### NEW: Rust + Python Stack Documentation
+### Rust + Python Stack Documentation
 - **07-rust-python-architecture.md**: Hybrid Rust TUI + Python backend design with ZeroMQ IPC patterns
 - **08-tui-design.md**: Complete TUI mockups, workflows, and side-by-side model comparison feature
 - **11-playbook-contribution.md**: Proposal for contributing to dgx-spark-playbooks repository
 
+### Operations & Project Management (NEW)
+- **hardware.md**: Verified DGX-Spark GB10 hardware specifications, topology, and performance characteristics
+- **metrics.md**: Performance, quality, and observability metrics framework (adapted for single-GPU)
+- **adr/0001-dgx-spark-not-b200.md**: Architecture Decision Record explaining hardware differences
+- **ROADMAP.md**: Milestone-based development roadmap (M0-M5)
+- **RFD_gpt5_dgx_pixels.md**: External review feedback (note: assumes DGX B200, not applicable to our GB10)
+
 **Critical**: Read relevant documentation before implementing any component. The research phase identified best practices, pitfalls, and optimal approaches.
+
+**Hardware Context**: The system runs on DGX-Spark GB10 (single GPU, unified memory), NOT a multi-GPU DGX B200. This changes many architectural decisions. Always consult `docs/hardware.md` and `docs/adr/0001-dgx-spark-not-b200.md` when making hardware-related decisions.
 
 ## Architecture Decision Required
 
@@ -94,6 +105,9 @@ These decisions were made after extensive research and should not be changed wit
 - Use xformers memory-efficient attention
 - Leverage Tensor Cores for matrix operations
 - Load multiple models in 128GB unified memory
+- **Unified Memory**: Exploit zero-copy CPU↔GPU transfers (no cudaMemcpy overhead)
+- **Single GPU Focus**: No multi-GPU scaling complexity, simpler deployment
+- **ARM Compatibility**: Ensure all dependencies support ARM64 architecture
 
 ## Implementation Guidelines
 
@@ -198,6 +212,9 @@ See `docs/04-bevy-integration.md` for complete patterns and code examples.
 4. **Don't ignore color quantization** - Reduce to optimal palette in post-processing
 5. **Don't load models with FP32** - Use FP16 or FP4 to leverage Tensor Cores
 6. **Don't create absolute asset paths in Bevy** - Use relative to `assets/` directory
+7. **Don't assume multi-GPU scaling** - This is a single-GPU system, focus on batch optimization instead
+8. **Don't ignore ARM compatibility** - Verify all dependencies support ARM64 architecture
+9. **Don't waste unified memory** - Exploit zero-copy transfers, avoid unnecessary cudaMemcpy calls
 
 ## Development Workflow (Once Implemented)
 
@@ -230,13 +247,16 @@ When building the system:
 
 Before implementing any component:
 
+- **HARDWARE FIRST**: Read `docs/hardware.md` and `docs/adr/0001-dgx-spark-not-b200.md` to understand single-GPU unified memory architecture
+- **Roadmap**: Read `ROADMAP.md` for milestone-based development plan (M0-M5)
+- **Metrics**: Read `docs/metrics.md` for performance targets and benchmarking strategy
 - **Architecture decision**: Read `docs/02-architecture-proposals.md` § Comparison Matrix and Proposal 2B
 - **SDXL + LoRA**: Read `docs/03-technology-deep-dive.md` § Stable Diffusion XL and LoRA sections
 - **ComfyUI**: Read `docs/03-technology-deep-dive.md` § ComfyUI section
 - **Bevy Assets**: Read `docs/04-bevy-integration.md` § Asset System Basics
 - **Training**: Read `docs/05-training-roadmap.md` § Phase 2 before training first model
 
-**For Proposal 2B (Rust + Python):**
+**For Proposal 2B (Rust + Python) - RECOMMENDED:**
 - **Architecture**: Read `docs/07-rust-python-architecture.md` § ZeroMQ Communication Patterns
 - **TUI Design**: Read `docs/08-tui-design.md` § Screen Layouts and Side-by-Side Comparison
 - **Playbook Integration**: Read `docs/11-playbook-contribution.md` § Installation Steps

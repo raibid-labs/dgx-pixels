@@ -1,8 +1,9 @@
 # DGX-Pixels Metrics & Measurement Framework
 
-> **Purpose:** Define consistent quantitative and qualitative metrics for evaluating DGX-Pixels performance, quality, and cost across all milestones.  
-> **Status:** Draft aligned with RFD [gpt5] (2025-11-10)  
-> **Owner:** raibid-labs / DGX-Pixels maintainers  
+> **Purpose:** Define consistent quantitative and qualitative metrics for evaluating DGX-Pixels performance, quality, and cost across all milestones.
+> **Status:** Draft aligned with RFD [gpt5] (2025-11-10), revised for DGX-Spark GB10
+> **Owner:** raibid-labs / DGX-Pixels maintainers
+> **Hardware Context:** Single GPU (GB10) with 128GB unified memory
 
 ---
 
@@ -10,7 +11,7 @@
 
 | Category | Description | Example Tools |
 |-----------|--------------|----------------|
-| **Performance** | GPU/CPU throughput, scaling efficiency, latency | DCGM, NCCL-tests, bench/throughput.py |
+| **Performance** | GPU throughput, latency, batch efficiency | DCGM, nvidia-smi, bench/throughput.py |
 | **Quality** | Visual fidelity and style consistency | LPIPS, SSIM, PSNR, CLIP distance |
 | **Observability** | Health, utilization, thermals, stability | DCGM Exporter, Prometheus, Grafana |
 | **Efficiency** | GPU-hour cost, power draw, throughput per watt | DCGM energy, job accounting |
@@ -18,16 +19,16 @@
 
 ---
 
-## 2. Performance Metrics
+## 2. Performance Metrics (Single-GPU Focus)
 
 | Metric | Definition | Target / Threshold | Measurement Script |
 |---------|-------------|--------------------|--------------------|
-| **Images / Second** | Mean generated images per second per GPU | ≥ 1.7× scaling (2→4 GPUs) | `/bench/throughput.py` |
-| **Latency (p95)** | 95th percentile inference latency per image | ≤ 200 ms @ 1024×1024 | `/bench/throughput.py` |
-| **VRAM Utilization** | Peak VRAM usage during inference | ≤ 90 % | `/bench/dmon.sh` |
-| **NCCL Bandwidth** | Aggregate inter-GPU communication throughput | ≥ 200 GB/s (8 GPUs) | `/bench/nccl.sh` |
+| **Images / Second** | Mean generated images per second (single GPU) | ≥ 0.3 img/s (batch=1), ≥ 0.25 img/s (batch=8) | `/bench/throughput.py` |
+| **Latency (p95)** | 95th percentile inference latency per image | ≤ 3s @ 1024×1024, FP16 | `/bench/throughput.py` |
+| **Unified Memory Usage** | Peak memory usage (CPU+GPU shared pool) | ≤ 100 GB (leaving 28GB headroom) | `/bench/dmon.sh` |
+| **Batch Efficiency** | Throughput improvement: batch vs single | ≥ 2.5× speedup (batch=8 vs batch=1) | `/bench/throughput.py` |
 | **I/O Throughput** | Sustained data read/write rate | ≥ 8 GB/s | `/bench/io_test.sh` (future) |
-| **Scaling Efficiency** | Speedup(n) / n vs single GPU | ≥ 0.85 (ideal linear = 1.0) | `/bench/throughput.py` |
+| **Zero-Copy Transfers** | CPU→GPU transfers avoided (unified mem) | 100% (measure cache hits) | Custom profiling |
 
 ---
 

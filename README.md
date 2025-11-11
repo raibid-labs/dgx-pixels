@@ -4,7 +4,9 @@ An open-source AI-powered pixel art generation system optimized for the NVIDIA D
 
 ## Overview
 
-DGX-Pixels leverages state-of-the-art diffusion models (Stable Diffusion XL) with custom LoRA fine-tuning to generate high-quality pixel art sprites for game development. The system is designed to run on NVIDIA DGX-Spark hardware, utilizing its powerful Blackwell GPU and 128GB unified memory for fast inference and efficient model training.
+DGX-Pixels leverages state-of-the-art diffusion models (Stable Diffusion XL) with custom LoRA fine-tuning to generate high-quality pixel art sprites for game development. The system is designed to run on **NVIDIA DGX-Spark (GB10 Grace Blackwell Superchip)**, utilizing its single powerful GPU with 128GB unified memory architecture for fast inference and efficient model training.
+
+**Hardware Note**: This system targets the DGX-Spark GB10 (single GPU, unified memory) rather than multi-GPU datacenter systems. This architecture provides unique advantages for interactive pixel art generation, including zero-copy image transfers and simplified deployment. See [Hardware Specification](docs/hardware.md) and [ADR 0001](docs/adr/0001-dgx-spark-not-b200.md) for details.
 
 ### Key Features
 
@@ -28,9 +30,10 @@ DGX-Pixels leverages state-of-the-art diffusion models (Stable Diffusion XL) wit
 
 ### Prerequisites
 
-- NVIDIA DGX-Spark with Ubuntu/Linux
-- Python 3.10+
-- CUDA 12.1+
+- NVIDIA DGX-Spark (GB10 Grace Blackwell Superchip) with Ubuntu/Linux
+- Python 3.10+ (ARM64-compatible packages)
+- CUDA 13.0+ (verified: 13.0.88)
+- Driver 580.95.05+
 - 500GB+ storage
 - Bevy game engine (for integration)
 
@@ -141,6 +144,14 @@ See [Rust-Python Architecture](docs/07-rust-python-architecture.md) and [TUI Des
 8. **[TUI Design](docs/08-tui-design.md)** - Complete TUI mockups, workflows, and side-by-side model comparison
 9. **[Playbook Contribution](docs/11-playbook-contribution.md)** - Contributing to dgx-spark-playbooks repository
 
+### NEW: Project Management & Operations
+
+10. **[Hardware Specification](docs/hardware.md)** - Verified DGX-Spark GB10 specifications and topology
+11. **[Metrics Framework](docs/metrics.md)** - Performance, quality, and observability metrics
+12. **[Roadmap](ROADMAP.md)** - Milestone-based development roadmap (M0-M5)
+13. **[RFD: GPT-5 Feedback](RFD_gpt5_dgx_pixels.md)** - External review and recommendations
+14. **[ADR 0001](docs/adr/0001-dgx-spark-not-b200.md)** - Hardware clarification: DGX-Spark vs DGX B200
+
 ### Quick Links
 
 | Topic | Documentation |
@@ -168,10 +179,11 @@ See [Rust-Python Architecture](docs/07-rust-python-architecture.md) and [TUI Des
 
 ### Hardware Optimization
 
-- **NVIDIA Blackwell GPU**: 5th-gen Tensor Cores with FP4 support
-- **1000 TOPS Compute**: Ultra-fast inference (3-5s per sprite)
-- **128GB Unified Memory**: Multiple concurrent models
-- **273 GB/s Bandwidth**: Efficient data transfer
+- **NVIDIA GB10 (Grace Blackwell)**: Single superchip with unified memory architecture
+- **1000 TOPS Compute**: Ultra-fast inference (2-4s per sprite)
+- **128GB Unified Memory**: Zero-copy CPU↔GPU transfers, multiple concurrent models
+- **ARM Grace CPU**: 20 cores (Cortex-X925 + A725) for energy-efficient preprocessing
+- **Compute Capability 12.1**: Latest Tensor Core features
 
 See [Technology Deep Dive](docs/03-technology-deep-dive.md) for comprehensive technical details.
 
@@ -241,19 +253,28 @@ See [Bevy Integration Guide](docs/04-bevy-integration.md) for complete details.
 
 ## Performance Benchmarks
 
-On NVIDIA DGX-Spark:
+On NVIDIA DGX-Spark GB10 (verified hardware):
 
-| Operation | Time | Details |
-|-----------|------|---------|
-| **Inference (SDXL + LoRA)** | 3-5s | 1024x1024 image |
-| **Batch Generation** | 20-30/min | Multiple sprites |
-| **LoRA Training** | 2-4 hours | 50 images, 3000 steps |
-| **Model Loading** | <10s | SDXL base + LoRA |
+| Operation | Expected Time | Details |
+|-----------|---------------|---------|
+| **Inference (SDXL + LoRA)** | 2-4s | 1024x1024 image @ FP16 |
+| **Batch Generation** | 15-25/min | Multiple sprites (batch=8) |
+| **LoRA Training** | 2-4 hours | 50 images, 3000 steps @ FP16 |
+| **Model Loading** | <10s | SDXL base + LoRA in unified memory |
+| **Zero-Copy Transfers** | <1μs | CPU↔GPU (unified memory advantage) |
+
+**Unified Memory Benefits:**
+- No CPU→GPU memory copies for image data
+- Lower latency for preprocessing and preview
+- Larger batch sizes (128GB shared pool)
+- Simplified memory management
 
 **Comparison to Manual Creation:**
 - Traditional pixel art: 30-120 minutes per sprite
 - AI generation + touch-up: 5-15 minutes per sprite
 - **Time savings**: 70-90%
+
+See [Metrics Framework](docs/metrics.md) for detailed performance targets.
 
 ## Project Structure
 
@@ -282,31 +303,26 @@ dgx-pixels/
 
 ## Roadmap
 
-### Phase 1: Foundation (Current)
-- [x] Research and documentation
-- [x] Architecture proposals
-- [x] Technology selection
-- [ ] Setup development environment
+See [ROADMAP.md](ROADMAP.md) for the complete milestone-based development plan.
 
-### Phase 2: MVP (Next 4-6 weeks)
-- [ ] Deploy ComfyUI on DGX-Spark
-- [ ] Build FastAPI orchestration layer
-- [ ] Train initial custom LoRA
-- [ ] Implement MCP integration
-- [ ] Create Bevy example project
+### Current Milestones
 
-### Phase 3: Production (8-12 weeks)
-- [ ] Advanced training pipeline
-- [ ] Custom ComfyUI nodes
-- [ ] Web dashboard (optional)
-- [ ] Multi-game support
-- [ ] Performance optimization
+| Milestone | Status | Goal |
+|-----------|--------|------|
+| **M0 — Foundation** | 🟢 In Progress | Hardware verification, reproducibility, baselines |
+| **M1 — Core Inference** | ⚪ Planned | Single-GPU SDXL optimization |
+| **M2 — Interactive TUI** | ⚪ Planned | Rust TUI with ZeroMQ + Sixel preview |
+| **M3 — LoRA Training** | ⚪ Planned | Custom model fine-tuning pipeline |
+| **M4 — Bevy Integration** | ⚪ Planned | MCP-based game engine integration |
+| **M5 — Production** | ⚪ Planned | Observability, metrics, deployment |
 
-### Phase 4: Enhancement (Ongoing)
-- [ ] Additional engine support (Unity, Godot)
-- [ ] Animation generation
-- [ ] Style transfer tools
-- [ ] Community model sharing
+### Recent Updates
+
+- ✅ Hardware verification complete: DGX-Spark GB10 confirmed
+- ✅ Documentation aligned with single-GPU unified memory architecture
+- ✅ Metrics framework adapted for single-GPU benchmarking
+- ✅ ADR 0001: Hardware clarification documented
+- 🟢 M0 in progress: Establishing reproducibility baseline
 
 ## Use Cases and Examples
 

@@ -1,31 +1,142 @@
 # DGX-Pixels Hardware Specification
 
-> Reference for performance baselines and reproducibility.  
+> Reference for performance baselines and reproducibility.
 > Update whenever hardware, drivers, or topology change.
 
 ---
 
 ## Node Overview
+
 | Component | Details |
 |------------|----------|
-| Platform | DGX B200 (8 × B200 192 GB HBM3) |
-| CPU | Dual EPYC 9654 (96 c @ 2.4 GHz) |
-| RAM | 2 TB DDR5 |
-| Interconnect | NVSwitch Gen 4 / NVLink 900 GB/s |
-| Network | Dual 400 GbE or IB NDR |
-| Storage | 8 × 3.84 TB NVMe RAID0 ( >8 GB/s ) |
-| OS | Ubuntu 22.04 LTS |
-| Driver | nvidia-driver-555.xx |
-| CUDA | 12.5 • cuDNN 9.x • NCCL 2.20 |
-| Runtime | NVIDIA Container Toolkit + Docker 24 |
+| **Platform** | **NVIDIA DGX-Spark (GB10 Grace Blackwell Superchip)** |
+| **GPU** | NVIDIA GB10 (Compute Capability 12.1) |
+| **Memory** | 128 GB unified memory (shared CPU+GPU) |
+| **CPU** | ARM-based Grace CPU (Cortex-X925 + Cortex-A725, 20 cores) |
+| **RAM** | 119 GiB available (unified architecture) |
+| **Interconnect** | Unified memory architecture (CPU-GPU coherent shared memory) |
+| **Network** | 4× RoCE NICs (rocep1s0f0, etc.) |
+| **Storage** | (to be verified) |
+| **OS** | Linux 6.11.0-1016-nvidia |
+| **Driver** | nvidia-driver-580.95.05 |
+| **CUDA** | 13.0 (V13.0.88) |
+| **Runtime** | NVIDIA Container Toolkit + Docker |
 
 ---
 
-## Topology Example
+## Architecture: DGX-Spark vs DGX B200
+
+**IMPORTANT**: This system is a **DGX-Spark**, NOT a DGX B200 as initially assumed.
+
+### Key Differences
+
+| Feature | DGX-Spark (GB10) | DGX B200 |
+|---------|------------------|-----------|
+| **GPU Count** | 1× GB10 superchip | 8× B200 GPUs |
+| **Memory Model** | Unified 128GB (CPU+GPU shared) | Separate: 2TB DDR5 + 8×192GB HBM3 |
+| **CPU Architecture** | ARM Grace (20 cores) | x86 Dual AMD EPYC (192 cores) |
+| **Target Use Case** | Edge AI, single-node inference | Datacenter scale-out training |
+| **Interconnect** | Coherent unified memory | NVSwitch Gen 4 (900 GB/s) |
+| **Multi-GPU Scaling** | N/A (single GPU) | 8-way data/model parallelism |
+
+### Implications for DGX-Pixels
+
+The DGX-Spark architecture has unique advantages for pixel art generation:
+
+1. **Unified Memory Benefits**:
+   - No CPU→GPU memory copies for image data
+   - Lower latency for preprocessing pipelines
+   - Simplified memory management
+   - Ideal for interactive TUI with image preview
+
+2. **Single-GPU Focus**:
+   - No multi-GPU scaling complexity
+   - No NCCL/distributed training overhead
+   - Simpler deployment model
+   - Better for rapid iteration and prototyping
+
+3. **ARM Architecture**:
+   - Energy efficient for long-running services
+   - Some x86-only libraries may need alternatives
+   - Modern toolchains (Rust, Python) have excellent ARM support
+
+4. **Edge Deployment**:
+   - Can prototype on DGX-Spark and deploy to Jetson/Orin devices
+   - Same Grace Blackwell architecture family
+   - Unified codebase across edge→server spectrum
+
+---
+
+## Topology
+
 ```text
 $ nvidia-smi topo -m
-GPU0  GPU1  GPU2  GPU3  ...  CPU Affinity
-GPU0   X     NV4  NV4  NV4      SOC0
-GPU1   NV4   X    NV4  NV4     SOC0
-...
+        GPU0    NIC0    NIC1    NIC2    NIC3    CPU Affinity    NUMA Affinity    GPU NUMA ID
+GPU0     X      NODE    NODE    NODE    NODE    0-19            0                N/A
+NIC0    NODE     X      PIX     NODE    NODE
+NIC1    NODE    PIX     X      NODE    NODE
+NIC2    NODE    NODE    NODE     X      PIX
+NIC3    NODE    NODE    NODE    PIX     X
 
+Legend:
+  NODE = Connection traversing PCIe + interconnect between PCIe Host Bridges
+  PIX  = Connection traversing at most a single PCIe bridge
+
+Single GPU system - no NVLink/NVSwitch topology
+```
+
+---
+
+## Performance Characteristics
+
+Based on GB10 Grace Blackwell Superchip (1000 TOPS):
+
+| Metric | Expected Performance |
+|---------|---------------------|
+| **Peak INT8 Performance** | ~1000 TOPS |
+| **Peak FP16 Performance** | ~500 TFLOPS |
+| **Memory Bandwidth** | Unified architecture (varies by access pattern) |
+| **Inference Latency** | 2-4s per 1024×1024 SDXL image (FP16) |
+| **Batch Throughput** | 15-25 images/min (batch size 4-8) |
+| **LoRA Training** | 1-3 hours for 50 images @ 3000 steps |
+
+---
+
+## Verification Commands
+
+```bash
+# GPU info
+nvidia-smi --query-gpu=name,memory.total,driver_version,compute_cap --format=csv
+
+# CUDA version
+nvcc --version
+
+# Topology
+nvidia-smi topo -m
+
+# CPU architecture
+lscpu | grep -E "Model name|Architecture"
+
+# Memory
+free -h
+
+# Storage
+df -h | grep -E "/$|/home"
+```
+
+---
+
+## Baseline Measurements (To Be Populated)
+
+Run `/repro/run.sh` to generate baseline metrics:
+
+| Test | Throughput | Latency (p95) | VRAM Peak | Notes |
+|------|------------|---------------|-----------|-------|
+| SDXL 1.0 base | TBD img/s | TBD ms | TBD GB | FP16, batch=1 |
+| SDXL + LoRA | TBD img/s | TBD ms | TBD GB | FP16, batch=1 |
+| Batch inference (8) | TBD img/s | TBD ms | TBD GB | FP16, batch=8 |
+
+---
+
+**Last Updated:** 2025-11-10
+**Verified By:** Claude Code (automated hardware scan)
