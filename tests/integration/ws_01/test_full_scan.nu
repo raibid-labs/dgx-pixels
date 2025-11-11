@@ -149,7 +149,7 @@ export def test-baseline-generation [] {
         }
 
         # Verify file contains valid JSON
-        let content = (open $output_path)
+        let content = (open --raw $output_path)
         let parsed = (try { $content | from json } catch { null })
 
         if $parsed == null {
@@ -258,7 +258,7 @@ export def test-baseline-schema [] {
             }
         }
 
-        let baseline = (open $output_path | from json)
+        let baseline = (open $output_path)
 
         # Define expected schema
         let gpu_fields = ["model", "count", "memory_gb", "compute_capability", "cuda_version", "driver_version"]
@@ -321,11 +321,12 @@ export def test-baseline-schema [] {
             }
         }
 
-        if $baseline.memory.total_gb < 120 or $baseline.memory.total_gb > 130 {
+        # DGX-Spark reports 119GB (not full 128GB due to system overhead)
+        if $baseline.memory.total_gb < 100 or $baseline.memory.total_gb > 130 {
             return {
                 name: "test_baseline_schema"
                 status: "FAILED"
-                error: $"Expected memory ~128GB, got ($baseline.memory.total_gb)GB"
+                error: $"Expected memory 100-130GB for DGX-Spark, got ($baseline.memory.total_gb)GB"
             }
         }
 

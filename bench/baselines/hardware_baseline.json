@@ -1,7 +1,7 @@
 {
   "version": "1.0",
-  "timestamp": "2025-11-10T19:30:00Z",
-  "hostname": "dgx-spark-01",
+  "timestamp": "2025-11-10T23:00:34Z",
+  "hostname": "spark-c4ae",
   "gpu": {
     "model": "GB10",
     "count": 1,
@@ -20,37 +20,117 @@
     "vendor": "NVIDIA",
     "frequency_mhz": {
       "min": 1000,
-      "max": 3000
+      "max": 4004
     }
   },
   "memory": {
     "type": "unified",
     "total_gb": 119,
-    "available_gb": 100,
-    "used_gb": 19,
+    "available_gb": 88,
+    "used_gb": 30,
     "bandwidth_gbs": 435
   },
   "storage": {
     "root": {
       "mount": "/",
       "size_gb": 3755,
-      "used_gb": 558,
+      "used_gb": 368,
       "available_gb": 3197,
       "io_throughput_gbs": 8.0
     }
   },
   "network": {
     "interfaces": [
-      {"name": "rocep1s0f0", "type": "RoCE", "speed_gbps": 100, "index": 0},
-      {"name": "rocep1s0f1", "type": "RoCE", "speed_gbps": 100, "index": 1},
-      {"name": "roceP2p1s0f0", "type": "RoCE", "speed_gbps": 100, "index": 2},
-      {"name": "roceP2p1s0f1", "type": "RoCE", "speed_gbps": 100, "index": 3}
+      {
+        "name": "lo",
+        "type": "Loopback",
+        "speed_gbps": 0,
+        "index": 1
+      },
+      {
+        "name": "enP7s7",
+        "type": "Other",
+        "speed_gbps": 0,
+        "index": 2
+      },
+      {
+        "name": "enp1s0f0np0",
+        "type": "Other",
+        "speed_gbps": 0,
+        "index": 3
+      },
+      {
+        "name": "enp1s0f1np1",
+        "type": "Other",
+        "speed_gbps": 0,
+        "index": 4
+      },
+      {
+        "name": "enP2p1s0f0np0",
+        "type": "Other",
+        "speed_gbps": 0,
+        "index": 5
+      },
+      {
+        "name": "enP2p1s0f1np1",
+        "type": "Other",
+        "speed_gbps": 0,
+        "index": 7
+      },
+      {
+        "name": "wlP9s9",
+        "type": "Other",
+        "speed_gbps": 0,
+        "index": 8
+      },
+      {
+        "name": "docker0",
+        "type": "Other",
+        "speed_gbps": 0,
+        "index": 9
+      },
+      {
+        "name": "br-e98bb3324ab1",
+        "type": "Other",
+        "speed_gbps": 0,
+        "index": 6333
+      },
+      {
+        "name": "veth1ceefff@if2",
+        "type": "Other",
+        "speed_gbps": 0,
+        "index": 6336
+      },
+      {
+        "name": "veth2004684@if2",
+        "type": "Other",
+        "speed_gbps": 0,
+        "index": 6337
+      },
+      {
+        "name": "veth36c1d27@if2",
+        "type": "Other",
+        "speed_gbps": 0,
+        "index": 6338
+      },
+      {
+        "name": "veth3818b4b@if3",
+        "type": "Other",
+        "speed_gbps": 0,
+        "index": 6339
+      },
+      {
+        "name": "enx089204c2d70b",
+        "type": "Other",
+        "speed_gbps": 0,
+        "index": 10380
+      }
     ]
   },
   "topology": {
     "numa_nodes": 1,
     "gpu_numa_id": "N/A",
     "pci_topology": "Single GPU system",
-    "topology_matrix": "See docs/topology.txt for full nvidia-smi topo output"
+    "topology_matrix": "GPU0NIC0NIC1NIC2NIC3CPU AffinityNUMA AffinityGPU NUMA ID\nGPU0 X NODENODENODENODE0-190N/A\nNIC0NODE X PIXNODENODE\nNIC1NODEPIX X NODENODE\nNIC2NODENODENODE X PIX\nNIC3NODENODENODEPIX X \n\nLegend:\n\n  X    = Self\n  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)\n  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node\n  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)\n  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)\n  PIX  = Connection traversing at most a single PCIe bridge\n  NV#  = Connection traversing a bonded set of # NVLinks\n\nNIC Legend:\n\n  NIC0: rocep1s0f0\n  NIC1: rocep1s0f1\n  NIC2: roceP2p1s0f0\n  NIC3: roceP2p1s0f1\n"
   }
 }

@@ -35,34 +35,34 @@ export const COLORS = {
 
 # Log success message
 export def log-success [message: string] {
-    print $"($COLORS.success)✓($COLORS.reset) ($message)"
+    print -e $"($COLORS.success)✓($COLORS.reset) ($message)"
 }
 
 # Log error message
 export def log-error [message: string] {
-    print $"($COLORS.error)✗($COLORS.reset) ($message)"
+    print -e $"($COLORS.error)✗($COLORS.reset) ($message)"
 }
 
 # Log warning message
 export def log-warning [message: string] {
-    print $"($COLORS.warning)⚠($COLORS.reset) ($message)"
+    print -e $"($COLORS.warning)⚠($COLORS.reset) ($message)"
 }
 
 # Log info message
 export def log-info [message: string] {
-    print $"($COLORS.info)ℹ($COLORS.reset) ($message)"
+    print -e $"($COLORS.info)ℹ($COLORS.reset) ($message)"
 }
 
 # Log debug message (only if DEBUG env var is set)
 export def log-debug [message: string] {
     if "DEBUG" in $env {
-        print $"($COLORS.debug)🐛($COLORS.reset) ($message)"
+        print -e $"($COLORS.debug)🐛($COLORS.reset) ($message)"
     }
 }
 
 # Log section header
 export def log-header [message: string] {
-    print $"\n($COLORS.header)━━━ ($message) ━━━($COLORS.reset)"
+    print -e $"\n($COLORS.header)━━━ ($message) ━━━($COLORS.reset)"
 }
 
 # === Command Utilities ===

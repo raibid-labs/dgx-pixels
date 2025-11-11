@@ -13,7 +13,7 @@ use ../scripts/nu/modules/dgx.nu *
 def main [] {
     log-info "DGX-Pixels Hardware Verification"
     log-info "=================================="
-    print ""
+    print -e ""
 
     # Collect all hardware information
     let gpu_info = (collect-gpu-info)
@@ -37,15 +37,15 @@ def main [] {
         topology: $topology_info
     }
 
-    # Output JSON to stdout
-    $baseline | to json
-
-    # Log summary to stderr so it doesn't interfere with JSON output
+    # Log summary to stderr
     print -e ""
     log-success "Hardware verification complete!"
     log-info $"GPU: ($gpu_info.model) with ($gpu_info.memory_gb)GB"
     log-info $"CPU: ($cpu_info.architecture) with ($cpu_info.cores) cores"
     log-info $"Memory: ($memory_info.total_gb)GB unified"
+
+    # Output JSON to stdout (must be last to avoid mixing with logs)
+    print ($baseline | to json)
 }
 
 # Collect GPU information
@@ -180,33 +180,11 @@ def collect-cpu-info [] {
 def collect-memory-info [] {
     log-info "Collecting memory information..."
 
-    try {
-        # Use free to get memory info
-        let mem_output = (^free -g | complete)
+    # Use bash to extract memory values (avoids nushell line wrapping issues)
+    let mem_result = (do -i { ^/usr/bin/bash -c "free -g | grep '^Mem:' | awk '{print $2,$3,$7}'" })
 
-        if $mem_output.exit_code != 0 {
-            throw {msg: "free command failed"}
-        }
-
-        let mem_lines = ($mem_output.stdout | lines)
-        let mem_line = ($mem_lines | where {|line| $line | str starts-with "Mem:"} | first)
-        let mem_parts = ($mem_line | split row --regex '\s+')
-
-        let total_gb = ($mem_parts | get 1 | into int)
-        let used_gb = ($mem_parts | get 2 | into int)
-        let available_gb = ($mem_parts | get 6 | into int)
-
-        log-success $"Memory: ($total_gb)GB total, ($available_gb)GB available (unified)"
-
-        return {
-            type: "unified"
-            total_gb: $total_gb
-            available_gb: $available_gb
-            used_gb: $used_gb
-            bandwidth_gbs: 435  # Expected for Grace Blackwell unified memory
-        }
-    } catch {|err|
-        log-error $"Failed to collect memory info: ($err.msg)"
+    if ($mem_result | is-empty) {
+        log-error "Failed to collect memory info: bash command returned empty"
         return {
             type: "unknown"
             total_gb: 0
@@ -214,6 +192,33 @@ def collect-memory-info [] {
             used_gb: 0
             bandwidth_gbs: 0
         }
+    }
+
+    let mem_values = ($mem_result | str trim | split row " ")
+
+    if ($mem_values | length) != 3 {
+        log-error $"Failed to collect memory info: Expected 3 values, got ($mem_values | length)"
+        return {
+            type: "unknown"
+            total_gb: 0
+            available_gb: 0
+            used_gb: 0
+            bandwidth_gbs: 0
+        }
+    }
+
+    let total_gb = ($mem_values | get 0 | into int)
+    let used_gb = ($mem_values | get 1 | into int)
+    let available_gb = ($mem_values | get 2 | into int)
+
+    log-success $"Memory: ($total_gb)GB total, ($available_gb)GB available - unified"
+
+    return {
+        type: "unified"
+        total_gb: $total_gb
+        available_gb: $available_gb
+        used_gb: $used_gb
+        bandwidth_gbs: 435  # Expected for Grace Blackwell unified memory
     }
 }
 
@@ -368,8 +373,8 @@ def collect-topology-info [] {
     log-info "Collecting topology information..."
 
     try {
-        # Get nvidia-smi topology
-        let topology_result = (dgx-export-topology)
+        # Get nvidia-smi topology and strip ANSI color codes
+        let topology_result = (dgx-export-topology | ansi strip)
 
         # Detect NUMA configuration
         let numa_nodes = (do {

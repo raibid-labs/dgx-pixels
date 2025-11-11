@@ -168,8 +168,8 @@ export def dgx-validate-hardware [] {
                 )
             }
 
-            if $memory_gb >= 120 {
-                log-success $"Memory capacity: ($memory_gb)GB"
+            if $memory_gb >= 100 {
+                log-success $"Memory capacity: ($memory_gb)GB unified"
             } else {
                 log-warning $"Memory capacity ($memory_gb)GB is less than expected 128GB"
             }
@@ -239,7 +239,7 @@ export def dgx-validate-hardware [] {
             $gpu_result.success and
             $gpu_result.is_grace_blackwell and
             $cpu_result.is_arm and
-            $gpu_result.memory_gb >= 120
+            $gpu_result.memory_gb >= 100
         )
         has_nvidia_gpu: true
         is_grace_blackwell: $gpu_result.is_grace_blackwell
@@ -374,10 +374,9 @@ export def dgx-export-topology [
         if ($output_file != null) {
             $topology | save -f $output_file
             log-success $"Topology exported to ($output_file)"
-        } else {
-            print $topology
         }
 
+        # Return topology text (don't print to stdout unless output_file is specified)
         return $topology
     } catch {|err|
         log-error $"Failed to export topology: ($err.msg)"
@@ -554,8 +553,7 @@ export def dgx-get-cuda-version [] {
     let driver_version = if (command-exists "nvidia-smi") {
         (do {
             try {
-                ^nvidia-smi --query-gpu=driver_version
-                --format=csv,noheader
+                ^nvidia-smi --query-gpu=driver_version --format=csv,noheader
                 | lines
                 | first
                 | str trim
