@@ -16,7 +16,7 @@
 | **RAM** | 119 GiB available (unified architecture) |
 | **Interconnect** | Unified memory architecture (CPU-GPU coherent shared memory) |
 | **Network** | 4× RoCE NICs (rocep1s0f0, etc.) |
-| **Storage** | (to be verified) |
+| **Storage** | 3755 GB total (3197 GB available), I/O throughput: 8.0 GB/s |
 | **OS** | Linux 6.11.0-1016-nvidia |
 | **Driver** | nvidia-driver-580.95.05 |
 | **CUDA** | 13.0 (V13.0.88) |
@@ -147,15 +147,15 @@ df -h | grep -E "/$|/home"
 | **Storage** | 500GB+ | ✅ 3755GB total |
 | **Network** | RoCE NICs | ✅ 4× 100Gbps RoCE |
 
-### Performance Baselines (To Be Measured in WS-03)
+### AI Inference Baselines (To Be Measured in WS-04/WS-06)
 
-Run `just bench` to generate inference baseline metrics:
+SDXL inference baselines will be established after ComfyUI integration (Model Orchestrator):
 
 | Test | Throughput | Latency (p95) | VRAM Peak | Notes |
 |------|------------|---------------|-----------|-------|
-| SDXL 1.0 base | TBD img/s | TBD ms | TBD GB | FP16, batch=1 |
-| SDXL + LoRA | TBD img/s | TBD ms | TBD GB | FP16, batch=1 |
-| Batch inference (8) | TBD img/s | TBD ms | TBD GB | FP16, batch=8 |
+| SDXL 1.0 base | *WS-04* | *WS-04* | *WS-04* | FP16, batch=1 |
+| SDXL + LoRA | *WS-06* | *WS-06* | *WS-06* | FP16, batch=1 |
+| Batch inference (8) | *WS-06* | *WS-06* | *WS-06* | FP16, batch=8 |
 
 ---
 

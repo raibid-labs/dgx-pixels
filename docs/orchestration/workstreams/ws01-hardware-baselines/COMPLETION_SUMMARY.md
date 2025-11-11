@@ -1,7 +1,7 @@
 # WS-01: Hardware Baselines - Completion Summary
 
 **Status**: ✅ Complete
-**Completed**: 2025-11-10
+**Completed**: 2025-11-11
 **Duration**: 1 day (3-4 days estimated)
 **Orchestrator**: Foundation
 **Milestone**: M0
@@ -54,7 +54,7 @@
 **Location**: `tests/unit/ws_01/`, `tests/integration/ws_01/`
 - Unit tests for hardware detection functions (7 tests)
 - Integration tests for full hardware scan (4 tests)
-- **Status**: Complete (6/7 unit tests passing, integration tests created)
+- **Status**: Complete (7/7 unit tests passing, 4/4 integration tests passing)
 
 ---
 
@@ -164,7 +164,7 @@ WS-01 completion unblocks:
 
 - **Lines of Code**: ~1,200 (verification script + tests + modules)
 - **Tests Created**: 11 (7 unit + 4 integration)
-- **Test Pass Rate**: 91% (10/11 tests passing - 1 dgx-gpu-stats test has minor issue)
+- **Test Pass Rate**: 100% (11/11 tests passing - all issues resolved)
 - **Documentation Pages**: 3 updated/created
 - **Baseline Fields Captured**: 30+ (GPU, CPU, memory, storage, network, topology)
 
@@ -189,8 +189,8 @@ WS-01 completion unblocks:
 ✅ Baseline JSON generated and validated
 ✅ Documentation updated with actual measurements
 ✅ Topology documented
-✅ Unit tests written and passing (6/7)
-✅ Integration tests written
+✅ Unit tests written and passing (7/7)
+✅ Integration tests written and passing (4/4)
 ✅ Test coverage adequate
 ✅ Code follows nushell style guide
 ✅ All acceptance criteria verified
@@ -204,7 +204,7 @@ WS-01 completion unblocks:
 **Workstream**: WS-01 (Hardware Baselines)
 **Orchestrator**: Foundation Orchestrator
 **Agent**: Claude Code (Foundation Agent)
-**Date**: 2025-11-10
+**Date**: 2025-11-11
 **Status**: ✅ COMPLETE
 
 All deliverables met, acceptance criteria satisfied, downstream workstreams unblocked.
