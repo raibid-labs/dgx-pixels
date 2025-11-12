@@ -286,7 +286,7 @@ export def comfyui-wait-for-completion [
     timeout_seconds: int = 300,
     poll_interval: int = 2
 ] {
-    log-info $"Waiting for prompt ($prompt_id) to complete (timeout: ($timeout_seconds)s)"
+    log-info $"Waiting for prompt ($prompt_id) to complete [timeout: ($timeout_seconds)s]"
 
     let start_time = (date now)
 
