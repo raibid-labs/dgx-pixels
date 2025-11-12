@@ -388,7 +388,7 @@ pub struct TrainingValidationReport {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::comparison::{GenerationParams, ModelResult, ModelResultStatus};
+    use crate::comparison::{GenerationParams, ModelConfig, ModelResult, ModelResultStatus};
 
     fn create_test_comparison(winner_idx: Option<usize>) -> ComparisonResult {
         ComparisonResult {
