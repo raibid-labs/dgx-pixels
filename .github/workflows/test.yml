@@ -27,14 +27,33 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: Check if Rust project exists
+        id: check_rust
+        run: |
+          if [ -d "rust" ] && [ -f "rust/Cargo.toml" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run tests
+        if: steps.check_rust.outputs.exists == 'true'
+        working-directory: rust
         run: cargo test --workspace --verbose
 
       - name: Run clippy
+        if: steps.check_rust.outputs.exists == 'true'
+        working-directory: rust
         run: cargo clippy --workspace -- -D warnings
 
       - name: Check formatting
+        if: steps.check_rust.outputs.exists == 'true'
+        working-directory: rust
         run: cargo fmt --all -- --check
+
+      - name: Skip if no Rust code
+        if: steps.check_rust.outputs.exists == 'false'
+        run: echo "No Rust code found, skipping tests"
 
   test-python:
     name: Python Tests
