@@ -1,0 +1,19 @@
+{
+  "version": "1.0",
+  "timestamp": "2025-11-11T17:40:52.002905+00:00",
+  "memory": {
+    "total_gb": 119.7,
+    "allocated_gb": 0.0,
+    "reserved_gb": 0.0,
+    "architecture": "unified",
+    "specification_bandwidth_gbs": 435
+  },
+  "gpu_to_gpu_gbs": 111.39,
+  "cpu_to_gpu_gbs": 52.4,
+  "gpu_to_cpu_gbs": 51.86,
+  "bandwidth_gbs": 52.13,
+  "benchmark_params": {
+    "transfer_size_mb": 512,
+    "iterations": 50
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "version": "1.0",
+  "timestamp": "2025-11-11T17:40:59Z",
+  "filesystem": {
+    "mount": "/",
+    "size": "3.7T",
+    "used": "395G",
+    "available": "3.1T"
+  },
+  "sequential_read_gbs": 10.6,
+  "sequential_write_gbs": 2.3,
+  "random_read_iops": 578,
+  "benchmark_params": {
+    "file_size": "2G",
+    "block_size_throughput": "1M",
+    "block_size_iops": "4K",
+    "iops_runtime_seconds": 30
+  }
+}
