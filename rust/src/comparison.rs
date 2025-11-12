@@ -1,8 +1,8 @@
-/// Side-by-Side Model Comparison System
-///
-/// This module implements the killer feature of DGX-Pixels - the ability to
-/// compare multiple models (base SDXL vs custom LoRA) side-by-side to validate
-/// training improvements.
+//! Side-by-Side Model Comparison System
+//!
+//! This module implements the killer feature of DGX-Pixels - the ability to
+//! compare multiple models (base SDXL vs custom LoRA) side-by-side to validate
+//! training improvements.
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -170,11 +170,13 @@ impl ComparisonResult {
     }
 
     /// Check if all results succeeded
+    #[allow(dead_code)]
     pub fn all_succeeded(&self) -> bool {
         self.results.iter().all(|r| r.status == ModelResultStatus::Complete)
     }
 
     /// Get average generation time
+    #[allow(dead_code)]
     pub fn avg_generation_time(&self) -> Option<f32> {
         let times: Vec<f32> = self.results
             .iter()
@@ -195,14 +197,17 @@ impl ComparisonResult {
 
 /// Manages multiple comparison jobs and tracks results
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct ComparisonManager {
     /// Active comparison jobs
+    #[allow(dead_code)]
     active_comparisons: HashMap<String, ComparisonJob>,
 
     /// Completed comparisons
     completed_comparisons: Vec<ComparisonResult>,
 
     /// Model results indexed by job_id
+    #[allow(dead_code)]
     job_to_comparison: HashMap<String, String>,
 }
 
@@ -212,6 +217,7 @@ impl Default for ComparisonManager {
     }
 }
 
+#[allow(dead_code)]
 impl ComparisonManager {
     /// Create a new comparison manager
     pub fn new() -> Self {
@@ -274,6 +280,7 @@ impl ComparisonManager {
     }
 
     /// Mark a job as complete
+    #[allow(unused_variables)]
     pub fn complete_job(
         &mut self,
         job_id: &str,
@@ -404,6 +411,7 @@ impl ComparisonManager {
 
 /// Statistics across all comparisons
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct ComparisonStatistics {
     pub total_comparisons: usize,
     pub comparisons_with_preference: usize,

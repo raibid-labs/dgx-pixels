@@ -131,16 +131,16 @@ fn render_thumbnail_list(f: &mut Frame, area: ratatui::layout::Rect, app: &App) 
         ]));
 
         // Request thumbnail preview for visible items
-        if matches!(app.terminal_capability, TerminalCapability::Sixel) {
-            if !app.preview_manager.has_preview(path) {
-                let thumbnail_opts = RenderOptions {
-                    width: 10,
-                    height: 10,
-                    preserve_aspect: true,
-                    high_quality: false,
-                };
-                let _ = app.preview_manager.request_preview(path.clone(), thumbnail_opts);
-            }
+        if matches!(app.terminal_capability, TerminalCapability::Sixel)
+            && !app.preview_manager.has_preview(path)
+        {
+            let thumbnail_opts = RenderOptions {
+                width: 10,
+                height: 10,
+                preserve_aspect: true,
+                high_quality: false,
+            };
+            let _ = app.preview_manager.request_preview(path.clone(), thumbnail_opts);
         }
     }
 

@@ -1,8 +1,8 @@
-/// Message protocol definitions for ZeroMQ IPC
-///
-/// Version: 1.0
-/// Serialization: MessagePack (MsgPack)
-/// Transport: ZeroMQ (REQ-REP + PUB-SUB)
+//! Message protocol definitions for ZeroMQ IPC
+//!
+//! Version: 1.0
+//! Serialization: MessagePack (MsgPack)
+//! Transport: ZeroMQ (REQ-REP + PUB-SUB)
 
 use serde::{Deserialize, Serialize};
 
@@ -155,10 +155,13 @@ pub enum GenerationStage {
 // ============================================================================
 
 /// Protocol version information
+#[allow(dead_code)]
 pub const PROTOCOL_VERSION: &str = "1.0.0";
 
 /// Default ports
+#[allow(dead_code)]
 pub const DEFAULT_REQ_REP_PORT: u16 = 5555;
+#[allow(dead_code)]
 pub const DEFAULT_PUB_SUB_PORT: u16 = 5556;
 
 /// Default addresses

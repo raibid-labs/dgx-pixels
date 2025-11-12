@@ -18,7 +18,6 @@ use ratatui::{backend::CrosstermBackend, Terminal};
 use std::io;
 use std::time::Duration;
 use tracing::info;
-use tracing_subscriber;
 
 #[tokio::main]
 async fn main() -> Result<()> {

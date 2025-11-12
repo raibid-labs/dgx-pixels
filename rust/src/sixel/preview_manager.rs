@@ -1,11 +1,11 @@
-/// Preview management with caching and async loading
+//! Preview management with caching and async loading
 
 use anyhow::{Context, Result};
 use dashmap::DashMap;
 use parking_lot::RwLock;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 use std::fmt;
 use tokio::sync::mpsc;
 use image::GenericImageView;
@@ -16,6 +16,7 @@ use super::MAX_CACHE_SIZE_MB;
 
 /// Preview entry with metadata
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct PreviewEntry {
     /// Path to the image file
     pub path: PathBuf,
@@ -32,6 +33,7 @@ pub struct PreviewEntry {
 /// Preview manager handles image caching and rendering
 pub struct PreviewManager {
     /// Image renderer
+    #[allow(dead_code)]
     renderer: Arc<ImageRenderer>,
     /// Preview cache (path -> PreviewEntry)
     cache: Arc<DashMap<PathBuf, PreviewEntry>>,
@@ -65,9 +67,11 @@ struct PreviewRequest {
 
 /// Result of preview rendering
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct PreviewResult {
     pub path: PathBuf,
     pub entry: Option<PreviewEntry>,
+    #[allow(dead_code)]
     pub error: Option<String>,
 }
 
@@ -147,6 +151,7 @@ impl PreviewManager {
     }
 
     /// Clear the entire cache
+    #[allow(dead_code)]
     pub fn clear_cache(&self) {
         info!("Clearing preview cache");
         self.cache.clear();
@@ -163,6 +168,7 @@ impl PreviewManager {
     }
 
     /// Evict least recently used entries to make space
+    #[allow(dead_code)]
     fn evict_lru(&self, required_space: usize) {
         let mut current_size = *self.cache_size.read();
 
@@ -304,14 +310,17 @@ impl Default for PreviewManager {
 
 /// Cache statistics
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct CacheStats {
     pub entries: usize,
     pub size_bytes: usize,
+    #[allow(dead_code)]
     pub max_size_bytes: usize,
 }
 
 impl CacheStats {
     /// Get cache usage percentage
+    #[allow(dead_code)]
     pub fn usage_percent(&self) -> f32 {
         if self.max_size_bytes == 0 {
             0.0

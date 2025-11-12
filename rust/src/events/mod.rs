@@ -6,6 +6,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 /// Application events
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub enum AppEvent {
     /// Key press event
     Key(KeyEvent),

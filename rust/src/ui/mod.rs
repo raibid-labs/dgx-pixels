@@ -9,9 +9,6 @@ use ratatui::{
     Frame,
 };
 
-pub use theme::Theme;
-pub use layout::create_layout;
-
 /// Main render function - dispatches to appropriate screen
 pub fn render<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> anyhow::Result<()> {
     terminal.draw(|f| {

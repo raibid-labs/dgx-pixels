@@ -1,7 +1,7 @@
-/// Side-by-Side Model Comparison UI Screen
-///
-/// The killer feature of DGX-Pixels - compare multiple models simultaneously
-/// to validate training improvements.
+//! Side-by-Side Model Comparison UI Screen
+//!
+//! The killer feature of DGX-Pixels - compare multiple models simultaneously
+//! to validate training improvements.
 
 use crate::app::App;
 use crate::comparison::{ComparisonManager, ModelConfig, GenerationParams};
@@ -12,11 +12,12 @@ use ratatui::{
     layout::{Constraint, Direction, Layout, Alignment},
     widgets::{Block, Borders, Paragraph, List, ListItem, Gauge},
     text::{Line, Span},
-    style::{Style, Color, Modifier},
+    style::{Style, Color},
 };
 
 /// Comparison screen state
 #[derive(Debug, Clone, PartialEq)]
+#[allow(dead_code)]
 pub enum ComparisonMode {
     /// Configuring comparison parameters
     Setup,
@@ -30,6 +31,7 @@ pub enum ComparisonMode {
 
 /// UI state for comparison screen
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct ComparisonState {
     /// Current mode
     pub mode: ComparisonMode,
@@ -53,6 +55,7 @@ pub struct ComparisonState {
     pub comparison_manager: ComparisonManager,
 
     /// Currently viewing result index
+    #[allow(dead_code)]
     pub viewing_result_index: usize,
 }
 
@@ -282,7 +285,7 @@ fn render_model_slots(f: &mut Frame, area: ratatui::layout::Rect, state: &Compar
     for (i, slot) in state.selected_models.iter().enumerate() {
         let title = format!(" Model {} ", i + 1);
         let block = create_block(&title);
-        let inner = block.inner(slot_chunks[i]);
+        let _inner = block.inner(slot_chunks[i]);
 
         let content = if let Some(model) = slot {
             vec![

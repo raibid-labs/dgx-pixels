@@ -9,6 +9,7 @@ use ratatui::{
 };
 
 /// Render the queue screen
+#[allow(unused_variables)]
 pub fn render(f: &mut Frame, app: &App) {
     let chunks = create_layout(f.size());
 

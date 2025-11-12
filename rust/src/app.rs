@@ -18,6 +18,7 @@ pub enum Screen {
 
 /// Job status tracking
 #[derive(Debug, Clone, PartialEq)]
+#[allow(dead_code)]
 pub enum JobStatus {
     Queued,
     Running {
@@ -36,6 +37,7 @@ pub enum JobStatus {
 
 /// Active job information
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct ActiveJob {
     pub job_id: String,
     pub prompt: String,
@@ -163,6 +165,7 @@ impl App {
     }
 
     /// Clear input buffer
+    #[allow(dead_code)]
     pub fn clear_input(&mut self) {
         self.input_buffer.clear();
         self.cursor_pos = 0;
@@ -170,6 +173,7 @@ impl App {
     }
 
     /// Get current FPS
+    #[allow(dead_code)]
     pub fn current_fps(&self) -> f64 {
         let elapsed = self.last_render.elapsed().as_secs_f64();
         if elapsed > 0.0 {
@@ -187,11 +191,13 @@ impl App {
     }
 
     /// Check if redraw is needed
+    #[allow(dead_code)]
     pub fn should_redraw(&self) -> bool {
         self.needs_redraw
     }
 
     /// Update job status
+    #[allow(dead_code)]
     pub fn update_job_status(&mut self, job_id: &str, status: JobStatus) {
         if let Some(job) = self.active_jobs.iter_mut().find(|j| j.job_id == job_id) {
             job.status = status;
@@ -200,6 +206,7 @@ impl App {
     }
 
     /// Add new job
+    #[allow(dead_code)]
     pub fn add_job(&mut self, job_id: String, prompt: String) {
         self.active_jobs.push(ActiveJob {
             job_id,
@@ -211,6 +218,7 @@ impl App {
     }
 
     /// Set preview for job
+    #[allow(dead_code)]
     pub fn set_job_preview(&mut self, job_id: &str, preview_path: PathBuf) {
         if let Some(job) = self.active_jobs.iter_mut().find(|j| j.job_id == job_id) {
             job.preview_path = Some(preview_path.clone());
@@ -220,12 +228,14 @@ impl App {
     }
 
     /// Remove completed job
+    #[allow(dead_code)]
     pub fn remove_job(&mut self, job_id: &str) {
         self.active_jobs.retain(|j| j.job_id != job_id);
         self.needs_redraw = true;
     }
 
     /// Add image to gallery
+    #[allow(dead_code)]
     pub fn add_to_gallery(&mut self, path: PathBuf) {
         if !self.gallery_images.contains(&path) {
             self.gallery_images.push(path);

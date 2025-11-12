@@ -15,7 +15,7 @@ use ratatui::{
 use crate::ui::theme::Theme;
 
 /// Create a standard block with title and borders
-pub fn create_block(title: &str) -> Block {
+pub fn create_block(title: &str) -> Block<'_> {
     Block::default()
         .title(Span::styled(title, Theme::title()))
         .borders(Borders::ALL)

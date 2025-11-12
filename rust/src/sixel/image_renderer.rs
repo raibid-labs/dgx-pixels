@@ -1,4 +1,4 @@
-/// Image to Sixel conversion and rendering
+//! Image to Sixel conversion and rendering
 
 use anyhow::{Context, Result};
 use image::{imageops::FilterType, DynamicImage, GenericImageView};
@@ -6,8 +6,6 @@ use std::io::Write;
 use std::path::Path;
 use tracing::{debug, warn};
 use viuer::Config;
-
-use super::MAX_SIXEL_COLORS;
 
 /// Options for image rendering
 #[derive(Debug, Clone)]
@@ -68,6 +66,7 @@ impl ImageRenderer {
     }
 
     /// Render image directly to stdout
+    #[allow(dead_code)]
     pub fn render_to_stdout(&self, image_path: &Path, options: &RenderOptions) -> Result<()> {
         debug!("Rendering to stdout: {:?}", image_path);
 
@@ -88,6 +87,7 @@ impl ImageRenderer {
     }
 
     /// Render a thumbnail (smaller, faster)
+    #[allow(dead_code)]
     pub fn render_thumbnail(
         &self,
         image_path: &Path,
@@ -158,7 +158,7 @@ impl ImageRenderer {
         options: &RenderOptions,
     ) -> Result<()> {
         // Use viuer to convert to Sixel
-        let config = viuer::Config {
+        let _config = viuer::Config {
             width: Some(options.width as u32),
             height: Some(options.height as u32),
             transparent: false,
@@ -172,9 +172,9 @@ impl ImageRenderer {
 
         // Write a simplified Sixel sequence as placeholder
         // Note: Full Sixel encoding would require libsixel or manual implementation
-        write!(
+        writeln!(
             buffer,
-            "\x1bP0;1;0q\"1;1;{};{}\n",
+            "\x1bP0;1;0q\"1;1;{};{}",
             width,
             height
         )?;

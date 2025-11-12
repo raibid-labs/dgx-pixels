@@ -3,6 +3,7 @@ use crate::ui::{layout::create_layout, theme::Theme};
 use crate::ui::screens::{create_block, create_header, create_status_bar};
 use ratatui::{Frame, widgets::Paragraph, text::{Line, Span}};
 
+#[allow(unused_variables)]
 pub fn render(f: &mut Frame, app: &App) {
     let chunks = create_layout(f.size());
 

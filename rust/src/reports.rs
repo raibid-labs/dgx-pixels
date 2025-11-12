@@ -1,8 +1,10 @@
-/// Comparison Report Export
-///
-/// Export comparison results to CSV/JSON for analysis and training validation
+//! Comparison Report Export
+//!
+//! Export comparison results to CSV/JSON for analysis and training validation
 
-use crate::comparison::{ComparisonResult, ComparisonStatistics, ModelConfig};
+#![allow(dead_code)]
+
+use crate::comparison::ComparisonResult;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::fs::File;

@@ -1,7 +1,9 @@
-/// ZeroMQ client for communicating with Python backend
-///
-/// Implements REQ-REP pattern for request/response
-/// and SUB pattern for progress updates
+//! ZeroMQ client for communicating with Python backend
+//!
+//! Implements REQ-REP pattern for request/response
+//! and SUB pattern for progress updates
+
+#![allow(dead_code)]
 
 use crate::messages::*;
 use anyhow::{Context, Result};

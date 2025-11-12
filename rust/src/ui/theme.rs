@@ -69,6 +69,7 @@ impl Theme {
     }
 
     /// Input field style
+    #[allow(dead_code)]
     pub fn input() -> Style {
         Style::default()
             .fg(Color::White)
@@ -76,6 +77,7 @@ impl Theme {
     }
 
     /// Active input field style
+    #[allow(dead_code)]
     pub fn input_active() -> Style {
         Style::default()
             .fg(Color::White)
@@ -90,6 +92,7 @@ impl Theme {
     }
 
     /// Disabled button style
+    #[allow(dead_code)]
     pub fn button_disabled() -> Style {
         Style::default()
             .fg(Self::muted())

@@ -1,4 +1,4 @@
-/// Terminal capability detection for Sixel support
+//! Terminal capability detection for Sixel support
 
 use std::env;
 use tracing::{debug, info, warn};

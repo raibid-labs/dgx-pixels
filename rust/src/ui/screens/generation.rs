@@ -5,10 +5,10 @@ use crate::ui::screens::{create_block, create_header, create_status_bar};
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout},
-    widgets::{Block, Borders, Paragraph, Gauge},
+    widgets::{Block, Borders, Paragraph},
     text::{Line, Span},
 };
-use std::path::PathBuf;
+use std::path::Path;
 
 /// Render the generation screen
 pub fn render(f: &mut Frame, app: &App) {
@@ -304,7 +304,7 @@ fn render_loading_preview(f: &mut Frame, area: ratatui::layout::Rect) {
     f.render_widget(paragraph, area);
 }
 
-fn render_text_preview_info(f: &mut Frame, area: ratatui::layout::Rect, path: &PathBuf) {
+fn render_text_preview_info(f: &mut Frame, area: ratatui::layout::Rect, path: &Path) {
     let filename = path.file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("unknown");

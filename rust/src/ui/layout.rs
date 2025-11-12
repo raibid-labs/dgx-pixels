@@ -16,6 +16,7 @@ pub fn create_layout(area: Rect) -> Rc<[Rect]> {
 }
 
 /// Create a two-column layout
+#[allow(dead_code)]
 pub fn two_columns(area: Rect) -> Rc<[Rect]> {
     Layout::default()
         .direction(Direction::Horizontal)
@@ -27,6 +28,7 @@ pub fn two_columns(area: Rect) -> Rc<[Rect]> {
 }
 
 /// Create a three-column layout
+#[allow(dead_code)]
 pub fn three_columns(area: Rect) -> Rc<[Rect]> {
     Layout::default()
         .direction(Direction::Horizontal)
@@ -39,6 +41,7 @@ pub fn three_columns(area: Rect) -> Rc<[Rect]> {
 }
 
 /// Create a centered popup area
+#[allow(dead_code)]
 pub fn centered_rect(percent_x: u16, percent_y: u16, area: Rect) -> Rect {
     let popup_layout = Layout::default()
         .direction(Direction::Vertical)
