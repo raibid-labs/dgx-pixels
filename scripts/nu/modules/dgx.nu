@@ -554,8 +554,7 @@ export def dgx-get-cuda-version [] {
     let driver_version = if (command-exists "nvidia-smi") {
         (do {
             try {
-                ^nvidia-smi --query-gpu=driver_version
-                --format=csv,noheader
+                ^nvidia-smi --query-gpu=driver_version --format=csv,noheader
                 | lines
                 | first
                 | str trim
