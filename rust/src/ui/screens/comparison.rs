@@ -4,15 +4,15 @@
 //! to validate training improvements.
 
 use crate::app::App;
-use crate::comparison::{ComparisonManager, ModelConfig, GenerationParams};
-use crate::ui::{layout::create_layout, theme::Theme};
+use crate::comparison::{ComparisonManager, GenerationParams, ModelConfig};
 use crate::ui::screens::{create_block, create_header, create_status_bar};
+use crate::ui::{layout::create_layout, theme::Theme};
 use ratatui::{
-    Frame,
-    layout::{Constraint, Direction, Layout, Alignment},
-    widgets::{Block, Borders, Paragraph, List, ListItem, Gauge},
+    layout::{Alignment, Constraint, Direction, Layout},
+    style::{Color, Style},
     text::{Line, Span},
-    style::{Style, Color},
+    widgets::{Block, Borders, Gauge, List, ListItem, Paragraph},
+    Frame,
 };
 
 /// Comparison screen state
@@ -145,11 +145,12 @@ pub fn render(f: &mut Frame, app: &App, state: &ComparisonState) {
             )
         }
         ComparisonMode::ModelSelection { slot } => {
-            format!("Selecting model for slot {} | [↑↓] Navigate [Enter] Select [ESC] Cancel", slot + 1)
+            format!(
+                "Selecting model for slot {} | [↑↓] Navigate [Enter] Select [ESC] Cancel",
+                slot + 1
+            )
         }
-        ComparisonMode::Running { .. } => {
-            "Generating... | [C] Cancel".to_string()
-        }
+        ComparisonMode::Running { .. } => "Generating... | [C] Cancel".to_string(),
         ComparisonMode::Results { .. } => {
             "Results | [1-3] Vote for model [R] Run Again [ESC] Back".to_string()
         }
@@ -159,14 +160,19 @@ pub fn render(f: &mut Frame, app: &App, state: &ComparisonState) {
 }
 
 /// Render setup/configuration mode
-fn render_setup_mode(f: &mut Frame, area: ratatui::layout::Rect, app: &App, state: &ComparisonState) {
+fn render_setup_mode(
+    f: &mut Frame,
+    area: ratatui::layout::Rect,
+    app: &App,
+    state: &ComparisonState,
+) {
     let body_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(5),   // Prompt input
-            Constraint::Length(10),  // Model selection grid
-            Constraint::Min(5),      // Parameters
-            Constraint::Length(3),   // Action buttons
+            Constraint::Length(5),  // Prompt input
+            Constraint::Length(10), // Model selection grid
+            Constraint::Min(5),     // Parameters
+            Constraint::Length(3),  // Action buttons
         ])
         .margin(1)
         .split(area);
@@ -199,8 +205,8 @@ fn render_running_mode(
     let body_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),   // Status
-            Constraint::Min(10),     // Progress grid
+            Constraint::Length(3), // Status
+            Constraint::Min(10),   // Progress grid
         ])
         .margin(1)
         .split(area);
@@ -210,8 +216,7 @@ fn render_running_mode(
         Span::styled("Generating with multiple models... ", Theme::text()),
         Span::styled("This may take 10-15 seconds", Theme::muted()),
     ])];
-    let status_para = Paragraph::new(status_text)
-        .block(create_block(" Comparison in Progress "));
+    let status_para = Paragraph::new(status_text).block(create_block(" Comparison in Progress "));
     f.render_widget(status_para, body_chunks[0]);
 
     // Progress for each model
@@ -228,9 +233,9 @@ fn render_results_mode(
     let body_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),   // Prompt display
-            Constraint::Min(15),     // Side-by-side results
-            Constraint::Length(5),   // Voting/preference section
+            Constraint::Length(3), // Prompt display
+            Constraint::Min(15),   // Side-by-side results
+            Constraint::Length(5), // Voting/preference section
         ])
         .margin(1)
         .split(area);
@@ -240,8 +245,7 @@ fn render_results_mode(
         Span::styled("Prompt: ", Theme::muted()),
         Span::styled(&state.params.prompt, Theme::text()),
     ])];
-    let prompt_para = Paragraph::new(prompt_text)
-        .block(create_block(" Comparison Parameters "));
+    let prompt_para = Paragraph::new(prompt_text).block(create_block(" Comparison Parameters "));
     f.render_widget(prompt_para, body_chunks[0]);
 
     // Side-by-side results
@@ -328,7 +332,10 @@ fn render_parameters(f: &mut Frame, area: ratatui::layout::Rect, state: &Compari
     let lines = vec![
         Line::from(vec![
             Span::raw("Size: "),
-            Span::styled(format!("{}x{}", state.params.width, state.params.height), Theme::text()),
+            Span::styled(
+                format!("{}x{}", state.params.width, state.params.height),
+                Theme::text(),
+            ),
             Span::raw("  Steps: "),
             Span::styled(state.params.steps.to_string(), Theme::text()),
             Span::raw("  CFG: "),
@@ -346,8 +353,7 @@ fn render_parameters(f: &mut Frame, area: ratatui::layout::Rect, state: &Compari
         ]),
     ];
 
-    let para = Paragraph::new(lines)
-        .block(create_block(" Generation Parameters "));
+    let para = Paragraph::new(lines).block(create_block(" Generation Parameters "));
 
     f.render_widget(para, area);
 }
@@ -362,14 +368,16 @@ fn render_action_buttons(f: &mut Frame, area: ratatui::layout::Rect, state: &Com
         ]
     } else {
         vec![
-            Span::styled(" [Enter] Start Comparison (need 2+ models) ", Theme::muted()),
+            Span::styled(
+                " [Enter] Start Comparison (need 2+ models) ",
+                Theme::muted(),
+            ),
             Span::raw("  "),
             Span::styled(" [ESC] Cancel ", Theme::button()),
         ]
     };
 
-    let para = Paragraph::new(Line::from(button_text))
-        .alignment(Alignment::Center);
+    let para = Paragraph::new(Line::from(button_text)).alignment(Alignment::Center);
 
     f.render_widget(para, area);
 }
@@ -473,9 +481,9 @@ fn render_model_progress(
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),  // Model info
-            Constraint::Length(3),  // Progress bar
-            Constraint::Min(3),     // Preview placeholder
+            Constraint::Length(3), // Model info
+            Constraint::Length(3), // Progress bar
+            Constraint::Min(3),    // Preview placeholder
         ])
         .split(inner);
 
@@ -532,8 +540,7 @@ fn render_side_by_side(
 
     for (i, model_opt) in state.selected_models.iter().enumerate() {
         if let Some(model) = model_opt {
-            let model_result = result
-                .and_then(|r| r.results.get(i));
+            let model_result = result.and_then(|r| r.results.get(i));
 
             render_model_result(f, result_chunks[i], model, model_result, i);
         }
@@ -555,8 +562,8 @@ fn render_model_result(
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Min(10),     // Image preview
-            Constraint::Length(4),   // Metadata
+            Constraint::Min(10),   // Image preview
+            Constraint::Length(4), // Metadata
         ])
         .split(inner);
 
@@ -607,10 +614,7 @@ fn render_voting_section(
             vec![
                 Line::from(vec![
                     Span::styled("Your preference: ", Theme::text()),
-                    Span::styled(
-                        format!("Model {}", winner_idx + 1),
-                        Theme::success(),
-                    ),
+                    Span::styled(format!("Model {}", winner_idx + 1), Theme::success()),
                 ]),
                 Line::from(""),
                 Line::from(Span::styled("[R] Run comparison again", Theme::button())),
@@ -641,7 +645,10 @@ fn render_voting_section(
             ]
         }
     } else {
-        vec![Line::from(Span::styled("Loading results...", Theme::muted()))]
+        vec![Line::from(Span::styled(
+            "Loading results...",
+            Theme::muted(),
+        ))]
     };
 
     let para = Paragraph::new(content)

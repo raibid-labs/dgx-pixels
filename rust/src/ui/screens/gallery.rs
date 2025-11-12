@@ -1,12 +1,12 @@
 use crate::app::App;
 use crate::sixel::{RenderOptions, TerminalCapability};
-use crate::ui::{layout::create_layout, theme::Theme};
 use crate::ui::screens::{create_block, create_header, create_status_bar};
+use crate::ui::{layout::create_layout, theme::Theme};
 use ratatui::{
-    Frame,
     layout::{Constraint, Direction, Layout},
-    widgets::Paragraph,
     text::{Line, Span},
+    widgets::Paragraph,
+    Frame,
 };
 
 pub fn render(f: &mut Frame, app: &App) {
@@ -81,7 +81,9 @@ fn render_main_preview(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
                         high_quality: true,
                     };
 
-                    let _ = app.preview_manager.request_preview(selected_path.clone(), options);
+                    let _ = app
+                        .preview_manager
+                        .request_preview(selected_path.clone(), options);
 
                     // Show loading
                     render_loading(f, inner);
@@ -109,7 +111,8 @@ fn render_thumbnail_list(f: &mut Frame, area: ratatui::layout::Rect, app: &App) 
 
     for (idx, path) in app.gallery_images[start_idx..end_idx].iter().enumerate() {
         let actual_idx = start_idx + idx;
-        let filename = path.file_name()
+        let filename = path
+            .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or("unknown");
 
@@ -140,7 +143,9 @@ fn render_thumbnail_list(f: &mut Frame, area: ratatui::layout::Rect, app: &App) 
                 preserve_aspect: true,
                 high_quality: false,
             };
-            let _ = app.preview_manager.request_preview(path.clone(), thumbnail_opts);
+            let _ = app
+                .preview_manager
+                .request_preview(path.clone(), thumbnail_opts);
         }
     }
 
@@ -154,24 +159,30 @@ fn render_sixel_large_preview(
     _sixel_data: &str,
     path: &std::path::Path,
 ) {
-    let filename = path.file_name()
+    let filename = path
+        .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("unknown");
 
     let lines = vec![
         Line::from(""),
         Line::from(""),
-        Line::from(Span::styled("[Sixel Preview Would Appear Here]", Theme::highlight())),
+        Line::from(Span::styled(
+            "[Sixel Preview Would Appear Here]",
+            Theme::highlight(),
+        )),
         Line::from(""),
         Line::from(Span::styled(filename, Theme::text())),
         Line::from(""),
-        Line::from(Span::styled("Full Sixel rendering available", Theme::muted())),
+        Line::from(Span::styled(
+            "Full Sixel rendering available",
+            Theme::muted(),
+        )),
         Line::from(""),
         Line::from("Use arrow keys to navigate"),
     ];
 
-    let paragraph = Paragraph::new(lines)
-        .alignment(ratatui::layout::Alignment::Center);
+    let paragraph = Paragraph::new(lines).alignment(ratatui::layout::Alignment::Center);
 
     f.render_widget(paragraph, area);
 }
@@ -185,14 +196,14 @@ fn render_loading(f: &mut Frame, area: ratatui::layout::Rect) {
         Line::from(Span::styled("Please wait", Theme::muted())),
     ];
 
-    let paragraph = Paragraph::new(lines)
-        .alignment(ratatui::layout::Alignment::Center);
+    let paragraph = Paragraph::new(lines).alignment(ratatui::layout::Alignment::Center);
 
     f.render_widget(paragraph, area);
 }
 
 fn render_text_only_info(f: &mut Frame, area: ratatui::layout::Rect, path: &std::path::Path) {
-    let filename = path.file_name()
+    let filename = path
+        .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("unknown");
 
@@ -204,14 +215,13 @@ fn render_text_only_info(f: &mut Frame, area: ratatui::layout::Rect, path: &std:
         Line::from(""),
         Line::from(Span::styled(
             "Terminal does not support Sixel",
-            Theme::muted()
+            Theme::muted(),
         )),
         Line::from(""),
         Line::from("Use kitty, WezTerm, or iTerm2"),
     ];
 
-    let paragraph = Paragraph::new(lines)
-        .alignment(ratatui::layout::Alignment::Center);
+    let paragraph = Paragraph::new(lines).alignment(ratatui::layout::Alignment::Center);
 
     f.render_widget(paragraph, area);
 }
@@ -223,8 +233,7 @@ fn render_no_selection(f: &mut Frame, area: ratatui::layout::Rect) {
         Line::from(Span::styled("No image selected", Theme::muted())),
     ];
 
-    let paragraph = Paragraph::new(lines)
-        .alignment(ratatui::layout::Alignment::Center);
+    let paragraph = Paragraph::new(lines).alignment(ratatui::layout::Alignment::Center);
 
     f.render_widget(paragraph, area);
 }

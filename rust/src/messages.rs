@@ -387,6 +387,10 @@ mod tests {
 
         let serialized = serialize(&req).expect("Failed to serialize");
         // MessagePack should compress well, expect < 1KB for reasonable prompts
-        assert!(serialized.len() < 1024, "Message too large: {} bytes", serialized.len());
+        assert!(
+            serialized.len() < 1024,
+            "Message too large: {} bytes",
+            serialized.len()
+        );
     }
 }

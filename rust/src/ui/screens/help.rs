@@ -1,7 +1,11 @@
 use crate::app::App;
-use crate::ui::{layout::create_layout, theme::Theme};
 use crate::ui::screens::{create_block, create_header, create_status_bar};
-use ratatui::{Frame, widgets::Paragraph, text::{Line, Span}};
+use crate::ui::{layout::create_layout, theme::Theme};
+use ratatui::{
+    text::{Line, Span},
+    widgets::Paragraph,
+    Frame,
+};
 
 #[allow(unused_variables)]
 pub fn render(f: &mut Frame, app: &App) {
@@ -12,20 +16,14 @@ pub fn render(f: &mut Frame, app: &App) {
 
     let lines = vec![
         Line::from(""),
-        Line::from(vec![
-            Span::styled("Keyboard Shortcuts", Theme::header()),
-        ]),
+        Line::from(vec![Span::styled("Keyboard Shortcuts", Theme::header())]),
         Line::from(""),
-        Line::from(vec![
-            Span::styled("  Global:", Theme::title()),
-        ]),
+        Line::from(vec![Span::styled("  Global:", Theme::title())]),
         Line::from("    Q         - Quit application"),
         Line::from("    Esc       - Back to previous screen"),
         Line::from("    ? or H    - Show this help screen"),
         Line::from(""),
-        Line::from(vec![
-            Span::styled("  Navigation:", Theme::title()),
-        ]),
+        Line::from(vec![Span::styled("  Navigation:", Theme::title())]),
         Line::from("    1         - Generation screen"),
         Line::from("    2         - Queue manager"),
         Line::from("    3         - Gallery"),
@@ -33,20 +31,18 @@ pub fn render(f: &mut Frame, app: &App) {
         Line::from("    5         - System monitor"),
         Line::from("    6         - Settings"),
         Line::from(""),
-        Line::from(vec![
-            Span::styled("  Generation Screen:", Theme::title()),
-        ]),
+        Line::from(vec![Span::styled("  Generation Screen:", Theme::title())]),
         Line::from("    G         - Generate image"),
         Line::from("    C         - Compare models"),
         Line::from("    Type      - Enter prompt text"),
         Line::from(""),
-        Line::from(vec![
-            Span::styled("Press Esc to return", Theme::secondary()),
-        ]),
+        Line::from(vec![Span::styled(
+            "Press Esc to return",
+            Theme::secondary(),
+        )]),
     ];
 
-    let paragraph = Paragraph::new(lines)
-        .block(create_block(" Help & Keyboard Shortcuts "));
+    let paragraph = Paragraph::new(lines).block(create_block(" Help & Keyboard Shortcuts "));
 
     f.render_widget(paragraph, chunks[1]);
 

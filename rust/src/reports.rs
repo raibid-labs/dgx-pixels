@@ -136,13 +136,14 @@ impl ReportBuilder {
                 lora: r.model.lora.clone(),
                 lora_strength: r.model.lora_strength,
                 generation_time_s: r.duration_s,
-                image_path: r.image_path.as_ref().map(|p| p.to_string_lossy().to_string()),
+                image_path: r
+                    .image_path
+                    .as_ref()
+                    .map(|p| p.to_string_lossy().to_string()),
             })
             .collect();
 
-        let winner = comparison
-            .winner()
-            .map(|w| w.name.clone());
+        let winner = comparison.winner().map(|w| w.name.clone());
 
         ComparisonExport {
             comparison_id: comparison.comparison_id.clone(),
@@ -234,11 +235,10 @@ impl Default for ReportBuilder {
 
 /// Export report to JSON file
 pub fn export_json<P: AsRef<Path>>(report: &ComparisonReport, path: P) -> Result<()> {
-    let json = serde_json::to_string_pretty(report)
-        .context("Failed to serialize report to JSON")?;
+    let json =
+        serde_json::to_string_pretty(report).context("Failed to serialize report to JSON")?;
 
-    let mut file = File::create(path.as_ref())
-        .context("Failed to create JSON file")?;
+    let mut file = File::create(path.as_ref()).context("Failed to create JSON file")?;
 
     file.write_all(json.as_bytes())
         .context("Failed to write JSON file")?;
@@ -248,8 +248,7 @@ pub fn export_json<P: AsRef<Path>>(report: &ComparisonReport, path: P) -> Result
 
 /// Export report to CSV file
 pub fn export_csv<P: AsRef<Path>>(report: &ComparisonReport, path: P) -> Result<()> {
-    let mut file = File::create(path.as_ref())
-        .context("Failed to create CSV file")?;
+    let mut file = File::create(path.as_ref()).context("Failed to create CSV file")?;
 
     // Write header
     writeln!(
@@ -284,12 +283,8 @@ pub fn export_csv<P: AsRef<Path>>(report: &ComparisonReport, path: P) -> Result<
 }
 
 /// Export statistics to separate file
-pub fn export_statistics_csv<P: AsRef<Path>>(
-    stats: &StatisticsExport,
-    path: P,
-) -> Result<()> {
-    let mut file = File::create(path.as_ref())
-        .context("Failed to create statistics CSV file")?;
+pub fn export_statistics_csv<P: AsRef<Path>>(stats: &StatisticsExport, path: P) -> Result<()> {
+    let mut file = File::create(path.as_ref()).context("Failed to create statistics CSV file")?;
 
     // Write header
     writeln!(file, "model_name,wins,win_rate")?;
@@ -482,11 +477,8 @@ mod tests {
             create_test_comparison(Some(0)), // Base wins
         ];
 
-        let validation = generate_training_validation_report(
-            &comparisons,
-            "Base SDXL",
-            "Pixel Art LoRA",
-        );
+        let validation =
+            generate_training_validation_report(&comparisons, "Base SDXL", "Pixel Art LoRA");
 
         assert_eq!(validation.lora_wins, 2);
         assert_eq!(validation.base_wins, 1);

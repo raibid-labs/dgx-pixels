@@ -1,12 +1,12 @@
 use crate::app::{App, JobStatus};
 use crate::sixel::{RenderOptions, TerminalCapability};
-use crate::ui::{layout::create_layout, theme::Theme};
 use crate::ui::screens::{create_block, create_header, create_status_bar};
+use crate::ui::{layout::create_layout, theme::Theme};
 use ratatui::{
-    Frame,
     layout::{Constraint, Direction, Layout},
-    widgets::{Block, Borders, Paragraph},
     text::{Line, Span},
+    widgets::{Block, Borders, Paragraph},
+    Frame,
 };
 use std::path::Path;
 
@@ -91,10 +91,10 @@ fn render_body(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
     let body_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(5),   // Prompt input
-            Constraint::Length(3),   // Options row
-            Constraint::Min(8),      // Preview/options area
-            Constraint::Length(6),   // Recent generations
+            Constraint::Length(5), // Prompt input
+            Constraint::Length(3), // Options row
+            Constraint::Min(8),    // Preview/options area
+            Constraint::Length(6), // Recent generations
         ])
         .margin(1)
         .split(area);
@@ -122,8 +122,7 @@ fn render_prompt_input(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
         Span::styled(&app.input_buffer, Theme::text())
     };
 
-    let paragraph = Paragraph::new(prompt_text)
-        .block(block);
+    let paragraph = Paragraph::new(prompt_text).block(block);
 
     f.render_widget(paragraph, area);
 
@@ -135,9 +134,11 @@ fn render_prompt_input(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
 
 fn render_options_row(f: &mut Frame, area: ratatui::layout::Rect) {
     let options_text = " Model: [SDXL Base ▼]  LoRA: [None ▼]  Size: [1024x1024]  Steps: [30] ";
-    let paragraph = Paragraph::new(options_text)
-        .style(Theme::text())
-        .block(Block::default().borders(Borders::ALL).border_style(Theme::border()));
+    let paragraph = Paragraph::new(options_text).style(Theme::text()).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_style(Theme::border()),
+    );
 
     f.render_widget(paragraph, area);
 }
@@ -146,8 +147,8 @@ fn render_main_content(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
     let main_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Percentage(50),  // Options/controls
-            Constraint::Percentage(50),  // Preview
+            Constraint::Percentage(50), // Options/controls
+            Constraint::Percentage(50), // Preview
         ])
         .split(area);
 
@@ -191,7 +192,11 @@ fn render_controls(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
             JobStatus::Queued => {
                 lines.push(Line::from(Span::styled("Status: Queued", Theme::muted())));
             }
-            JobStatus::Running { stage, progress, eta_s } => {
+            JobStatus::Running {
+                stage,
+                progress,
+                eta_s,
+            } => {
                 lines.push(Line::from(vec![
                     Span::raw("Stage: "),
                     Span::styled(stage, Theme::text()),
@@ -211,7 +216,7 @@ fn render_controls(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
             JobStatus::Failed { error } => {
                 lines.push(Line::from(Span::styled(
                     format!("Error: {}", error),
-                    Theme::error()
+                    Theme::error(),
                 )));
             }
         }
@@ -224,8 +229,7 @@ fn render_controls(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
         Span::styled(" [C]ompare Models ", Theme::button()),
     ]));
 
-    let paragraph = Paragraph::new(lines)
-        .block(create_block(" Generation Options "));
+    let paragraph = Paragraph::new(lines).block(create_block(" Generation Options "));
 
     f.render_widget(paragraph, area);
 }
@@ -252,7 +256,9 @@ fn render_preview(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
                         high_quality: true,
                     };
 
-                    let _ = app.preview_manager.request_preview(preview_path.clone(), options);
+                    let _ = app
+                        .preview_manager
+                        .request_preview(preview_path.clone(), options);
 
                     // Show loading message
                     render_loading_preview(f, inner);
@@ -305,7 +311,8 @@ fn render_loading_preview(f: &mut Frame, area: ratatui::layout::Rect) {
 }
 
 fn render_text_preview_info(f: &mut Frame, area: ratatui::layout::Rect, path: &Path) {
-    let filename = path.file_name()
+    let filename = path
+        .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("unknown");
 
@@ -317,7 +324,7 @@ fn render_text_preview_info(f: &mut Frame, area: ratatui::layout::Rect, path: &P
         Line::from(""),
         Line::from(Span::styled(
             "Sixel not supported in this terminal",
-            Theme::muted()
+            Theme::muted(),
         )),
         Line::from(""),
         Line::from("Use kitty, WezTerm, or iTerm2"),
@@ -350,32 +357,36 @@ fn render_no_preview(f: &mut Frame, area: ratatui::layout::Rect) {
 
 fn render_recent_generations(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
     let lines = if app.gallery_images.is_empty() {
-        vec![Line::from(Span::styled("No recent generations", Theme::muted()))]
+        vec![Line::from(Span::styled(
+            "No recent generations",
+            Theme::muted(),
+        ))]
     } else {
-        let recent: Vec<_> = app.gallery_images
+        let recent: Vec<_> = app
+            .gallery_images
             .iter()
             .rev()
             .take(3)
             .map(|path| {
-                let filename = path.file_name()
+                let filename = path
+                    .file_name()
                     .and_then(|n| n.to_str())
                     .unwrap_or("unknown");
-                Line::from(vec![
-                    Span::raw("  "),
-                    Span::styled(filename, Theme::text()),
-                ])
+                Line::from(vec![Span::raw("  "), Span::styled(filename, Theme::text())])
             })
             .collect();
 
         if recent.is_empty() {
-            vec![Line::from(Span::styled("No recent generations", Theme::muted()))]
+            vec![Line::from(Span::styled(
+                "No recent generations",
+                Theme::muted(),
+            ))]
         } else {
             recent
         }
     };
 
-    let paragraph = Paragraph::new(lines)
-        .block(create_block(" Recent Generations "));
+    let paragraph = Paragraph::new(lines).block(create_block(" Recent Generations "));
 
     f.render_widget(paragraph, area);
 }

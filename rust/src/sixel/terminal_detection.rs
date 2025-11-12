@@ -19,12 +19,7 @@ pub fn detect_sixel_support() -> TerminalCapability {
         debug!("Detected TERM: {}", term);
 
         // Known Sixel-capable terminals
-        let sixel_terms = [
-            "xterm-256color",
-            "xterm-sixel",
-            "mlterm",
-            "yaft-256color",
-        ];
+        let sixel_terms = ["xterm-256color", "xterm-sixel", "mlterm", "yaft-256color"];
 
         if sixel_terms.iter().any(|&t| term.contains(t)) {
             info!("Terminal supports Sixel (via TERM)");
@@ -74,8 +69,6 @@ mod tests {
     #[test]
     fn test_detect_capability_returns_valid() {
         let cap = detect_sixel_support();
-        assert!(
-            cap == TerminalCapability::Sixel || cap == TerminalCapability::TextOnly
-        );
+        assert!(cap == TerminalCapability::Sixel || cap == TerminalCapability::TextOnly);
     }
 }

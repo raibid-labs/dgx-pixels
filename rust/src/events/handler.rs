@@ -1,5 +1,5 @@
 use crate::app::{App, Screen};
-use crate::events::{key_match, is_ctrl_c, AppEvent};
+use crate::events::{is_ctrl_c, key_match, AppEvent};
 use crossterm::event::KeyCode;
 
 /// Event handler for the application

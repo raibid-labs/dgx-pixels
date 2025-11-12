@@ -1,13 +1,13 @@
-use std::path::PathBuf;
-use std::time::Instant;
 use crate::sixel::{PreviewManager, TerminalCapability};
 use crate::ui::screens::comparison::ComparisonState;
+use std::path::PathBuf;
+use std::time::Instant;
 
 /// Represents the current screen in the application
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Screen {
     Generation,
-    Comparison,  // NEW: Side-by-side model comparison
+    Comparison, // NEW: Side-by-side model comparison
     Queue,
     Gallery,
     Models,
@@ -246,7 +246,8 @@ impl App {
     /// Select next gallery image
     pub fn gallery_next(&mut self) {
         if !self.gallery_images.is_empty() {
-            self.selected_gallery_index = (self.selected_gallery_index + 1) % self.gallery_images.len();
+            self.selected_gallery_index =
+                (self.selected_gallery_index + 1) % self.gallery_images.len();
             self.needs_redraw = true;
         }
     }
@@ -359,13 +360,19 @@ mod tests {
         let mut app = App::new();
         app.add_job("job-001".to_string(), "test".to_string());
 
-        app.update_job_status("job-001", JobStatus::Running {
-            stage: "sampling".to_string(),
-            progress: 0.5,
-            eta_s: 2.0,
-        });
+        app.update_job_status(
+            "job-001",
+            JobStatus::Running {
+                stage: "sampling".to_string(),
+                progress: 0.5,
+                eta_s: 2.0,
+            },
+        );
 
-        assert!(matches!(app.active_jobs[0].status, JobStatus::Running { .. }));
+        assert!(matches!(
+            app.active_jobs[0].status,
+            JobStatus::Running { .. }
+        ));
     }
 
     #[tokio::test]

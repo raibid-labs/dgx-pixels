@@ -1,6 +1,4 @@
-use ratatui::{
-    layout::{Constraint, Direction, Layout, Rect},
-};
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use std::rc::Rc;
 
 /// Create the main 3-section layout (header, body, footer)
@@ -8,9 +6,9 @@ pub fn create_layout(area: Rect) -> Rc<[Rect]> {
     Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),  // Header
-            Constraint::Min(0),     // Body
-            Constraint::Length(3),  // Footer/Status bar
+            Constraint::Length(3), // Header
+            Constraint::Min(0),    // Body
+            Constraint::Length(3), // Footer/Status bar
         ])
         .split(area)
 }
@@ -20,10 +18,7 @@ pub fn create_layout(area: Rect) -> Rc<[Rect]> {
 pub fn two_columns(area: Rect) -> Rc<[Rect]> {
     Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage(50),
-            Constraint::Percentage(50),
-        ])
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
         .split(area)
 }
 

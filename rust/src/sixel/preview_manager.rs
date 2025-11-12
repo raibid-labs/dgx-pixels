@@ -2,13 +2,13 @@
 
 use anyhow::{Context, Result};
 use dashmap::DashMap;
+use image::GenericImageView;
 use parking_lot::RwLock;
+use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Instant;
-use std::fmt;
 use tokio::sync::mpsc;
-use image::GenericImageView;
 use tracing::{debug, info, warn};
 
 use super::image_renderer::{ImageRenderer, RenderOptions};
@@ -101,7 +101,10 @@ impl PreviewManager {
             .await;
         });
 
-        info!("Preview manager initialized with {}MB cache", MAX_CACHE_SIZE_MB);
+        info!(
+            "Preview manager initialized with {}MB cache",
+            MAX_CACHE_SIZE_MB
+        );
 
         Self {
             renderer,
@@ -185,7 +188,13 @@ impl PreviewManager {
         let mut entries: Vec<_> = self
             .cache
             .iter()
-            .map(|entry| (entry.key().clone(), entry.value().last_access, entry.value().size_bytes))
+            .map(|entry| {
+                (
+                    entry.key().clone(),
+                    entry.value().last_access,
+                    entry.value().size_bytes,
+                )
+            })
             .collect();
 
         entries.sort_by_key(|(_, access, _)| *access);
@@ -351,7 +360,7 @@ mod tests {
     fn test_cache_stats_usage() {
         let stats = CacheStats {
             entries: 10,
-            size_bytes: 25 * 1024 * 1024, // 25 MB
+            size_bytes: 25 * 1024 * 1024,     // 25 MB
             max_size_bytes: 50 * 1024 * 1024, // 50 MB
         };
 

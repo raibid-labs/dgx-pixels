@@ -1,11 +1,11 @@
 mod app;
-mod comparison;  // NEW: Comparison system
+mod comparison; // NEW: Comparison system
 mod events;
 mod messages;
-mod reports;     // NEW: Report export
-mod zmq_client;
-mod ui;
+mod reports; // NEW: Report export
 mod sixel;
+mod ui;
+mod zmq_client;
 
 use anyhow::Result;
 use app::App;
@@ -75,7 +75,8 @@ async fn run_app<B: ratatui::backend::Backend>(
         app.mark_rendered();
 
         // Handle events with timeout
-        if event::poll(Duration::from_millis(16))? { // 60Hz target
+        if event::poll(Duration::from_millis(16))? {
+            // 60Hz target
             match event::read()? {
                 Event::Key(key) => {
                     events::EventHandler::handle(app, events::AppEvent::Key(key));

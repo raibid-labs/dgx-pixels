@@ -1,11 +1,11 @@
 use crate::app::App;
-use crate::ui::{layout::create_layout, theme::Theme};
 use crate::ui::screens::{create_block, create_header, create_status_bar};
+use crate::ui::{layout::create_layout, theme::Theme};
 use ratatui::{
-    Frame,
     layout::{Constraint, Direction, Layout},
-    widgets::Paragraph,
     text::{Line, Span},
+    widgets::Paragraph,
+    Frame,
 };
 
 /// Render the queue screen
@@ -29,9 +29,9 @@ fn render_body(f: &mut Frame, area: ratatui::layout::Rect) {
     let body_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Percentage(40),  // Active jobs
-            Constraint::Percentage(40),  // Completed jobs
-            Constraint::Percentage(20),  // Queue stats
+            Constraint::Percentage(40), // Active jobs
+            Constraint::Percentage(40), // Completed jobs
+            Constraint::Percentage(20), // Queue stats
         ])
         .margin(1)
         .split(area);
@@ -52,8 +52,7 @@ fn render_active_jobs(f: &mut Frame, area: ratatui::layout::Rect) {
         Line::from(Span::styled("No active jobs", Theme::muted())),
     ];
 
-    let paragraph = Paragraph::new(lines)
-        .block(create_block(" Active Jobs (0) "));
+    let paragraph = Paragraph::new(lines).block(create_block(" Active Jobs (0) "));
 
     f.render_widget(paragraph, area);
 }
@@ -64,26 +63,22 @@ fn render_completed_jobs(f: &mut Frame, area: ratatui::layout::Rect) {
         Line::from(Span::styled("No completed jobs", Theme::muted())),
     ];
 
-    let paragraph = Paragraph::new(lines)
-        .block(create_block(" Completed Jobs (0) "));
+    let paragraph = Paragraph::new(lines).block(create_block(" Completed Jobs (0) "));
 
     f.render_widget(paragraph, area);
 }
 
 fn render_queue_stats(f: &mut Frame, area: ratatui::layout::Rect) {
-    let lines = vec![
-        Line::from(vec![
-            Span::raw("Total Jobs: "),
-            Span::styled("0", Theme::text()),
-            Span::raw("  |  Avg Time: "),
-            Span::styled("--", Theme::muted()),
-            Span::raw("  |  Success Rate: "),
-            Span::styled("--", Theme::muted()),
-        ]),
-    ];
+    let lines = vec![Line::from(vec![
+        Span::raw("Total Jobs: "),
+        Span::styled("0", Theme::text()),
+        Span::raw("  |  Avg Time: "),
+        Span::styled("--", Theme::muted()),
+        Span::raw("  |  Success Rate: "),
+        Span::styled("--", Theme::muted()),
+    ])];
 
-    let paragraph = Paragraph::new(lines)
-        .block(create_block(" Queue Statistics "));
+    let paragraph = Paragraph::new(lines).block(create_block(" Queue Statistics "));
 
     f.render_widget(paragraph, area);
 }

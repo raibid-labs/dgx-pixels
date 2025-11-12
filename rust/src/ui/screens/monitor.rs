@@ -1,7 +1,7 @@
 use crate::app::App;
-use crate::ui::{layout::create_layout, theme::Theme};
 use crate::ui::screens::{create_block, create_header, create_status_bar};
-use ratatui::{Frame, widgets::Paragraph, text::Line};
+use crate::ui::{layout::create_layout, theme::Theme};
+use ratatui::{text::Line, widgets::Paragraph, Frame};
 
 #[allow(unused_variables)]
 pub fn render(f: &mut Frame, app: &App) {

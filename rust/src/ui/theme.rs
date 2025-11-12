@@ -58,9 +58,7 @@ impl Theme {
 
     /// Status bar style
     pub fn status_bar() -> Style {
-        Style::default()
-            .fg(Color::White)
-            .bg(Color::DarkGray)
+        Style::default().fg(Color::White).bg(Color::DarkGray)
     }
 
     /// Border style
@@ -71,32 +69,24 @@ impl Theme {
     /// Input field style
     #[allow(dead_code)]
     pub fn input() -> Style {
-        Style::default()
-            .fg(Color::White)
-            .bg(Color::Black)
+        Style::default().fg(Color::White).bg(Color::Black)
     }
 
     /// Active input field style
     #[allow(dead_code)]
     pub fn input_active() -> Style {
-        Style::default()
-            .fg(Color::White)
-            .bg(Color::DarkGray)
+        Style::default().fg(Color::White).bg(Color::DarkGray)
     }
 
     /// Button style
     pub fn button() -> Style {
-        Style::default()
-            .fg(Color::Black)
-            .bg(Self::primary())
+        Style::default().fg(Color::Black).bg(Self::primary())
     }
 
     /// Disabled button style
     #[allow(dead_code)]
     pub fn button_disabled() -> Style {
-        Style::default()
-            .fg(Self::muted())
-            .bg(Color::Black)
+        Style::default().fg(Self::muted()).bg(Color::Black)
     }
 }
 

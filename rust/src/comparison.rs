@@ -4,10 +4,10 @@
 //! compare multiple models (base SDXL vs custom LoRA) side-by-side to validate
 //! training improvements.
 
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use chrono::{DateTime, Utc};
 
 // ============================================================================
 // Core Data Structures
@@ -172,16 +172,15 @@ impl ComparisonResult {
     /// Check if all results succeeded
     #[allow(dead_code)]
     pub fn all_succeeded(&self) -> bool {
-        self.results.iter().all(|r| r.status == ModelResultStatus::Complete)
+        self.results
+            .iter()
+            .all(|r| r.status == ModelResultStatus::Complete)
     }
 
     /// Get average generation time
     #[allow(dead_code)]
     pub fn avg_generation_time(&self) -> Option<f32> {
-        let times: Vec<f32> = self.results
-            .iter()
-            .filter_map(|r| r.duration_s)
-            .collect();
+        let times: Vec<f32> = self.results.iter().filter_map(|r| r.duration_s).collect();
 
         if times.is_empty() {
             None
@@ -260,7 +259,8 @@ impl ComparisonManager {
 
             // Map job IDs to comparison ID
             for job_id in job_ids {
-                self.job_to_comparison.insert(job_id, comparison_id.to_string());
+                self.job_to_comparison
+                    .insert(job_id, comparison_id.to_string());
             }
         }
     }
@@ -281,12 +281,7 @@ impl ComparisonManager {
 
     /// Mark a job as complete
     #[allow(unused_variables)]
-    pub fn complete_job(
-        &mut self,
-        job_id: &str,
-        image_path: PathBuf,
-        duration_s: f32,
-    ) {
+    pub fn complete_job(&mut self, job_id: &str, image_path: PathBuf, duration_s: f32) {
         if let Some(comparison_id) = self.job_to_comparison.get(job_id).cloned() {
             if let Some(job) = self.active_comparisons.get_mut(&comparison_id) {
                 if let ComparisonStatus::Running { completed, total } = &mut job.status {
@@ -313,7 +308,8 @@ impl ComparisonManager {
     /// Finalize a comparison and move to completed
     fn finalize_comparison(&mut self, comparison_id: &str) {
         if let Some(job) = self.active_comparisons.remove(comparison_id) {
-            let results: Vec<ModelResult> = job.models
+            let results: Vec<ModelResult> = job
+                .models
                 .iter()
                 .zip(job.job_ids.iter())
                 .map(|(model, job_id)| ModelResult {
@@ -455,10 +451,7 @@ mod tests {
         let mut manager = ComparisonManager::new();
 
         let params = GenerationParams::default();
-        let models = vec![
-            ModelConfig::default(),
-            ModelConfig::default(),
-        ];
+        let models = vec![ModelConfig::default(), ModelConfig::default()];
 
         let comparison_id = manager.create_comparison(params, models);
         let job_ids = vec!["job-1".to_string(), "job-2".to_string()];
@@ -512,15 +505,15 @@ mod tests {
         ];
 
         let comparison_id = manager.create_comparison(params, models);
-        manager.register_jobs(&comparison_id, vec!["job-1".to_string(), "job-2".to_string()]);
+        manager.register_jobs(
+            &comparison_id,
+            vec!["job-1".to_string(), "job-2".to_string()],
+        );
         manager.complete_job("job-1", PathBuf::from("/tmp/1.png"), 3.0);
         manager.complete_job("job-2", PathBuf::from("/tmp/2.png"), 3.0);
 
-        let success = manager.set_preference(
-            &comparison_id,
-            1,
-            Some("Model B looks better".to_string()),
-        );
+        let success =
+            manager.set_preference(&comparison_id, 1, Some("Model B looks better".to_string()));
         assert!(success);
 
         let result = manager.get_completed(&comparison_id).unwrap();

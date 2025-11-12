@@ -88,11 +88,7 @@ impl ImageRenderer {
 
     /// Render a thumbnail (smaller, faster)
     #[allow(dead_code)]
-    pub fn render_thumbnail(
-        &self,
-        image_path: &Path,
-        size: u16,
-    ) -> Result<String> {
+    pub fn render_thumbnail(&self, image_path: &Path, size: u16) -> Result<String> {
         debug!("Rendering thumbnail: {:?} (size: {})", image_path, size);
 
         let options = RenderOptions {
@@ -172,12 +168,7 @@ impl ImageRenderer {
 
         // Write a simplified Sixel sequence as placeholder
         // Note: Full Sixel encoding would require libsixel or manual implementation
-        writeln!(
-            buffer,
-            "\x1bP0;1;0q\"1;1;{};{}",
-            width,
-            height
-        )?;
+        writeln!(buffer, "\x1bP0;1;0q\"1;1;{};{}", width, height)?;
 
         // Simplified Sixel data (viuer handles this properly in print mode)
         buffer.extend_from_slice(b"#0;2;0;0;0"); // Black color

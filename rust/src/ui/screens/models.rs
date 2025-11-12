@@ -1,7 +1,11 @@
 use crate::app::App;
-use crate::ui::{layout::create_layout, theme::Theme};
 use crate::ui::screens::{create_block, create_header, create_status_bar};
-use ratatui::{Frame, widgets::Paragraph, text::{Line, Span}};
+use crate::ui::{layout::create_layout, theme::Theme};
+use ratatui::{
+    text::{Line, Span},
+    widgets::Paragraph,
+    Frame,
+};
 
 #[allow(unused_variables)]
 pub fn render(f: &mut Frame, app: &App) {
@@ -12,19 +16,14 @@ pub fn render(f: &mut Frame, app: &App) {
 
     let lines = vec![
         Line::from(""),
-        Line::from(vec![
-            Span::styled("Base Models", Theme::header()),
-        ]),
+        Line::from(vec![Span::styled("Base Models", Theme::header())]),
         Line::from("  No models loaded"),
         Line::from(""),
-        Line::from(vec![
-            Span::styled("LoRA Adapters", Theme::header()),
-        ]),
+        Line::from(vec![Span::styled("LoRA Adapters", Theme::header())]),
         Line::from("  No LoRAs loaded"),
     ];
 
-    let paragraph = Paragraph::new(lines)
-        .block(create_block(" Model Manager "));
+    let paragraph = Paragraph::new(lines).block(create_block(" Model Manager "));
 
     f.render_widget(paragraph, chunks[1]);
 

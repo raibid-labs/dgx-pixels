@@ -1,13 +1,9 @@
+pub mod layout;
 pub mod screens;
 pub mod theme;
-pub mod layout;
 
 use crate::app::App;
-use ratatui::{
-    backend::Backend,
-    Terminal,
-    Frame,
-};
+use ratatui::{backend::Backend, Frame, Terminal};
 
 /// Main render function - dispatches to appropriate screen
 pub fn render<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> anyhow::Result<()> {

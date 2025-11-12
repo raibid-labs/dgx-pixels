@@ -1,18 +1,18 @@
-pub mod generation;
-pub mod comparison;  // NEW: Side-by-side comparison screen
-pub mod queue;
+pub mod comparison; // NEW: Side-by-side comparison screen
 pub mod gallery;
+pub mod generation;
+pub mod help;
 pub mod models;
 pub mod monitor;
+pub mod queue;
 pub mod settings;
-pub mod help;
 
 // Common widgets used across screens
-use ratatui::{
-    widgets::{Block, Borders, Paragraph},
-    text::Span,
-};
 use crate::ui::theme::Theme;
+use ratatui::{
+    text::Span,
+    widgets::{Block, Borders, Paragraph},
+};
 
 /// Create a standard block with title and borders
 pub fn create_block(title: &str) -> Block<'_> {

@@ -170,21 +170,19 @@ impl ZmqClient {
 
         loop {
             match socket.recv_bytes(0) {
-                Ok(data) => {
-                    match deserialize::<ProgressUpdate>(&data) {
-                        Ok(update) => {
-                            debug!("Received update: {:?}", update);
+                Ok(data) => match deserialize::<ProgressUpdate>(&data) {
+                    Ok(update) => {
+                        debug!("Received update: {:?}", update);
 
-                            if update_send.send(update).is_err() {
-                                info!("Main thread disconnected, shutting down PUB-SUB");
-                                break;
-                            }
-                        }
-                        Err(e) => {
-                            warn!("Failed to deserialize update: {}", e);
+                        if update_send.send(update).is_err() {
+                            info!("Main thread disconnected, shutting down PUB-SUB");
+                            break;
                         }
                     }
-                }
+                    Err(e) => {
+                        warn!("Failed to deserialize update: {}", e);
+                    }
+                },
                 Err(zmq::Error::EAGAIN) => {
                     // Timeout, continue
                     continue;
