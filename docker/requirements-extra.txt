@@ -1,0 +1,35 @@
+# DGX-Pixels Additional Python Dependencies
+# These are packages NOT included in NGC PyTorch 24.11 base
+#
+# NGC base already includes:
+# - PyTorch 2.6+ with CUDA 12.6
+# - NumPy 1.26.4 (DO NOT upgrade to 2.x - breaks NVIDIA packages)
+# - SciPy
+# - Pillow
+# - Many other common packages
+#
+# All versions pinned for reproducibility
+# Last updated: 2025-11-11
+
+# HTTP and APIs
+aiohttp>=3.9.0
+
+# Serialization
+msgpack>=1.0.0
+pyyaml>=6.0.0
+
+# Progress bars and CLI
+tqdm>=4.66.0
+click>=8.1.0
+
+# Testing (for development)
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# Utilities
+python-dotenv>=1.0.0
+
+# Image processing (if not in NGC)
+# NOTE: opencv-python-headless may upgrade numpy to 2.x which breaks NVIDIA packages
+# Skip for now or install with --no-deps if needed
+# opencv-python-headless>=4.8.0

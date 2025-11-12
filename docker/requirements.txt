@@ -1,0 +1,40 @@
+# DGX-Pixels Python Dependencies
+# For ARM64 (aarch64) architecture with CUDA 13.0 support
+#
+# All versions pinned for reproducibility
+# Last updated: 2025-11-11
+
+# Deep Learning Framework
+torch>=2.5.0
+torchvision>=0.20.0
+
+# Scientific Computing
+numpy>=1.24.0,<2.0.0
+scipy>=1.11.0
+
+# Image Processing
+Pillow>=10.0.0
+opencv-python-headless>=4.8.0
+
+# Data Handling
+pandas>=2.0.0
+pyarrow>=13.0.0
+
+# HTTP and APIs
+requests>=2.31.0
+aiohttp>=3.9.0
+
+# Serialization
+msgpack>=1.0.0
+pyyaml>=6.0.0
+
+# Progress bars and CLI
+tqdm>=4.66.0
+click>=8.1.0
+
+# Testing (for development)
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# Utilities
+python-dotenv>=1.0.0
