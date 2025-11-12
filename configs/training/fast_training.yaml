@@ -1,0 +1,68 @@
+# Fast Training Configuration (2 hours)
+# For quick iterations and experimentation
+
+# Model Configuration
+model:
+  base: "stabilityai/stable-diffusion-xl-base-1.0"
+  type: "lora"
+  checkpoint_path: "models/checkpoints/sd_xl_base_1.0.safetensors"
+
+# LoRA Parameters (smaller for faster training)
+lora:
+  rank: 16  # Lower rank = faster training
+  alpha: 16
+  dropout: 0.1
+  target_modules:
+    - "to_k"
+    - "to_q"
+    - "to_v"
+    - "to_out.0"
+
+# Training Parameters (reduced steps)
+training:
+  learning_rate: 2e-4  # Higher LR for faster convergence
+  batch_size: 4  # Larger batch if memory allows
+  gradient_accumulation_steps: 1
+  max_train_steps: 1500  # Reduced steps
+  num_train_epochs: 10
+  save_every_n_steps: 500
+  validation_every_n_steps: 500
+
+# Optimization
+optimization:
+  optimizer: "adamw_8bit"
+  lr_scheduler: "cosine"
+  warmup_steps: 50  # Shorter warmup
+  max_grad_norm: 1.0
+
+# Regularization (lighter)
+regularization:
+  min_snr_gamma: null  # Disable for speed
+  noise_offset: 0.0
+
+# Hardware Optimization
+hardware:
+  mixed_precision: "fp16"
+  gradient_checkpointing: true
+  use_xformers: false
+  enable_cpu_offload: false
+
+# Dataset
+dataset:
+  resolution: 1024
+  center_crop: true
+  random_flip: true
+
+# Validation (minimal)
+validation:
+  prompts:
+    - "pixel art knight character, standing pose"
+    - "pixel art potion item, red"
+  num_inference_steps: 15
+  guidance_scale: 7.5
+
+# Output
+output:
+  dir: "./outputs/lora_fast"
+  save_samples: true
+  log_interval: 20

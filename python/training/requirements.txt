@@ -1,0 +1,44 @@
+# LoRA Training Dependencies for DGX-Spark GB10
+
+# Core ML frameworks
+torch>=2.1.0
+torchvision>=0.16.0
+
+# Diffusion models
+diffusers>=0.25.0
+transformers>=4.36.0
+accelerate>=0.25.0
+
+# LoRA / PEFT
+peft>=0.7.0
+
+# Image processing
+Pillow>=10.1.0
+opencv-python>=4.8.0
+
+# Data handling
+numpy>=1.24.0
+scipy>=1.11.0
+
+# Progress and logging
+tqdm>=4.66.0
+tensorboard>=2.15.0
+
+# Configuration
+PyYAML>=6.0.1
+omegaconf>=2.3.0
+
+# Memory optimization
+bitsandbytes>=0.41.0  # 8-bit optimizers
+
+# Auto-captioning (optional)
+# transformers already included above
+
+# Metrics and evaluation
+scikit-learn>=1.3.0
+scikit-image>=0.22.0
+
+# Development
+pytest>=7.4.0
+pytest-cov>=4.1.0
+black>=23.11.0
