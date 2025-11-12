@@ -1,0 +1,25 @@
+# ZeroMQ IPC dependencies
+pyzmq>=25.1.0
+msgpack>=1.0.5
+
+# Async support
+asyncio>=3.4.3
+
+# Type hints and validation
+pydantic>=2.5.0
+typing-extensions>=4.8.0
+
+# HTTP requests (for ComfyUI API)
+requests>=2.31.0
+
+# YAML configuration
+pyyaml>=6.0.1
+
+# System monitoring
+psutil>=5.9.0
+
+# Development dependencies
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+black>=23.11.0
+mypy>=1.7.0
