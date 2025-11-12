@@ -1,0 +1,21 @@
+{
+  "version": "1.0",
+  "timestamp": "2025-11-11T17:40:32.414528+00:00",
+  "gpu": {
+    "name": "NVIDIA GB10",
+    "compute_capability": "12.1",
+    "total_memory_gb": 119.7,
+    "multi_processor_count": 48,
+    "cuda_version": "12.6",
+    "pytorch_version": "2.6.0a0+df5bbc09d1.nv24.11"
+  },
+  "fp32_tflops": 28.26,
+  "fp16_tflops": 10.03,
+  "int8_tops": null,
+  "benchmark_params": {
+    "matrix_size": 8192,
+    "iterations": 100,
+    "warmup": 10
+  },
+  "notes": "INT8 benchmark skipped (torch.int8 matmul not supported in PyTorch)"
+}

@@ -1,0 +1,21 @@
+{
+  "version": "1.0",
+  "timestamp": "2025-11-11T17:40:59Z",
+  "source": "nvidia-smi",
+  "gpu": {
+    "name": "NVIDIA GB10",
+    "driver_version": "580.95.05",
+    "cuda_version": "13.0"
+  },
+  "metrics": {
+    "gpu_utilization_percent": 1,
+    "memory_utilization_percent": 0,
+    "power_watts": 11.61,
+    "temperature_celsius": 54,
+    "sm_clock_mhz": 2411,
+    "memory_clock_mhz": 0
+  },
+  "gpu_utilization_percent": 1,
+  "power_watts": 11.61,
+  "temperature_celsius": 54
+}
