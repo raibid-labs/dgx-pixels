@@ -1,0 +1,133 @@
+################################################################################
+# DGX-Pixels Docker Compose Configuration
+#
+# This compose file defines the complete DGX-Pixels stack with GPU support.
+#
+# Prerequisites:
+#   - Docker Compose v2+
+#   - NVIDIA Container Toolkit installed
+#   - DGX-Spark GB10 hardware
+#
+# Usage:
+#   docker-compose up -d              # Start all services
+#   docker-compose down               # Stop all services
+#   docker-compose logs -f dgx-pixels # View logs
+#   docker-compose exec dgx-pixels bash # Enter container
+#
+################################################################################
+
+version: '3.8'
+
+services:
+  ############################################################################
+  # DGX-Pixels Development Environment
+  ############################################################################
+  dgx-pixels:
+    image: dgx-pixels:dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dgx-pixels-dev
+    hostname: dgx-pixels
+
+    # GPU Configuration
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, compute, utility]
+
+    # Environment Variables
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - CUDA_VISIBLE_DEVICES=0
+      - PYTHONUNBUFFERED=1
+
+    # Volume Mounts
+    volumes:
+      # Project code (for development)
+      - ../:/workspace:rw
+      # Model storage (persistent)
+      - dgx-pixels-models:/models:rw
+      # Generated outputs (persistent)
+      - dgx-pixels-outputs:/outputs:rw
+      # Configuration (persistent)
+      - dgx-pixels-config:/config:rw
+      # Shared memory for multi-process training
+      - /dev/shm:/dev/shm
+
+    # Network Configuration
+    networks:
+      - dgx-pixels-net
+
+    # Restart Policy
+    restart: unless-stopped
+
+    # Health Check
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import torch; assert torch.cuda.is_available()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    # Resource Limits (adjust based on your needs)
+    mem_limit: 100g
+    memswap_limit: 100g
+    shm_size: 16g
+
+    # Security
+    security_opt:
+      - no-new-privileges:true
+
+    # User mapping (use host UID to avoid permission issues)
+    user: "1000:1000"
+
+    # Keep container running
+    stdin_open: true
+    tty: true
+
+    # Default command
+    command: /bin/bash
+
+################################################################################
+# Named Volumes (Persistent Storage)
+################################################################################
+volumes:
+  dgx-pixels-models:
+    name: dgx-pixels-models
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PROJECT_ROOT:-/home/beengud/raibid-labs/dgx-pixels}/models
+
+  dgx-pixels-outputs:
+    name: dgx-pixels-outputs
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PROJECT_ROOT:-/home/beengud/raibid-labs/dgx-pixels}/outputs
+
+  dgx-pixels-config:
+    name: dgx-pixels-config
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PROJECT_ROOT:-/home/beengud/raibid-labs/dgx-pixels}/config
+
+################################################################################
+# Networks
+################################################################################
+networks:
+  dgx-pixels-net:
+    name: dgx-pixels-net
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

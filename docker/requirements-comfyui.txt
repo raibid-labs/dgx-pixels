@@ -1,0 +1,25 @@
+# ComfyUI Dependencies
+# Installed in addition to requirements-extra.txt
+# Last updated: 2025-11-11 (WS-04)
+
+# ComfyUI frontend and templates
+comfyui-frontend-package==1.28.8
+comfyui-workflow-templates==0.2.11
+comfyui-embedded-docs==0.3.1
+
+# Core dependencies (most already in NGC)
+einops
+transformers>=4.37.2
+tokenizers>=0.13.3
+sentencepiece
+safetensors>=0.4.2
+
+# Additional dependencies
+torchsde
+kornia>=0.7.1
+spandrel
+pydantic~=2.0
+pydantic-settings~=2.0
+alembic
+SQLAlchemy
+av>=14.2.0
