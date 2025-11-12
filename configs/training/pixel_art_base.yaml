@@ -1,0 +1,72 @@
+# Base Configuration for Pixel Art LoRA Training
+# Optimized for NVIDIA DGX-Spark GB10
+
+# Model Configuration
+model:
+  base: "stabilityai/stable-diffusion-xl-base-1.0"
+  type: "lora"
+  checkpoint_path: "models/checkpoints/sd_xl_base_1.0.safetensors"
+
+# LoRA Parameters
+lora:
+  rank: 32  # LoRA rank (8-64, higher = more capacity but slower)
+  alpha: 32  # LoRA alpha (typically same as rank)
+  dropout: 0.1  # Dropout for regularization
+  target_modules:
+    - "to_k"
+    - "to_q"
+    - "to_v"
+    - "to_out.0"
+    - "ff.net.0.proj"
+    - "ff.net.2"
+
+# Training Parameters
+training:
+  learning_rate: 1e-4  # Learning rate
+  batch_size: 2  # Batch size (2-4 for GB10)
+  gradient_accumulation_steps: 2  # Effective batch size = 4
+  max_train_steps: 3000  # Total training steps
+  num_train_epochs: 10  # Maximum epochs
+  save_every_n_steps: 500  # Save checkpoint interval
+  validation_every_n_steps: 500  # Validation interval
+
+# Optimization
+optimization:
+  optimizer: "adamw_8bit"  # Memory-efficient optimizer
+  lr_scheduler: "cosine"  # Learning rate schedule
+  warmup_steps: 100  # Warmup steps
+  max_grad_norm: 1.0  # Gradient clipping
+
+# Regularization
+regularization:
+  min_snr_gamma: 5.0  # Min SNR weighting for better training
+  noise_offset: 0.05  # Noise offset
+
+# Hardware Optimization (GB10 specific)
+hardware:
+  mixed_precision: "fp16"  # Use FP16 for Tensor Cores
+  gradient_checkpointing: true  # Save memory
+  use_xformers: false  # Use PyTorch SDPA instead
+  enable_cpu_offload: false  # Keep everything on GPU
+
+# Dataset
+dataset:
+  resolution: 1024  # SDXL requires 1024x1024
+  center_crop: true  # Center crop images
+  random_flip: true  # Random horizontal flip for augmentation
+
+# Validation
+validation:
+  prompts:
+    - "pixel art knight character, standing pose, front view"
+    - "16bit potion item, red, game sprite"
+    - "pixel art mage casting spell, side view"
+    - "medieval sword weapon, pixel art, game item"
+  num_inference_steps: 20
+  guidance_scale: 8.0
+
+# Output
+output:
+  dir: "./outputs/lora_training"
+  save_samples: true  # Save validation samples
+  log_interval: 10  # Log metrics every N steps

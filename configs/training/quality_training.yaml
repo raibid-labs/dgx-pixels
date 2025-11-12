@@ -1,0 +1,78 @@
+# High Quality Training Configuration (4+ hours)
+# For production-ready LoRA models
+
+# Model Configuration
+model:
+  base: "stabilityai/stable-diffusion-xl-base-1.0"
+  type: "lora"
+  checkpoint_path: "models/checkpoints/sd_xl_base_1.0.safetensors"
+
+# LoRA Parameters (larger for more capacity)
+lora:
+  rank: 64  # Higher rank for better quality
+  alpha: 64
+  dropout: 0.1
+  target_modules:
+    - "to_k"
+    - "to_q"
+    - "to_v"
+    - "to_out.0"
+    - "ff.net.0.proj"
+    - "ff.net.2"
+    - "add_k_proj"
+    - "add_v_proj"
+
+# Training Parameters (extended)
+training:
+  learning_rate: 5e-5  # Lower LR for stability
+  batch_size: 2  # Conservative batch size
+  gradient_accumulation_steps: 4  # Effective batch = 8
+  max_train_steps: 5000  # Extended training
+  num_train_epochs: 15
+  save_every_n_steps: 250  # More frequent saves
+  validation_every_n_steps: 250
+
+# Optimization
+optimization:
+  optimizer: "adamw_8bit"
+  lr_scheduler: "cosine"
+  warmup_steps: 200  # Longer warmup
+  max_grad_norm: 1.0
+
+# Regularization (full)
+regularization:
+  min_snr_gamma: 5.0
+  noise_offset: 0.05
+
+# Hardware Optimization
+hardware:
+  mixed_precision: "fp16"
+  gradient_checkpointing: true
+  use_xformers: false
+  enable_cpu_offload: false
+
+# Dataset
+dataset:
+  resolution: 1024
+  center_crop: true
+  random_flip: true
+
+# Validation (comprehensive)
+validation:
+  prompts:
+    - "pixel art knight character, standing pose, front view, full body"
+    - "pixel art knight character, walking animation, side view"
+    - "16bit potion item, red, game sprite, glowing effect"
+    - "pixel art mage casting spell, side view, magical effects"
+    - "medieval sword weapon, pixel art, game item, detailed"
+    - "dungeon floor tile, stone texture, top-down view, seamless"
+    - "pixel art treasure chest, closed, game asset"
+    - "fire spell effect, pixel art, animation frame"
+  num_inference_steps: 25
+  guidance_scale: 9.0
+
+# Output
+output:
+  dir: "./outputs/lora_quality"
+  save_samples: true
+  log_interval: 5
