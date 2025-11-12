@@ -386,8 +386,8 @@ mod tests {
     use ratatui::backend::TestBackend;
     use ratatui::Terminal;
 
-    #[test]
-    fn test_generation_screen_renders() {
+    #[tokio::test]
+    async fn test_generation_screen_renders() {
         let backend = TestBackend::new(80, 24);
         let mut terminal = Terminal::new(backend).unwrap();
         let app = App::new();
@@ -396,8 +396,8 @@ mod tests {
         assert!(result.is_ok());
     }
 
-    #[test]
-    fn test_generation_with_active_job() {
+    #[tokio::test]
+    async fn test_generation_with_active_job() {
         let backend = TestBackend::new(80, 24);
         let mut terminal = Terminal::new(backend).unwrap();
         let mut app = App::new();

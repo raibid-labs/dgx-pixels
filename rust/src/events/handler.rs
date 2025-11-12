@@ -120,24 +120,24 @@ mod tests {
     use super::*;
     use crossterm::event::{KeyEvent, KeyModifiers};
 
-    #[test]
-    fn test_quit_on_q() {
+    #[tokio::test]
+    async fn test_quit_on_q() {
         let mut app = App::new();
         let event = AppEvent::Key(KeyEvent::from(KeyCode::Char('q')));
         EventHandler::handle(&mut app, event);
         assert!(app.should_quit);
     }
 
-    #[test]
-    fn test_quit_on_ctrl_c() {
+    #[tokio::test]
+    async fn test_quit_on_ctrl_c() {
         let mut app = App::new();
         let event = AppEvent::Key(KeyEvent::new(KeyCode::Char('c'), KeyModifiers::CONTROL));
         EventHandler::handle(&mut app, event);
         assert!(app.should_quit);
     }
 
-    #[test]
-    fn test_screen_navigation() {
+    #[tokio::test]
+    async fn test_screen_navigation() {
         let mut app = App::new();
 
         let event = AppEvent::Key(KeyEvent::from(KeyCode::Char('2')));
@@ -149,8 +149,8 @@ mod tests {
         assert_eq!(app.current_screen, Screen::Gallery);
     }
 
-    #[test]
-    fn test_navigate_back() {
+    #[tokio::test]
+    async fn test_navigate_back() {
         let mut app = App::new();
 
         let event = AppEvent::Key(KeyEvent::from(KeyCode::Char('2')));
@@ -161,8 +161,8 @@ mod tests {
         assert_eq!(app.current_screen, Screen::Generation);
     }
 
-    #[test]
-    fn test_help_screen() {
+    #[tokio::test]
+    async fn test_help_screen() {
         let mut app = App::new();
         let event = AppEvent::Key(KeyEvent::from(KeyCode::Char('?')));
         EventHandler::handle(&mut app, event);

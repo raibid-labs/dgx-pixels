@@ -263,15 +263,15 @@ impl App {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_new_app_starts_on_generation_screen() {
+    #[tokio::test]
+    async fn test_new_app_starts_on_generation_screen() {
         let app = App::new();
         assert_eq!(app.current_screen, Screen::Generation);
         assert!(!app.should_quit);
     }
 
-    #[test]
-    fn test_navigation_forward() {
+    #[tokio::test]
+    async fn test_navigation_forward() {
         let mut app = App::new();
         app.navigate_to(Screen::Queue);
         assert_eq!(app.current_screen, Screen::Queue);
@@ -279,8 +279,8 @@ mod tests {
         assert_eq!(app.screen_history[0], Screen::Generation);
     }
 
-    #[test]
-    fn test_navigation_back() {
+    #[tokio::test]
+    async fn test_navigation_back() {
         let mut app = App::new();
         app.navigate_to(Screen::Queue);
         app.navigate_to(Screen::Gallery);
@@ -290,16 +290,16 @@ mod tests {
         assert_eq!(app.current_screen, Screen::Generation);
     }
 
-    #[test]
-    fn test_quit() {
+    #[tokio::test]
+    async fn test_quit() {
         let mut app = App::new();
         assert!(!app.should_quit);
         app.quit();
         assert!(app.should_quit);
     }
 
-    #[test]
-    fn test_input_char() {
+    #[tokio::test]
+    async fn test_input_char() {
         let mut app = App::new();
         app.input_char('h');
         app.input_char('i');
@@ -307,8 +307,8 @@ mod tests {
         assert_eq!(app.cursor_pos, 2);
     }
 
-    #[test]
-    fn test_input_backspace() {
+    #[tokio::test]
+    async fn test_input_backspace() {
         let mut app = App::new();
         app.input_char('h');
         app.input_char('i');
@@ -317,8 +317,8 @@ mod tests {
         assert_eq!(app.cursor_pos, 1);
     }
 
-    #[test]
-    fn test_clear_input() {
+    #[tokio::test]
+    async fn test_clear_input() {
         let mut app = App::new();
         app.input_char('t');
         app.input_char('e');
@@ -329,23 +329,23 @@ mod tests {
         assert_eq!(app.cursor_pos, 0);
     }
 
-    #[test]
-    fn test_navigation_same_screen_no_history() {
+    #[tokio::test]
+    async fn test_navigation_same_screen_no_history() {
         let mut app = App::new();
         app.navigate_to(Screen::Generation);
         assert_eq!(app.screen_history.len(), 0);
     }
 
-    #[test]
-    fn test_add_job() {
+    #[tokio::test]
+    async fn test_add_job() {
         let mut app = App::new();
         app.add_job("job-001".to_string(), "test prompt".to_string());
         assert_eq!(app.active_jobs.len(), 1);
         assert_eq!(app.active_jobs[0].job_id, "job-001");
     }
 
-    #[test]
-    fn test_update_job_status() {
+    #[tokio::test]
+    async fn test_update_job_status() {
         let mut app = App::new();
         app.add_job("job-001".to_string(), "test".to_string());
 
@@ -358,8 +358,8 @@ mod tests {
         assert!(matches!(app.active_jobs[0].status, JobStatus::Running { .. }));
     }
 
-    #[test]
-    fn test_gallery_navigation() {
+    #[tokio::test]
+    async fn test_gallery_navigation() {
         let mut app = App::new();
         app.add_to_gallery(PathBuf::from("/test/img1.png"));
         app.add_to_gallery(PathBuf::from("/test/img2.png"));

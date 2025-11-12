@@ -37,8 +37,8 @@ mod tests {
     use ratatui::backend::TestBackend;
     use ratatui::Terminal;
 
-    #[test]
-    fn test_monitor_screen_renders() {
+    #[tokio::test]
+    async fn test_monitor_screen_renders() {
         let backend = TestBackend::new(80, 24);
         let mut terminal = Terminal::new(backend).unwrap();
         let app = App::new();

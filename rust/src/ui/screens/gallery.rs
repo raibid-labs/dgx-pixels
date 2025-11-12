@@ -236,8 +236,8 @@ mod tests {
     use ratatui::Terminal;
     use std::path::PathBuf;
 
-    #[test]
-    fn test_gallery_screen_renders() {
+    #[tokio::test]
+    async fn test_gallery_screen_renders() {
         let backend = TestBackend::new(80, 24);
         let mut terminal = Terminal::new(backend).unwrap();
         let app = App::new();
@@ -245,8 +245,8 @@ mod tests {
         assert!(result.is_ok());
     }
 
-    #[test]
-    fn test_gallery_with_images() {
+    #[tokio::test]
+    async fn test_gallery_with_images() {
         let backend = TestBackend::new(80, 24);
         let mut terminal = Terminal::new(backend).unwrap();
         let mut app = App::new();

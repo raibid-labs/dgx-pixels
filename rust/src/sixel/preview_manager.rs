@@ -330,8 +330,8 @@ impl CacheStats {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_preview_manager_creation() {
+    #[tokio::test]
+    async fn test_preview_manager_creation() {
         let manager = PreviewManager::new();
         let stats = manager.cache_stats();
         assert_eq!(stats.entries, 0);
@@ -350,8 +350,8 @@ mod tests {
         assert!((stats.size_mb() - 25.0).abs() < 0.1);
     }
 
-    #[test]
-    fn test_has_preview_empty() {
+    #[tokio::test]
+    async fn test_has_preview_empty() {
         let manager = PreviewManager::new();
         let path = PathBuf::from("/nonexistent/image.png");
         assert!(!manager.has_preview(&path));
