@@ -1,0 +1,29 @@
+# DGX-Pixels Backend Worker Dependencies
+
+# Core dependencies (from base requirements.txt)
+pyzmq>=25.1.0
+msgpack>=1.0.5
+
+# HTTP client for ComfyUI API
+requests>=2.31.0
+
+# Configuration management
+pyyaml>=6.0
+
+# Async support
+asyncio>=3.4.3
+
+# Type hints and validation
+pydantic>=2.5.0
+typing-extensions>=4.8.0
+
+# Development dependencies
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-timeout>=2.2.0
+black>=23.11.0
+mypy>=1.7.0
+
+# Testing utilities
+responses>=0.24.0  # Mock HTTP responses
+pytest-mock>=3.12.0

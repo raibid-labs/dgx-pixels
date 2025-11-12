@@ -1,0 +1,126 @@
+# DGX-Pixels Backend Worker Configuration
+# This file configures the Python AI backend worker
+
+# ZeroMQ Communication
+zmq:
+  # REQ-REP endpoint for request/response
+  req_rep_addr: "tcp://127.0.0.1:5555"
+  req_rep_port: 5555
+
+  # PUB-SUB endpoint for progress updates
+  pub_sub_addr: "tcp://127.0.0.1:5556"
+  pub_sub_port: 5556
+
+  # Bind to localhost only (use 0.0.0.0 for network access)
+  bind_address: "127.0.0.1"
+
+# ComfyUI Integration
+comfyui:
+  # ComfyUI HTTP API endpoint
+  api_url: "http://localhost:8188"
+
+  # Request timeout (seconds)
+  timeout_s: 300
+
+  # Progress polling interval (milliseconds)
+  poll_interval_ms: 100
+
+  # Connection retry settings
+  max_retries: 3
+  retry_delay_s: 2.0
+
+# Worker Configuration
+worker:
+  # Maximum concurrent jobs (currently single-threaded)
+  max_concurrent_jobs: 1
+
+  # Progress update publishing interval (milliseconds)
+  progress_update_interval_ms: 100
+
+  # Job queue settings
+  queue_max_size: 100
+
+  # Auto-cleanup completed jobs older than this (seconds)
+  cleanup_age_s: 3600
+
+# Workflow Configuration
+workflows:
+  # Directory containing workflow JSON files
+  workflow_dir: "/home/beengud/raibid-labs/dgx-pixels/workflows"
+
+  # Default workflow for text-to-image
+  default_workflow: "sprite_optimized.json"
+
+  # Workflow selection rules (future feature)
+  # batch: "batch_optimized.json"
+  # img2img: "img2img_sdxl.json"
+
+# Output Configuration
+output:
+  # Directory for generated images
+  output_dir: "/home/beengud/raibid-labs/dgx-pixels/outputs"
+
+  # Filename pattern (supports: {job_id}, {timestamp}, {prompt})
+  filename_pattern: "{job_id}_{timestamp}.png"
+
+  # Image format
+  format: "png"
+
+  # Keep intermediate previews
+  keep_previews: false
+
+# Model Configuration
+models:
+  # Base models directory
+  models_dir: "/workspace/models"
+
+  # Checkpoint directory
+  checkpoint_dir: "/workspace/models/checkpoints"
+
+  # LoRA directory
+  lora_dir: "/workspace/models/loras"
+
+  # VAE directory
+  vae_dir: "/workspace/models/vae"
+
+  # Auto-scan models on startup
+  auto_scan: true
+
+# Performance Tuning
+performance:
+  # Enable FP16 inference (faster, lower memory)
+  fp16: true
+
+  # Enable xformers memory-efficient attention
+  xformers: true
+
+  # PyTorch CUDA settings
+  cuda_malloc_backend: "native"
+
+  # Batch processing optimization
+  batch_size: 1
+
+# Logging Configuration
+logging:
+  # Log level (DEBUG, INFO, WARNING, ERROR)
+  level: "INFO"
+
+  # Log file path (null for console only)
+  file: null
+
+  # Log format
+  format: "[%(asctime)s] %(levelname)s - %(message)s"
+
+  # Enable performance logging
+  log_performance: true
+
+# Development Settings
+development:
+  # Enable debug mode
+  debug: false
+
+  # Enable verbose logging
+  verbose: false
+
+  # Mock ComfyUI (for testing without GPU)
+  mock_comfyui: false
