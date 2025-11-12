@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+models/checkpoints/*.safetensors
+models/checkpoints/*.ckpt
+models/loras/*.safetensors
+!models/checkpoints/.gitkeep
+!models/loras/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# Build artifacts
+target/
+Cargo.lock
