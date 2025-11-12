@@ -1,0 +1,130 @@
+# Batch Processing Profiles
+#
+# Pre-configured profiles for different use cases:
+# - speed: Maximum throughput (batch-8, fewer steps)
+# - balanced: Balance between speed and quality (batch-4)
+# - quality: Best quality (batch-1, more steps)
+
+profiles:
+  speed:
+    name: "Speed"
+    description: "Maximum throughput - batch-8, optimized for quantity"
+    batch_size: 8
+    steps: 15
+    cfg_scale: 7.0
+    sampler: "euler_ancestral"
+    scheduler: "karras"
+    # Expected performance: ~20-30 images/minute
+    # Use for: Initial ideation, rapid prototyping, batch generation
+
+  balanced:
+    name: "Balanced"
+    description: "Balance speed and quality - batch-4, production-ready"
+    batch_size: 4
+    steps: 20
+    cfg_scale: 8.0
+    sampler: "euler_ancestral"
+    scheduler: "karras"
+    # Expected performance: ~15-20 images/minute
+    # Use for: Production sprites, game assets, standard workflow
+
+  quality:
+    name: "Quality"
+    description: "Best quality - batch-1, maximum detail"
+    batch_size: 1
+    steps: 30
+    cfg_scale: 8.5
+    sampler: "dpmpp_2m"
+    scheduler: "karras"
+    # Expected performance: ~8-12 images/minute
+    # Use for: Hero sprites, key assets, final polish
+
+  # Custom profiles
+  animation:
+    name: "Animation Frames"
+    description: "Optimized for animation frame generation"
+    batch_size: 8
+    steps: 20
+    cfg_scale: 8.0
+    sampler: "euler_ancestral"
+    scheduler: "karras"
+    # Use fixed seeds for consistency across frames
+    # Expected performance: ~20-25 images/minute
+
+  tileset:
+    name: "Tileset Generation"
+    description: "Optimized for tile generation"
+    batch_size: 8
+    steps: 18
+    cfg_scale: 7.5
+    sampler: "euler_ancestral"
+    scheduler: "karras"
+    # Use for: Terrain tiles, wall tiles, floor tiles
+    # Expected performance: ~22-28 images/minute
+
+# Model-specific optimizations
+model_optimizations:
+  sdxl_base:
+    # Base SDXL model
+    model_name: "sd_xl_base_1.0.safetensors"
+    max_batch_size: 8
+    optimal_batch_size: 4
+    vram_usage_gb:
+      batch_1: 10
+      batch_4: 22
+      batch_8: 38
+
+  sdxl_with_lora:
+    # SDXL with custom LoRA
+    model_name: "sd_xl_base_1.0.safetensors"
+    lora_enabled: true
+    max_batch_size: 8
+    optimal_batch_size: 4
+    vram_usage_gb:
+      batch_1: 11
+      batch_4: 24
+      batch_8: 42
+
+# Hardware constraints (DGX-Spark GB10)
+hardware:
+  max_vram_gb: 119  # Safe limit (total 128GB unified memory)
+  max_concurrent_batches: 1  # Only 1 GPU
+  enable_mixed_precision: true
+  enable_xformers: true
+  enable_sdpa: true
+
+# Queue management
+queue:
+  max_queue_size: 100
+  priority_levels:
+    - urgent  # 0
+    - high    # 1
+    - normal  # 2
+    - low     # 3
+
+  # Auto-cleanup completed jobs after 1 hour
+  cleanup_completed_after_s: 3600
+
+# Output management
+output:
+  base_directory: "outputs/batches"
+  filename_template: "sprite_{index:04d}_{seed}"
+  save_metadata: true
+  save_workflow: true  # Save workflow JSON with each batch
+
+  # Automatic cleanup of old batches
+  cleanup_enabled: false
+  cleanup_after_days: 30
+
+# Performance targets
+performance_targets:
+  min_throughput_images_per_minute: 20
+  max_generation_time_per_image_s: 3.5
+  target_gpu_utilization_percent: 80
+
+# Monitoring
+monitoring:
+  enable_gpu_monitoring: true
+  enable_memory_profiling: false
+  log_generation_times: true
+  track_throughput: true
