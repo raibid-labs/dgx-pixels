@@ -1,0 +1,107 @@
+{
+  "1": {
+    "inputs": {
+      "ckpt_name": "sd_xl_base_1.0.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load SDXL Base"
+    }
+  },
+  "2": {
+    "inputs": {
+      "text": "pixel art game sprite, 16bit retro style, game character, clean simple background, centered composition, sharp crisp pixels, video game art",
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Pixel Art Prompt"
+    }
+  },
+  "3": {
+    "inputs": {
+      "text": "blurry, smooth, antialiased, 3d render, photorealistic, low quality, watermark, text, signature",
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Negative Prompt (Anti-blur)"
+    }
+  },
+  "4": {
+    "inputs": {
+      "width": 1024,
+      "height": 1024,
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "Square Canvas (1024x1024)"
+    }
+  },
+  "5": {
+    "inputs": {
+      "seed": 42,
+      "steps": 25,
+      "cfg": 9.0,
+      "sampler_name": "euler_ancestral",
+      "scheduler": "karras",
+      "denoise": 1.0,
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "2",
+        0
+      ],
+      "negative": [
+        "3",
+        0
+      ],
+      "latent_image": [
+        "4",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler (Pixel Art Settings)"
+    }
+  },
+  "6": {
+    "inputs": {
+      "samples": [
+        "5",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "7": {
+    "inputs": {
+      "filename_prefix": "pixel_art",
+      "images": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Pixel Art"
+    }
+  }
+}
