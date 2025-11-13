@@ -1,0 +1,132 @@
+# DGX-Pixels MCP Server Configuration
+# Configuration for FastMCP server that enables Bevy integration
+
+mcp_server:
+  name: "dgx-pixels"
+  version: "0.1.0"
+  description: "AI-powered pixel art sprite generation for Bevy game engine"
+
+  # MCP transports
+  transports:
+    - stdio  # Standard input/output (default for MCP)
+    - sse    # Server-Sent Events (for web clients)
+
+  # Server settings
+  host: "127.0.0.1"
+  port: 3000  # Only used for SSE transport
+
+# Backend Worker Connection
+backend:
+  # ZeroMQ REQ-REP endpoint
+  zmq_endpoint: "tcp://localhost:5555"
+
+  # Request timeout (seconds)
+  timeout_s: 300
+
+  # Connection retry settings
+  max_retries: 3
+  retry_delay_s: 2.0
+
+  # ComfyUI URL (for health checks)
+  comfyui_url: "http://localhost:8188"
+
+# Generation Settings
+generation:
+  # Default workflow template
+  default_workflow: "sprite_optimized.json"
+
+  # Workflow directory
+  workflow_dir: "/home/beengud/raibid-labs/dgx-pixels/workflows"
+
+  # Default generation parameters
+  default_resolution: "1024x1024"
+  default_steps: 30
+  default_cfg_scale: 7.5
+  default_model: "SDXL Base 1.0"
+
+  # Output directory
+  output_dir: "/home/beengud/raibid-labs/dgx-pixels/outputs"
+
+  # Batch generation limits
+  max_batch_size: 20
+  batch_timeout_s: 600
+
+# Bevy Integration
+deployment:
+  # Default Bevy assets directory (can be overridden per request)
+  bevy_assets_base: "/path/to/bevy/assets"
+
+  # Sprite subdirectory within assets
+  sprite_subdir: "sprites"
+
+  # Asset manifest file (optional)
+  manifest_file: "asset_manifest.json"
+
+  # File naming conventions
+  filename_pattern: "{sprite_name}.png"
+
+  # Validate Bevy directory structure
+  validate_bevy_structure: true
+
+# Validation Rules
+validation:
+  # Prompt validation
+  min_prompt_length: 3
+  max_prompt_length: 500
+
+  # Resolution validation
+  allowed_resolutions:
+    - "512x512"
+    - "1024x1024"
+    - "2048x2048"
+
+  # Steps validation
+  min_steps: 10
+  max_steps: 100
+
+  # CFG scale validation
+  min_cfg_scale: 1.0
+  max_cfg_scale: 20.0
+
+  # Style validation
+  allowed_styles:
+    - "pixel_art"
+    - "16bit"
+    - "8bit"
+    - "retro"
+    - "game_sprite"
+
+# Error Handling
+error_handling:
+  # Return detailed error messages
+  detailed_errors: true
+
+  # Include stack traces (development only)
+  include_stack_trace: false
+
+  # Retry failed generations
+  retry_on_failure: true
+  max_retries: 2
+
+# Logging
+logging:
+  level: "INFO"
+  format: "[%(asctime)s] %(levelname)s - %(name)s - %(message)s"
+
+  # Log MCP tool calls
+  log_tool_calls: true
+
+  # Log generation progress
+  log_progress: true
+
+# Performance
+performance:
+  # Enable response caching
+  cache_enabled: false
+  cache_ttl_s: 300
+
+  # Connection pooling
+  connection_pool_size: 5
+
+  # Async request timeout
+  async_timeout_s: 30

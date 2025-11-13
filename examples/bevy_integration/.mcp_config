@@ -1,0 +1,27 @@
+{
+  "server": {
+    "command": "python",
+    "args": ["-m", "python.mcp_server.server"],
+    "cwd": "../..",
+    "description": "DGX-Pixels MCP Server for sprite generation"
+  },
+  "tools": {
+    "generate_sprite": {
+      "timeout": 60000,
+      "description": "Generate a single sprite with SDXL + LoRA"
+    },
+    "generate_batch": {
+      "timeout": 120000,
+      "description": "Generate multiple sprites in batch"
+    },
+    "list_models": {
+      "timeout": 5000,
+      "description": "List available SDXL checkpoints and LoRA models"
+    }
+  },
+  "connection": {
+    "type": "stdio",
+    "retry_attempts": 3,
+    "retry_delay_ms": 1000
+  }
+}

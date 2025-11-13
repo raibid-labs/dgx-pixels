@@ -1,7 +1,7 @@
 ################################################################################
 # DGX-Pixels Docker Compose Configuration
 #
-# This compose file defines the complete DGX-Pixels stack with GPU support.
+# Complete production stack with AI generation services and observability.
 #
 # Prerequisites:
 #   - Docker Compose v2+
@@ -9,10 +9,18 @@
 #   - DGX-Spark GB10 hardware
 #
 # Usage:
-#   docker-compose up -d              # Start all services
-#   docker-compose down               # Stop all services
-#   docker-compose logs -f dgx-pixels # View logs
-#   docker-compose exec dgx-pixels bash # Enter container
+#   docker compose up -d              # Start all services
+#   docker compose down               # Stop all services
+#   docker compose logs -f comfyui    # View ComfyUI logs
+#   docker compose ps                 # Check service status
+#
+# Service URLs:
+#   - ComfyUI:        http://localhost:8188
+#   - Backend API:    tcp://localhost:5555 (ZeroMQ)
+#   - Metrics:        http://localhost:8000/metrics
+#   - Prometheus:     http://localhost:9090
+#   - Grafana:        http://localhost:3000 (admin/admin)
+#   - DCGM Exporter:  http://localhost:9400/metrics
 #
 ################################################################################
 
@@ -20,15 +28,223 @@ version: '3.8'
 
 services:
   ############################################################################
-  # DGX-Pixels Development Environment
+  # AI Generation Stack
   ############################################################################
-  dgx-pixels:
+
+  comfyui:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.comfyui
+    image: dgx-pixels-comfyui:latest
+    container_name: dgx-pixels-comfyui
+    hostname: comfyui
+
+    # GPU Configuration
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu, compute, utility]
+
+    # Environment Variables
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - CUDA_VISIBLE_DEVICES=0
+      - PYTHONUNBUFFERED=1
+
+    # Volume Mounts
+    volumes:
+      # ComfyUI code (optional - for development)
+      - ../ComfyUI:/workspace/ComfyUI:rw
+      # Model storage (persistent)
+      - comfyui-models:/workspace/models:rw
+      # Workflows (read-only templates)
+      - ../workflows:/workspace/workflows:ro
+      # Generated outputs (persistent)
+      - comfyui-outputs:/workspace/outputs:rw
+      # Shared memory for performance
+      - /dev/shm:/dev/shm
+
+    # Network Configuration
+    networks:
+      - dgx-pixels-net
+
+    # Ports
+    ports:
+      - "8188:8188"
+
+    # Working directory
+    working_dir: /workspace/ComfyUI
+
+    # Command
+    command: python main.py --listen 0.0.0.0 --port 8188
+
+    # Health Check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8188/system_stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    # Restart Policy
+    restart: unless-stopped
+
+    # Security
+    security_opt:
+      - no-new-privileges:true
+
+  backend-worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    image: dgx-pixels-backend:latest
+    container_name: dgx-pixels-backend
+    hostname: backend-worker
+
+    # GPU Configuration (optional - for future GPU-accelerated processing)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu, compute, utility]
+
+    # Dependencies
+    depends_on:
+      comfyui:
+        condition: service_healthy
+
+    # Environment Variables
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - ZMQ_REQ_REP_ADDR=tcp://0.0.0.0:5555
+      - ZMQ_PUB_SUB_ADDR=tcp://0.0.0.0:5556
+      - COMFYUI_URL=http://comfyui:8188
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+
+    # Volume Mounts
+    volumes:
+      # Application code (for development)
+      - ../python:/app/python:rw
+      # Workflows (read-only templates)
+      - ../workflows:/app/workflows:ro
+      # Model metadata
+      - ../models:/app/models:ro
+      # Generated outputs (persistent)
+      - backend-outputs:/app/outputs:rw
+      # Configuration
+      - ../config:/app/config:ro
+      # Logs
+      - backend-logs:/app/logs:rw
+
+    # Network Configuration
+    networks:
+      - dgx-pixels-net
+
+    # Ports
+    ports:
+      - "5555:5555"  # ZeroMQ REQ-REP
+      - "5556:5556"  # ZeroMQ PUB-SUB
+      - "8000:8000"  # Prometheus metrics
+
+    # Working directory
+    working_dir: /app
+
+    # Command
+    command: python -m python.workers.zmq_server
+
+    # Health Check
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import zmq; ctx = zmq.Context(); sock = ctx.socket(zmq.REQ); sock.setsockopt(zmq.RCVTIMEO, 5000); sock.connect('tcp://localhost:5555'); sock.close(); ctx.term()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    # Restart Policy
+    restart: unless-stopped
+
+    # Security
+    security_opt:
+      - no-new-privileges:true
+
+  mcp-server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.mcp
+    image: dgx-pixels-mcp:latest
+    container_name: dgx-pixels-mcp
+    hostname: mcp-server
+
+    # Dependencies
+    depends_on:
+      backend-worker:
+        condition: service_healthy
+
+    # Environment Variables
+    environment:
+      - ZMQ_ENDPOINT=tcp://backend-worker:5555
+      - COMFYUI_URL=http://comfyui:8188
+      - PYTHONUNBUFFERED=1
+      - DGX_PIXELS_CONFIG=/app/config/mcp_config.yaml
+
+    # Volume Mounts
+    volumes:
+      # MCP server code (for development)
+      - ../python/mcp_server:/app/mcp_server:rw
+      # Configuration
+      - ../config:/app/config:ro
+      # Generated outputs (shared with backend)
+      - backend-outputs:/app/outputs:ro
+      # Logs
+      - mcp-logs:/app/logs:rw
+
+    # Network Configuration
+    networks:
+      - dgx-pixels-net
+
+    # Ports (optional - for HTTP transport)
+    ports:
+      - "3001:3001"
+
+    # Working directory
+    working_dir: /app
+
+    # Command
+    command: python -m mcp_server.server
+
+    # Health Check
+    healthcheck:
+      test: ["CMD", "python3", "-c", "from mcp_server import server"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    # Restart Policy
+    restart: unless-stopped
+
+    # Security
+    security_opt:
+      - no-new-privileges:true
+
+  ############################################################################
+  # Development Environment (Optional)
+  ############################################################################
+  dgx-pixels-dev:
     image: dgx-pixels:dev
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: dgx-pixels-dev
     hostname: dgx-pixels
+    profiles:
+      - dev  # Only start with --profile dev
 
     # GPU Configuration
     deploy:
@@ -49,7 +265,7 @@ services:
     # Volume Mounts
     volumes:
       # Project code (for development)
-      - ../:/workspace:rw
+      - ..:/workspace:rw
       # Model storage (persistent)
       - dgx-pixels-models:/models:rw
       # Generated outputs (persistent)
@@ -63,6 +279,11 @@ services:
     networks:
       - dgx-pixels-net
 
+    # Ports
+    ports:
+      # Metrics endpoint
+      - "8001:8001"
+
     # Restart Policy
     restart: unless-stopped
 
@@ -74,7 +295,7 @@ services:
       retries: 3
       start_period: 10s
 
-    # Resource Limits (adjust based on your needs)
+    # Resource Limits
     mem_limit: 100g
     memswap_limit: 100g
     shm_size: 16g
@@ -83,9 +304,6 @@ services:
     security_opt:
       - no-new-privileges:true
 
-    # User mapping (use host UID to avoid permission issues)
-    user: "1000:1000"
-
     # Keep container running
     stdin_open: true
     tty: true
@@ -93,10 +311,201 @@ services:
     # Default command
     command: /bin/bash
 
+  ############################################################################
+  # Observability Stack
+  ############################################################################
+
+  dcgm-exporter:
+    image: nvcr.io/nvidia/k8s/dcgm-exporter:3.1.7-3.1.4-ubuntu22.04
+    container_name: dgx-pixels-dcgm
+    hostname: dcgm-exporter
+
+    # GPU access required for DCGM
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, utility]
+
+    # Environment
+    environment:
+      - DCGM_EXPORTER_LISTEN=:9400
+      - DCGM_EXPORTER_KUBERNETES=false
+
+    # Volumes
+    volumes:
+      - ../deploy/dcgm/dcgm-exporter.yaml:/etc/dcgm-exporter/default-counters.csv:ro
+
+    # Network
+    networks:
+      - dgx-pixels-net
+
+    # Ports
+    ports:
+      - "9400:9400"
+
+    # Restart
+    restart: unless-stopped
+
+    # Health Check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9400/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: dgx-pixels-prometheus
+    hostname: prometheus
+
+    # Volumes
+    volumes:
+      - ../deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../deploy/prometheus/alerts:/etc/prometheus/alerts:ro
+      - prometheus-data:/prometheus
+
+    # Network
+    networks:
+      - dgx-pixels-net
+
+    # Ports
+    ports:
+      - "9090:9090"
+
+    # Command
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--storage.tsdb.retention.size=50GB'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+
+    # Restart
+    restart: unless-stopped
+
+    # Health Check
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    # Dependencies
+    depends_on:
+      - dcgm-exporter
+      - backend-worker
+
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: dgx-pixels-grafana
+    hostname: grafana
+
+    # Volumes
+    volumes:
+      - ../deploy/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ../deploy/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - grafana-data:/var/lib/grafana
+
+    # Network
+    networks:
+      - dgx-pixels-net
+
+    # Ports
+    ports:
+      - "3000:3000"
+
+    # Environment
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=redis-datasource
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+
+    # Restart
+    restart: unless-stopped
+
+    # Health Check
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    # Dependencies
+    depends_on:
+      - prometheus
+
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    container_name: dgx-pixels-node-exporter
+    hostname: node-exporter
+
+    # Network
+    networks:
+      - dgx-pixels-net
+
+    # Ports
+    ports:
+      - "9100:9100"
+
+    # Command - expose host metrics
+    command:
+      - '--path.rootfs=/host'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+
+    # Volumes - mount host filesystem
+    volumes:
+      - /:/host:ro,rslave
+
+    # Restart
+    restart: unless-stopped
+
+    # Health Check
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9100/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 ################################################################################
 # Named Volumes (Persistent Storage)
 ################################################################################
 volumes:
+  # ComfyUI volumes
+  comfyui-models:
+    name: dgx-pixels-comfyui-models
+    driver: local
+
+  comfyui-outputs:
+    name: dgx-pixels-comfyui-outputs
+    driver: local
+
+  # Backend volumes
+  backend-outputs:
+    name: dgx-pixels-backend-outputs
+    driver: local
+
+  backend-logs:
+    name: dgx-pixels-backend-logs
+    driver: local
+
+  # MCP server volumes
+  mcp-logs:
+    name: dgx-pixels-mcp-logs
+    driver: local
+
+  # Development volumes (bind mounts to host)
   dgx-pixels-models:
     name: dgx-pixels-models
     driver: local
@@ -120,6 +529,13 @@ volumes:
       type: none
       o: bind
       device: ${PROJECT_ROOT:-/home/beengud/raibid-labs/dgx-pixels}/config
+
+  # Observability volumes
+  prometheus-data:
+    name: dgx-pixels-prometheus-data
+
+  grafana-data:
+    name: dgx-pixels-grafana-data
 
 ################################################################################
 # Networks

@@ -1,0 +1,50 @@
+player:
+  prompt: "pixel art medieval knight character sprite, 32x32, front view, blue armor"
+  style: "pixel_art"
+  resolution: "1024x1024"
+
+enemies:
+  goblin:
+    prompt: "pixel art goblin enemy sprite, 32x32, green skin, carrying club"
+    style: "pixel_art"
+    resolution: "1024x1024"
+  skeleton:
+    prompt: "pixel art skeleton warrior sprite, 32x32, white bones, sword"
+    style: "pixel_art"
+    resolution: "1024x1024"
+  dragon:
+    prompt: "pixel art dragon sprite, 64x64, red scales, breathing fire"
+    style: "pixel_art"
+    resolution: "1024x1024"
+
+tiles:
+  grass:
+    prompt: "pixel art grass ground tile, 32x32, seamless, top-down view"
+    style: "pixel_art"
+    resolution: "1024x1024"
+  stone_wall:
+    prompt: "pixel art stone wall tile, 32x32, seamless, top-down view"
+    style: "pixel_art"
+    resolution: "1024x1024"
+  water:
+    prompt: "pixel art water tile, 32x32, seamless, animated, top-down view"
+    style: "pixel_art"
+    resolution: "1024x1024"
+  dirt:
+    prompt: "pixel art dirt ground tile, 32x32, seamless, top-down view"
+    style: "pixel_art"
+    resolution: "1024x1024"
+
+items:
+  health_potion:
+    prompt: "pixel art health potion item, 16x16, red liquid, glass bottle"
+    style: "pixel_art"
+    resolution: "1024x1024"
+  sword:
+    prompt: "pixel art iron sword item, 16x16, medieval style"
+    style: "pixel_art"
+    resolution: "1024x1024"
+  shield:
+    prompt: "pixel art wooden shield item, 16x16, medieval style"
+    style: "pixel_art"
+    resolution: "1024x1024"

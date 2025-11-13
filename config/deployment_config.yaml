@@ -1,0 +1,210 @@
+# Asset Deployment Configuration for DGX-Pixels
+#
+# This configuration defines rules and conventions for deploying
+# AI-generated sprites to Bevy game engine projects.
+
+# Naming Convention
+naming:
+  # Pattern: {category}_{name}_{variant}_{frame}.{ext}
+  # Examples:
+  #   - character_knight_idle_0001.png
+  #   - enemy_goblin_attack_0003.png
+  #   - tile_grass_001.png
+  #   - ui_button_hover.png
+  pattern: "^([a-z]+)_([a-z0-9]+)(?:_([a-z0-9]+))?(?:_(\\d{3,4}))?\\.png$"
+
+  # Valid categories
+  categories:
+    - character
+    - enemy
+    - npc
+    - item
+    - tile
+    - ui
+    - effect
+    - projectile
+    - environment
+    - background
+
+  # Enforce naming convention (if false, only warn)
+  enforce: true
+
+# Validation Rules
+validation:
+  # Allowed image formats
+  formats:
+    - PNG
+
+  # Allowed color modes
+  color_modes:
+    - RGB
+    - RGBA
+    - L  # Grayscale
+
+  # Resolution constraints
+  resolution:
+    # Recommended power-of-2 sizes
+    recommended: [128, 256, 512, 1024, 2048]
+
+    # Enforce power-of-2 (if false, only warn)
+    enforce_power_of_2: false
+
+    # Allow non-square images
+    allow_non_square: true
+
+    # Minimum resolution
+    min_width: 16
+    min_height: 16
+
+    # Maximum resolution
+    max_width: 4096
+    max_height: 4096
+
+  # File size limits
+  max_file_size_mb: 10
+
+  # Fail on warnings (if false, continue despite warnings)
+  fail_on_warnings: false
+
+# Post-Processing
+post_processing:
+  # Enable post-processing
+  enabled: false
+
+  # Default preset (pixel_art, retro, modern, minimal)
+  default_preset: "pixel_art"
+
+  # Preset configurations
+  presets:
+    pixel_art:
+      quantize_colors: true
+      max_colors: 64
+      auto_crop: true
+      optimize: true
+      compression_level: 9
+
+    retro:
+      quantize_colors: true
+      max_colors: 16
+      auto_crop: true
+      optimize: true
+      compression_level: 9
+
+    modern:
+      quantize_colors: false
+      auto_crop: true
+      optimize: true
+      compression_level: 6
+
+    minimal:
+      quantize_colors: false
+      auto_crop: false
+      optimize: true
+      compression_level: 6
+
+# Deployment Settings
+deployment:
+  # Target Bevy structure
+  bevy:
+    # Validate Bevy project structure before deployment
+    validate_structure: true
+
+    # Expected directories (relative to project root)
+    required_dirs:
+      - assets
+      - assets/sprites
+
+    # Subdirectory for sprites (relative to assets/)
+    sprite_subdir: "sprites"
+
+    # Subdirectory for tiles (relative to assets/)
+    tile_subdir: "tiles"
+
+    # Subdirectory for UI assets (relative to assets/)
+    ui_subdir: "ui"
+
+  # File naming in deployment
+  filename:
+    # Pattern for deployed files
+    # Variables: {category}, {name}, {variant}, {frame}, {timestamp}
+    pattern: "{name}.png"
+
+    # Preserve original filename
+    preserve_original: false
+
+    # Add timestamp suffix
+    add_timestamp: false
+
+  # Backup settings
+  backup:
+    # Create backup before overwriting
+    enabled: true
+
+    # Backup directory (relative to assets/)
+    backup_dir: ".backup"
+
+    # Keep last N backups
+    keep_last: 5
+
+  # Hot reload compatibility
+  hot_reload:
+    # Wait after deployment for file system to settle
+    settle_time_ms: 100
+
+    # Verify file was written successfully
+    verify_write: true
+
+# Manifest Generation
+manifest:
+  # Enable manifest generation
+  enabled: true
+
+  # Manifest filename
+  filename: "sprites_manifest.json"
+
+  # Format (json, toml)
+  format: "json"
+
+  # Include detailed metadata
+  include_metadata: true
+
+  # Metadata fields to include
+  metadata_fields:
+    - name
+    - path
+    - category
+    - variant
+    - frames
+    - resolution
+    - generated_at
+    - file_size_kb
+
+  # Update strategy (replace, merge, append)
+  update_strategy: "merge"
+
+# Logging
+logging:
+  # Log level (DEBUG, INFO, WARNING, ERROR)
+  level: "INFO"
+
+  # Log deployment actions
+  log_deployments: true
+
+  # Log file path
+  log_file: "logs/deployment.log"
+
+  # Console output
+  console_output: true
+
+# Performance
+performance:
+  # Parallel processing
+  parallel:
+    enabled: true
+    max_workers: 4
+
+  # Caching
+  cache:
+    enabled: true
+    cache_dir: ".cache/deployment"
+    ttl_hours: 24

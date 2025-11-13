@@ -1,0 +1,25 @@
+# Rust
+/target/
+Cargo.lock
+
+# Generated sprites
+assets/sprites/*.png
+assets/tiles/*.png
+
+# Keep placeholder directory but ignore contents
+assets/placeholder/*.png
+!assets/placeholder/.gitkeep
+
+# Bevy
+*.profdata
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

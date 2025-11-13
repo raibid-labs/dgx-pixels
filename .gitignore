@@ -27,6 +27,14 @@ models/loras/*.safetensors
 !models/checkpoints/.gitkeep
 !models/loras/.gitkeep
 
+# Generated outputs
+outputs/*.png
+outputs/.processed/
+!outputs/.gitkeep
+
+# Deployment cache
+.cache/
+
 # Logs
 *.log
 logs/
@@ -34,3 +42,9 @@ logs/
 # Build artifacts
 target/
 Cargo.lock
+
+# Bevy example assets (generated)
+examples/bevy_integration/assets/sprites/*.png
+examples/bevy_integration/assets/.backup/
+examples/bevy_integration/assets/sprites_manifest.json
+!examples/bevy_integration/assets/sprites/.gitkeep

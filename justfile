@@ -51,7 +51,7 @@ init:
     echo ""
     echo "Next steps:"
     echo "  1. Run 'just validate-gpu' to check GPU"
-    echo "  2. Run 'just test' to verify setup"
+    echo "  2. Run 'just docker-setup' for Docker deployment"
     echo "  3. See 'just --list' for all commands"
 
 # Validate DGX-Spark hardware prerequisites
@@ -342,25 +342,119 @@ orch-integration:
 
 # === Docker Commands ===
 
-# Build Docker image
-docker-build TAG="latest":
-    docker build -t dgx-pixels:{{TAG}} .
+# Setup Docker environment (first-time)
+docker-setup:
+    #!/usr/bin/env bash
+    ./scripts/setup_docker.sh
 
-# Run Docker container with GPU support
-docker-run TAG="latest":
-    docker run --gpus all -it --rm dgx-pixels:{{TAG}}
+# Build all Docker images
+docker-build:
+    cd docker && docker compose build
 
-# Start full stack with Docker Compose
-up:
-    docker-compose up -d
+# Build specific service image
+docker-build-service SERVICE:
+    cd docker && docker compose build {{SERVICE}}
 
-# Stop full stack
-down:
-    docker-compose down
+# Start full production stack
+docker-up:
+    cd docker && docker compose up -d
 
-# View Docker logs
+# Start stack with development container
+docker-up-dev:
+    cd docker && docker compose --profile dev up -d
+
+# Stop all services
+docker-down:
+    cd docker && docker compose down
+
+# Restart all services
+docker-restart:
+    cd docker && docker compose restart
+
+# Restart specific service
+docker-restart-service SERVICE:
+    cd docker && docker compose restart {{SERVICE}}
+
+# View all service logs
 docker-logs:
-    docker-compose logs -f
+    cd docker && docker compose logs -f
+
+# View specific service logs
+docker-logs-service SERVICE:
+    cd docker && docker compose logs -f {{SERVICE}}
+
+# Check service status
+docker-ps:
+    cd docker && docker compose ps
+
+# Run health checks on all services
+docker-health:
+    ./scripts/docker_health_check.sh
+
+# Clean up Docker resources
+docker-clean:
+    ./scripts/docker_cleanup.sh
+
+# Execute command in service container
+docker-exec SERVICE COMMAND:
+    cd docker && docker compose exec {{SERVICE}} {{COMMAND}}
+
+# Enter service container shell
+docker-shell SERVICE:
+    cd docker && docker compose exec {{SERVICE}} bash
+
+# Check GPU access in ComfyUI
+docker-gpu-comfyui:
+    cd docker && docker compose exec comfyui nvidia-smi
+
+# Check GPU access in backend
+docker-gpu-backend:
+    cd docker && docker compose exec backend-worker nvidia-smi
+
+# View resource usage
+docker-stats:
+    docker stats --no-stream
+
+# Pull latest images
+docker-pull:
+    cd docker && docker compose pull
+
+# Update and restart services
+docker-update: docker-pull docker-up
+    @echo "✅ Services updated and restarted"
+
+# Validate Docker Compose configuration
+docker-validate:
+    cd docker && docker compose config > /dev/null && echo "✅ Configuration valid"
+
+# Build without cache
+docker-build-nocache:
+    cd docker && docker compose build --no-cache
+
+# Stop and remove volumes (CAUTION: deletes data)
+docker-down-volumes:
+    @echo "⚠️  This will delete all persistent data!"
+    @read -p "Are you sure? (yes/no): " confirm; \
+    if [ "$$confirm" = "yes" ]; then \
+        cd docker && docker compose down -v; \
+    fi
+
+# === Quick Access URLs ===
+
+# Open ComfyUI in browser
+open-comfyui:
+    @echo "Opening ComfyUI at http://localhost:8188"
+    @xdg-open http://localhost:8188 2>/dev/null || open http://localhost:8188 2>/dev/null || echo "URL: http://localhost:8188"
+
+# Open Grafana in browser
+open-grafana:
+    @echo "Opening Grafana at http://localhost:3000 (admin/admin)"
+    @xdg-open http://localhost:3000 2>/dev/null || open http://localhost:3000 2>/dev/null || echo "URL: http://localhost:3000"
+
+# Open Prometheus in browser
+open-prometheus:
+    @echo "Opening Prometheus at http://localhost:9090"
+    @xdg-open http://localhost:9090 2>/dev/null || open http://localhost:9090 2>/dev/null || echo "URL: http://localhost:9090"
 
 # === Maintenance ===
 
@@ -375,7 +469,7 @@ update:
 audit:
     cargo audit
 
-# Check project health
+# Check project health (including Docker services)
 health:
     @echo "🏥 DGX-Pixels Health Check"
     @echo ""
@@ -384,6 +478,11 @@ health:
     @just status
     @echo ""
     @just test
+    @echo ""
+    @if [ -f "docker/.env" ]; then \
+        echo "Running Docker health checks..."; \
+        just docker-health; \
+    fi
 
 # === Miscellaneous ===
 
@@ -405,7 +504,8 @@ info:
     @echo "  M5: Production Ready (Weeks 10-12)"
     @echo ""
     @echo "Documentation: docs/"
-    @echo "Orchestration: docs/orchestration/"
+    @echo "Docker Quick Ref: DOCKER-QUICKREF.md"
+    @echo "Deployment Guide: docs/docker-deployment.md"
 
 # Clean everything (including models - be careful!)
 clean-all:

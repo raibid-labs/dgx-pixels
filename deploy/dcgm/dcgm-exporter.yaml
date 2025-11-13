@@ -1,0 +1,187 @@
+################################################################################
+# DCGM Exporter Configuration for NVIDIA DGX-Spark GB10
+#
+# This configuration exports GPU metrics for the Grace Blackwell GB10 Superchip
+# using NVIDIA DCGM (Data Center GPU Manager).
+#
+# Metrics are exposed on port 9400 in Prometheus format.
+#
+# Grace Blackwell GB10 Specifications:
+#   - 1 GB10 Superchip (unified CPU+GPU architecture)
+#   - 128GB Unified Memory
+#   - 1000 TOPS AI performance
+#   - NVLink C2C interconnect
+#
+# Usage:
+#   docker run -d --gpus all --rm \
+#     -v $(pwd)/dcgm-exporter.yaml:/etc/dcgm-exporter/default-counters.csv \
+#     -p 9400:9400 \
+#     nvcr.io/nvidia/k8s/dcgm-exporter:3.1.7-3.1.4-ubuntu22.04
+#
+################################################################################
+
+version: 2
+
+metricGroups:
+  ############################################################################
+  # GPU Utilization Metrics (1 second interval)
+  ############################################################################
+  - name: gpu_utilization
+    interval: 1000  # 1 second - high frequency for real-time monitoring
+    metrics:
+      # Overall GPU utilization percentage
+      - DCGM_FI_DEV_GPU_UTIL
+
+      # Memory copy engine utilization
+      - DCGM_FI_DEV_MEM_COPY_UTIL
+
+      # Encoder utilization (for video/image encoding)
+      - DCGM_FI_DEV_ENC_UTIL
+
+      # Decoder utilization
+      - DCGM_FI_DEV_DEC_UTIL
+
+      # SM (Streaming Multiprocessor) activity
+      - DCGM_FI_DEV_SM_ACTIVE
+
+      # SM occupancy percentage
+      - DCGM_FI_DEV_SM_OCCUPANCY
+
+  ############################################################################
+  # Memory Metrics (1 second interval)
+  ############################################################################
+  - name: memory_metrics
+    interval: 1000
+    metrics:
+      # Free framebuffer memory (VRAM)
+      - DCGM_FI_DEV_FB_FREE
+
+      # Used framebuffer memory (VRAM)
+      - DCGM_FI_DEV_FB_USED
+
+      # Reserved framebuffer memory
+      - DCGM_FI_DEV_FB_RESERVED
+
+      # Total framebuffer memory
+      - DCGM_FI_DEV_FB_TOTAL
+
+      # Memory clock frequency (MHz)
+      - DCGM_FI_DEV_MEM_CLOCK
+
+      # Memory bandwidth utilization
+      - DCGM_FI_PROF_DRAM_ACTIVE
+
+  ############################################################################
+  # Power and Thermal Metrics (5 second interval)
+  ############################################################################
+  - name: power_thermal
+    interval: 5000  # 5 seconds - lower frequency for thermal monitoring
+    metrics:
+      # Current power draw (Watts)
+      - DCGM_FI_DEV_POWER_USAGE
+
+      # Total energy consumption (Joules)
+      - DCGM_FI_DEV_TOTAL_ENERGY_CONSUMPTION
+
+      # GPU temperature (Celsius)
+      - DCGM_FI_DEV_GPU_TEMP
+
+      # Memory temperature (Celsius)
+      - DCGM_FI_DEV_MEMORY_TEMP
+
+      # Power limit (Watts)
+      - DCGM_FI_DEV_POWER_MGMT_LIMIT
+
+      # Thermal violation time (microseconds)
+      - DCGM_FI_DEV_THERMAL_VIOLATION
+
+      # Power violation time (microseconds)
+      - DCGM_FI_DEV_POWER_VIOLATION
+
+  ############################################################################
+  # Performance Metrics (1 second interval)
+  ############################################################################
+  - name: performance
+    interval: 1000
+    metrics:
+      # SM clock frequency (MHz)
+      - DCGM_FI_DEV_SM_CLOCK
+
+      # Graphics clock frequency (MHz)
+      - DCGM_FI_DEV_GRAPHICS_CLOCK
+
+      # PCIe transmit throughput (KB/s)
+      - DCGM_FI_DEV_PCIE_TX_THROUGHPUT
+
+      # PCIe receive throughput (KB/s)
+      - DCGM_FI_DEV_PCIE_RX_THROUGHPUT
+
+      # PCIe replay counter (error indicator)
+      - DCGM_FI_DEV_PCIE_REPLAY_COUNTER
+
+      # NVLink bandwidth (GB/s) - critical for GB10 C2C interconnect
+      - DCGM_FI_DEV_NVLINK_BANDWIDTH_TOTAL
+
+      # NVLink throughput counter 0
+      - DCGM_FI_PROF_NVLINK_TX_BYTES
+
+      # NVLink throughput counter 1
+      - DCGM_FI_PROF_NVLINK_RX_BYTES
+
+  ############################################################################
+  # Error and Health Metrics (10 second interval)
+  ############################################################################
+  - name: errors
+    interval: 10000  # 10 seconds - errors are rare
+    metrics:
+      # XID errors (critical GPU errors)
+      - DCGM_FI_DEV_XID_ERRORS
+
+      # Double-bit ECC errors (volatile memory)
+      - DCGM_FI_DEV_ECC_DBE_VOL_TOTAL
+
+      # Single-bit ECC errors (volatile memory)
+      - DCGM_FI_DEV_ECC_SBE_VOL_TOTAL
+
+      # Double-bit ECC errors (aggregate)
+      - DCGM_FI_DEV_ECC_DBE_AGG_TOTAL
+
+      # Single-bit ECC errors (aggregate)
+      - DCGM_FI_DEV_ECC_SBE_AGG_TOTAL
+
+      # Retired pages (memory errors)
+      - DCGM_FI_DEV_RETIRED_DBE
+
+      # Pending retired pages
+      - DCGM_FI_DEV_RETIRED_PENDING
+
+  ############################################################################
+  # Compute Metrics (1 second interval)
+  ############################################################################
+  - name: compute
+    interval: 1000
+    metrics:
+      # Tensor Core utilization (critical for AI workloads)
+      - DCGM_FI_PROF_PIPE_TENSOR_ACTIVE
+
+      # FP64 pipe utilization
+      - DCGM_FI_PROF_PIPE_FP64_ACTIVE
+
+      # FP32 pipe utilization
+      - DCGM_FI_PROF_PIPE_FP32_ACTIVE
+
+      # FP16 pipe utilization (used by SDXL with mixed precision)
+      - DCGM_FI_PROF_PIPE_FP16_ACTIVE
+
+  ############################################################################
+  # Process Metrics (2 second interval)
+  ############################################################################
+  - name: process
+    interval: 2000
+    metrics:
+      # Graphics engine activity
+      - DCGM_FI_PROF_GR_ENGINE_ACTIVE
+
+      # PCIe bandwidth utilization
+      - DCGM_FI_PROF_PCIE_TX_BYTES
+      - DCGM_FI_PROF_PCIE_RX_BYTES

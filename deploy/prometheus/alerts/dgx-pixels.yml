@@ -1,0 +1,342 @@
+################################################################################
+# DGX-Pixels Alerting Rules
+#
+# This file defines alerting rules for:
+#   - GPU critical conditions (VRAM, temperature, errors)
+#   - Generation pipeline health (latency, failure rate)
+#   - System health (disk space, memory)
+#
+# Alerts are sent to Alertmanager for routing to notification channels.
+#
+################################################################################
+
+groups:
+
+  ##############################################################################
+  # GPU Critical Alerts
+  ##############################################################################
+  - name: gpu_critical
+    interval: 30s  # Evaluate every 30 seconds
+    rules:
+
+      # VRAM Usage Above 95%
+      - alert: GPUHighVRAMUsage
+        expr: |
+          (DCGM_FI_DEV_FB_USED / DCGM_FI_DEV_FB_TOTAL * 100) > 95
+        for: 2m
+        labels:
+          severity: warning
+          component: gpu
+          category: memory
+        annotations:
+          summary: "GPU VRAM usage critically high"
+          description: |
+            GPU {{ $labels.gpu }} VRAM usage is {{ $value | humanizePercentage }}
+            Current: {{ $value }}%
+            Threshold: 95%
+            Action: Consider reducing batch size or model size
+
+      # VRAM Usage Above 98% (Critical)
+      - alert: GPUCriticalVRAMUsage
+        expr: |
+          (DCGM_FI_DEV_FB_USED / DCGM_FI_DEV_FB_TOTAL * 100) > 98
+        for: 1m
+        labels:
+          severity: critical
+          component: gpu
+          category: memory
+        annotations:
+          summary: "GPU VRAM usage at critical level"
+          description: |
+            GPU {{ $labels.gpu }} VRAM usage is {{ $value | humanizePercentage }}
+            Imminent OOM risk! Immediate action required.
+
+      # GPU High Temperature
+      - alert: GPUHighTemperature
+        expr: DCGM_FI_DEV_GPU_TEMP > 85
+        for: 5m
+        labels:
+          severity: warning
+          component: gpu
+          category: thermal
+        annotations:
+          summary: "GPU temperature above 85°C"
+          description: |
+            GPU {{ $labels.gpu }} temperature is {{ $value }}°C
+            Threshold: 85°C
+            Action: Check cooling system and workload
+
+      # GPU Critical Temperature
+      - alert: GPUCriticalTemperature
+        expr: DCGM_FI_DEV_GPU_TEMP > 90
+        for: 2m
+        labels:
+          severity: critical
+          component: gpu
+          category: thermal
+        annotations:
+          summary: "GPU temperature critically high"
+          description: |
+            GPU {{ $labels.gpu }} temperature is {{ $value }}°C
+            Risk of thermal throttling or shutdown!
+
+      # GPU XID Errors (Hardware Errors)
+      - alert: GPUXIDErrors
+        expr: increase(DCGM_FI_DEV_XID_ERRORS[5m]) > 0
+        labels:
+          severity: critical
+          component: gpu
+          category: hardware
+        annotations:
+          summary: "GPU XID errors detected"
+          description: |
+            GPU {{ $labels.gpu }} reported {{ $value }} XID errors in last 5 minutes
+            XID errors indicate serious hardware issues
+            Action: Check nvidia-smi, dmesg, and GPU health
+
+      # GPU ECC Double-Bit Errors
+      - alert: GPUECCDoubleBitErrors
+        expr: increase(DCGM_FI_DEV_ECC_DBE_VOL_TOTAL[10m]) > 0
+        labels:
+          severity: critical
+          component: gpu
+          category: memory
+        annotations:
+          summary: "GPU ECC double-bit errors detected"
+          description: |
+            GPU {{ $labels.gpu }} reported uncorrectable memory errors
+            Data corruption possible! Check GPU health immediately.
+
+      # GPU Power Violation
+      - alert: GPUPowerViolation
+        expr: DCGM_FI_DEV_POWER_VIOLATION > 10000  # 10ms
+        for: 5m
+        labels:
+          severity: warning
+          component: gpu
+          category: power
+        annotations:
+          summary: "GPU power limit violations detected"
+          description: |
+            GPU {{ $labels.gpu }} exceeded power limit for {{ $value }}μs
+            May cause performance throttling
+
+  ##############################################################################
+  # Generation Pipeline Alerts
+  ##############################################################################
+  - name: generation_pipeline
+    interval: 1m  # Evaluate every minute
+    rules:
+
+      # High P95 Generation Latency
+      - alert: HighGenerationLatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(dgx_pixels_generation_duration_seconds_bucket[5m])
+          ) > 10
+        for: 10m
+        labels:
+          severity: warning
+          component: backend
+          category: performance
+        annotations:
+          summary: "P95 generation latency exceeds 10 seconds"
+          description: |
+            95th percentile generation time: {{ $value | humanizeDuration }}
+            Expected: < 5 seconds
+            Action: Check GPU utilization and queue depth
+
+      # Critical Generation Latency
+      - alert: CriticalGenerationLatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(dgx_pixels_generation_duration_seconds_bucket[5m])
+          ) > 20
+        for: 5m
+        labels:
+          severity: critical
+          component: backend
+          category: performance
+        annotations:
+          summary: "P95 generation latency critically high"
+          description: |
+            95th percentile generation time: {{ $value | humanizeDuration }}
+            System severely degraded!
+
+      # High Failure Rate
+      - alert: HighFailureRate
+        expr: |
+          (
+            rate(dgx_pixels_generation_failures_total[5m]) /
+            rate(dgx_pixels_images_generated_total[5m])
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          component: backend
+          category: reliability
+        annotations:
+          summary: "Generation failure rate exceeds 10%"
+          description: |
+            Failure rate: {{ $value | humanizePercentage }}
+            Action: Check logs for error patterns
+
+      # Queue Depth Growing
+      - alert: QueueDepthGrowing
+        expr: |
+          deriv(dgx_pixels_queue_depth[5m]) > 1
+        for: 10m
+        labels:
+          severity: warning
+          component: backend
+          category: capacity
+        annotations:
+          summary: "Job queue depth growing continuously"
+          description: |
+            Queue depth: {{ $value }}
+            Workers may not be keeping up with demand
+            Action: Consider scaling workers or reducing load
+
+      # No Images Generated (Service Down?)
+      - alert: NoImagesGenerated
+        expr: |
+          rate(dgx_pixels_images_generated_total[5m]) == 0
+        for: 5m
+        labels:
+          severity: critical
+          component: backend
+          category: availability
+        annotations:
+          summary: "No images generated in last 5 minutes"
+          description: |
+            Generation pipeline may be down or blocked
+            Action: Check worker health and ComfyUI connectivity
+
+  ##############################################################################
+  # System Resource Alerts
+  ##############################################################################
+  - name: system_resources
+    interval: 1m
+    rules:
+
+      # High System Memory Usage
+      - alert: HighSystemMemory
+        expr: |
+          (
+            node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes
+          ) / node_memory_MemTotal_bytes > 0.90
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+          category: memory
+        annotations:
+          summary: "System memory usage above 90%"
+          description: |
+            Memory usage: {{ $value | humanizePercentage }}
+            Available: {{ with query "node_memory_MemAvailable_bytes" }}{{ . | first | value | humanize1024 }}B{{ end }}
+
+      # Disk Space Low
+      - alert: DiskSpaceLow
+        expr: |
+          (
+            node_filesystem_avail_bytes{mountpoint="/workspace"} /
+            node_filesystem_size_bytes{mountpoint="/workspace"}
+          ) < 0.15
+        for: 10m
+        labels:
+          severity: warning
+          component: system
+          category: storage
+        annotations:
+          summary: "Disk space below 15% on /workspace"
+          description: |
+            Available: {{ $value | humanizePercentage }}
+            Action: Clean up old outputs or add storage
+
+      # Disk Space Critical
+      - alert: DiskSpaceCritical
+        expr: |
+          (
+            node_filesystem_avail_bytes{mountpoint="/workspace"} /
+            node_filesystem_size_bytes{mountpoint="/workspace"}
+          ) < 0.05
+        for: 5m
+        labels:
+          severity: critical
+          component: system
+          category: storage
+        annotations:
+          summary: "Disk space critically low on /workspace"
+          description: |
+            Available: {{ $value | humanizePercentage }}
+            System may fail! Immediate cleanup required.
+
+  ##############################################################################
+  # ZeroMQ Communication Alerts
+  ##############################################################################
+  - name: zeromq_communication
+    interval: 30s
+    rules:
+
+      # High ZeroMQ Message Queue
+      - alert: HighZMQMessageQueue
+        expr: zmq_message_queue_depth > 100
+        for: 5m
+        labels:
+          severity: warning
+          component: worker
+          category: ipc
+        annotations:
+          summary: "ZeroMQ message queue depth high"
+          description: |
+            Queue depth: {{ $value }} messages
+            IPC backlog detected - workers may be slow
+
+      # ZeroMQ Connection Errors
+      - alert: ZMQConnectionErrors
+        expr: increase(zmq_connection_errors_total[5m]) > 5
+        labels:
+          severity: critical
+          component: worker
+          category: ipc
+        annotations:
+          summary: "ZeroMQ connection errors detected"
+          description: |
+            Errors in last 5 minutes: {{ $value }}
+            IPC communication failing!
+
+  ##############################################################################
+  # ComfyUI Integration Alerts
+  ##############################################################################
+  - name: comfyui_integration
+    interval: 1m
+    rules:
+
+      # ComfyUI API Errors
+      - alert: ComfyUIAPIErrors
+        expr: increase(comfyui_api_errors_total[5m]) > 10
+        for: 3m
+        labels:
+          severity: warning
+          component: comfyui
+          category: integration
+        annotations:
+          summary: "High rate of ComfyUI API errors"
+          description: |
+            Errors in last 5 minutes: {{ $value }}
+            Action: Check ComfyUI service health
+
+      # ComfyUI Not Responding
+      - alert: ComfyUIDown
+        expr: up{job="comfyui"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: comfyui
+          category: availability
+        annotations:
+          summary: "ComfyUI service is down"
+          description: |
+            ComfyUI not responding to health checks
+            Generation pipeline blocked!

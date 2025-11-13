@@ -1,0 +1,71 @@
+################################################################################
+# DGX-Pixels MCP Server Dockerfile
+#
+# This image runs the FastMCP server that provides Model Context Protocol
+# tools for Bevy game engine integration.
+#
+# Build:
+#   docker build -f docker/Dockerfile.mcp -t dgx-pixels-mcp:latest .
+#
+# Run:
+#   docker run --rm -p 3001:3001 dgx-pixels-mcp:latest
+#
+# Architecture:
+#   - FastMCP server with stdio transport
+#   - ZeroMQ client to backend worker
+#   - MCP tools for Bevy integration
+#
+################################################################################
+
+FROM python:3.11-slim
+
+# Metadata
+LABEL maintainer="DGX-Pixels Team"
+LABEL description="FastMCP server for Bevy game engine integration"
+LABEL version="1.0"
+LABEL component="mcp-server"
+
+# Environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libzmq3-dev \
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy MCP server requirements
+COPY python/mcp_server/requirements.txt /app/requirements.txt
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+# Copy MCP server code
+COPY python/mcp_server/ /app/mcp_server/
+COPY config/ /app/config/
+
+# Create directories
+RUN mkdir -p /app/outputs /app/logs
+
+# Create non-root user
+RUN useradd -m -u 1000 -s /bin/bash mcpuser && \
+    chown -R mcpuser:mcpuser /app
+
+# Switch to non-root user
+USER mcpuser
+
+# Expose port (optional, for HTTP transport)
+EXPOSE 3001
+
+# Health check - verify server is importable
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD python3 -c "from mcp_server import server" || exit 1
+
+# Run MCP server
+CMD ["python3", "-m", "mcp_server.server"]

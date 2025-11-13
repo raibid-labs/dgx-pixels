@@ -1,0 +1,194 @@
+################################################################################
+# Prometheus Configuration for DGX-Pixels Observability Stack
+#
+# This configuration scrapes metrics from:
+#   - DCGM Exporter (GPU metrics)
+#   - DGX-Pixels Python Backend (application metrics)
+#   - Node Exporter (system metrics)
+#
+# Metrics are retained for 30 days and exposed on port 9090.
+#
+# Usage:
+#   prometheus --config.file=prometheus.yml \
+#     --storage.tsdb.retention.time=30d \
+#     --storage.tsdb.path=/prometheus
+#
+################################################################################
+
+global:
+  # How frequently to scrape targets by default
+  scrape_interval: 15s
+
+  # How long until a scrape request times out
+  scrape_timeout: 10s
+
+  # How frequently to evaluate alerting rules
+  evaluation_interval: 15s
+
+  # External labels to attach to time series or alerts
+  external_labels:
+    cluster: 'dgx-pixels'
+    environment: 'production'
+    datacenter: 'dgx-spark'
+    hardware: 'gb10-grace-blackwell'
+
+################################################################################
+# Alerting Configuration
+################################################################################
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - 'alertmanager:9093'
+      timeout: 10s
+      api_version: v2
+
+################################################################################
+# Rule Files (Alert Definitions)
+################################################################################
+rule_files:
+  - 'alerts/*.yml'
+
+################################################################################
+# Scrape Configurations
+################################################################################
+scrape_configs:
+
+  ##############################################################################
+  # DCGM GPU Metrics
+  ##############################################################################
+  - job_name: 'dcgm'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    static_configs:
+      - targets: ['dcgm-exporter:9400']
+        labels:
+          component: 'gpu'
+          gpu_type: 'grace-blackwell-gb10'
+
+    # Relabel GPU device IDs for clarity
+    metric_relabel_configs:
+      - source_labels: [gpu]
+        target_label: gpu_id
+        regex: '(\d+)'
+        replacement: 'gpu_${1}'
+
+      - source_labels: [UUID]
+        target_label: gpu_uuid
+
+      # Add computed metric: VRAM usage percentage
+      - source_labels: [__name__, DCGM_FI_DEV_FB_USED, DCGM_FI_DEV_FB_TOTAL]
+        target_label: __name__
+        regex: 'DCGM_FI_DEV_FB_USED;(.*);(.*)'
+        replacement: 'dcgm_fb_used_percent'
+        action: replace
+
+  ##############################################################################
+  # DGX-Pixels Python Backend Metrics
+  ##############################################################################
+  - job_name: 'dgx-pixels-backend'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    static_configs:
+      - targets: ['dgx-pixels:8000']
+        labels:
+          component: 'backend'
+          language: 'python'
+    metrics_path: '/metrics'
+
+    # Honor labels from application (allows overrides)
+    honor_labels: true
+
+  ##############################################################################
+  # ComfyUI Metrics (if exposed)
+  ##############################################################################
+  - job_name: 'comfyui'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    static_configs:
+      - targets: ['localhost:8188']
+        labels:
+          component: 'comfyui'
+    metrics_path: '/metrics'
+
+    # ComfyUI may not have metrics endpoint - allow failures
+    honor_labels: true
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'comfyui_.*'
+        action: keep
+
+  ##############################################################################
+  # Node Exporter (System Metrics)
+  ##############################################################################
+  - job_name: 'node'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          component: 'system'
+          os: 'linux'
+
+    # Filter node metrics to reduce cardinality
+    metric_relabel_configs:
+      # Keep only relevant node metrics
+      - source_labels: [__name__]
+        regex: 'node_(cpu|memory|disk|network|filesystem).*'
+        action: keep
+
+  ##############################################################################
+  # Prometheus Self-Monitoring
+  ##############################################################################
+  - job_name: 'prometheus'
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          component: 'monitoring'
+
+  ##############################################################################
+  # ZeroMQ Worker Metrics (from Python Backend)
+  ##############################################################################
+  - job_name: 'zmq-worker'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    static_configs:
+      - targets: ['dgx-pixels:8001']
+        labels:
+          component: 'worker'
+          protocol: 'zeromq'
+    metrics_path: '/metrics'
+
+################################################################################
+# Storage Configuration
+################################################################################
+storage:
+  tsdb:
+    # Data retention period
+    retention.time: 30d
+
+    # Minimum retention time (data will not be deleted before this)
+    retention.size: 50GB
+
+    # Path to TSDB data directory
+    path: /prometheus
+
+################################################################################
+# Remote Write (Optional - for long-term storage)
+################################################################################
+# remote_write:
+#   - url: "http://cortex:9009/api/v1/push"
+#     queue_config:
+#       capacity: 10000
+#       max_samples_per_send: 5000
+#       batch_send_deadline: 5s
+#       min_shards: 1
+#       max_shards: 10
+
+################################################################################
+# Remote Read (Optional - for querying long-term storage)
+################################################################################
+# remote_read:
+#   - url: "http://cortex:9009/api/v1/read"
+#     read_recent: true
