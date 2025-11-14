@@ -21,6 +21,14 @@ pub struct ZmqClient {
     _sub_thread: thread::JoinHandle<()>,
 }
 
+impl std::fmt::Debug for ZmqClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ZmqClient")
+            .field("connected", &true)
+            .finish()
+    }
+}
+
 /// Internal message for request thread
 enum ClientRequest {
     Send(Request),

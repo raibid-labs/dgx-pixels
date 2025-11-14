@@ -1,5 +1,6 @@
 use crate::sixel::{PreviewManager, TerminalCapability};
 use crate::ui::screens::comparison::ComparisonState;
+use crate::zmq_client::ZmqClient;
 use std::path::PathBuf;
 use std::time::Instant;
 
@@ -92,6 +93,18 @@ pub struct App {
 
     /// Comparison screen state (NEW)
     pub comparison_state: ComparisonState,
+
+    /// ZeroMQ client for backend communication
+    pub zmq_client: Option<ZmqClient>,
+
+    /// Debug mode enabled
+    pub debug_mode: bool,
+
+    /// Backend log lines (for debug mode)
+    pub backend_logs: Vec<String>,
+
+    /// Current preview tab (0=Preview, 1=Logs)
+    pub preview_tab: usize,
 }
 
 impl Default for App {
@@ -123,6 +136,26 @@ impl App {
             gallery_images: Vec::new(),
             selected_gallery_index: 0,
             comparison_state: ComparisonState::new(),
+            zmq_client: None,
+            debug_mode: false,
+            backend_logs: Vec::new(),
+            preview_tab: 0, // Will be set to 1 (Logs) if debug_mode is enabled
+        }
+    }
+
+    /// Switch to next preview tab
+    pub fn next_preview_tab(&mut self) {
+        if self.debug_mode {
+            self.preview_tab = (self.preview_tab + 1) % 2;
+            self.needs_redraw = true;
+        }
+    }
+
+    /// Switch to specific preview tab
+    pub fn set_preview_tab(&mut self, tab: usize) {
+        if self.debug_mode && tab < 2 {
+            self.preview_tab = tab;
+            self.needs_redraw = true;
         }
     }
 

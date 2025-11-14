@@ -136,6 +136,13 @@ pub enum ProgressUpdate {
         success: bool,
         duration_s: f32,
     },
+
+    /// Job complete (sent by backend as progress update)
+    JobComplete {
+        job_id: String,
+        image_path: String,
+        duration_s: f32,
+    },
 }
 
 /// Generation stage

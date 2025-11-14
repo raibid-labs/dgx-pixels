@@ -21,62 +21,7 @@ pub fn render(f: &mut Frame, app: &App) {
     // Body
     render_body(f, chunks[1], app);
 
-    let cache_stats = app.preview_manager.cache_stats();
-    let status_text = format!(
-        "GPU: Ready | Memory: 104GB free | Cache: {:.1}MB ({} previews)",
-        cache_stats.size_mb(),
-        cache_stats.entries
-    );
-    let status = create_status_bar(&status_text);
-    f.render_widget(status, chunks[2]);
-    let cache_stats = app.preview_manager.cache_stats();
-    let status_text = format!(
-        "GPU: Ready | Memory: 104GB free | Cache: {:.1}MB ({} previews)",
-        cache_stats.size_mb(),
-        cache_stats.entries
-    );
-    let status = create_status_bar(&status_text);
-    f.render_widget(status, chunks[2]);
-    let cache_stats = app.preview_manager.cache_stats();
-    let status_text = format!(
-        "GPU: Ready | Memory: 104GB free | Cache: {:.1}MB ({} previews)",
-        cache_stats.size_mb(),
-        cache_stats.entries
-    );
-    let status = create_status_bar(&status_text);
-    f.render_widget(status, chunks[2]);
-    let cache_stats = app.preview_manager.cache_stats();
-    let status_text = format!(
-        "GPU: Ready | Memory: 104GB free | Cache: {:.1}MB ({} previews)",
-        cache_stats.size_mb(),
-        cache_stats.entries
-    );
-    let status = create_status_bar(&status_text);
-    f.render_widget(status, chunks[2]);
-    let cache_stats = app.preview_manager.cache_stats();
-    let status_text = format!(
-        "GPU: Ready | Memory: 104GB free | Cache: {:.1}MB ({} previews)",
-        cache_stats.size_mb(),
-        cache_stats.entries
-    );
-    let status = create_status_bar(&status_text);
-    f.render_widget(status, chunks[2]);
-    let cache_stats = app.preview_manager.cache_stats();
-    let status_text = format!(
-        "GPU: Ready | Memory: 104GB free | Cache: {:.1}MB ({} previews)",
-        cache_stats.size_mb(),
-        cache_stats.entries
-    );
-    let status = create_status_bar(&status_text);
-    f.render_widget(status, chunks[2]);
-    let cache_stats = app.preview_manager.cache_stats();
-    let status_text = format!(
-        "GPU: Ready | Memory: 104GB free | Cache: {:.1}MB ({} previews)",
-        cache_stats.size_mb(),
-        cache_stats.entries
-    );
-    let status = create_status_bar(&status_text);
-    f.render_widget(status, chunks[2]);
+    // Status bar
     let cache_stats = app.preview_manager.cache_stats();
     let status_text = format!(
         "GPU: Ready | Memory: 104GB free | Cache: {:.1}MB ({} previews)",
@@ -235,60 +180,76 @@ fn render_controls(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
 }
 
 fn render_preview(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
-    let block = create_block(" Preview ");
+    // Create title string outside to avoid lifetime issues
+    let title_string = if app.debug_mode {
+        let tab_titles = vec!["Preview", "Backend Logs"];
+        format!(
+            " {} [Ctrl+Tab/P/L] ",
+            tab_titles
+                .iter()
+                .enumerate()
+                .map(|(i, &t)| if i == app.preview_tab {
+                    format!("▸{}", t)
+                } else {
+                    format!(" {}", t)
+                })
+                .collect::<Vec<_>>()
+                .join(" │ ")
+        )
+    } else {
+        " Preview ".to_string()
+    };
+
+    let block = create_block(&title_string);
     let inner = block.inner(area);
     f.render_widget(block, area);
 
+    // Render content based on selected tab
+    if app.debug_mode && app.preview_tab == 1 {
+        // Render backend logs
+        render_backend_logs(f, inner, app);
+        return;
+    }
+
+    // Otherwise render preview (tab 0 or non-debug mode)
     // Check if we have a current preview
     if let Some(preview_path) = &app.current_preview {
-        match app.terminal_capability {
-            TerminalCapability::Sixel => {
-                // Try to get cached preview
-                if let Some(preview_entry) = app.preview_manager.get_preview(preview_path) {
-                    // Render Sixel image
-                    render_sixel_preview(f, inner, &preview_entry.sixel_data);
-                } else {
-                    // Request preview if not cached
-                    let options = RenderOptions {
-                        width: inner.width.saturating_sub(2),
-                        height: inner.height.saturating_sub(2),
-                        preserve_aspect: true,
-                        high_quality: true,
-                    };
-
-                    let _ = app
-                        .preview_manager
-                        .request_preview(preview_path.clone(), options);
-
-                    // Show loading message
-                    render_loading_preview(f, inner);
-                }
-            }
-            TerminalCapability::TextOnly => {
-                // Show preview info without Sixel
-                render_text_preview_info(f, inner, preview_path);
-            }
-        }
+        // For now, just show the image info (Sixel rendering not yet implemented)
+        render_preview_info(f, inner, preview_path);
     } else {
         // No preview available
         render_no_preview(f, inner);
     }
 }
 
-fn render_sixel_preview(f: &mut Frame, area: ratatui::layout::Rect, sixel_data: &str) {
-    // Note: In a real implementation, we'd use crossterm to write raw Sixel data
-    // For now, show a placeholder indicating Sixel would render here
+fn render_preview_info(f: &mut Frame, area: ratatui::layout::Rect, path: &Path) {
+    let filename = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("unknown");
+
+    // Get file size
+    let size_str = if let Ok(metadata) = std::fs::metadata(path) {
+        let size_kb = metadata.len() / 1024;
+        format!("{} KB", size_kb)
+    } else {
+        "Unknown size".to_string()
+    };
+
     let lines = vec![
         Line::from(""),
-        Line::from(Span::styled("[Sixel Preview]", Theme::highlight())),
+        Line::from(Span::styled("✓ Generation Complete", Theme::success())),
         Line::from(""),
-        Line::from(Span::styled("Preview rendering...", Theme::muted())),
+        Line::from(format!("File: {}", filename)),
+        Line::from(format!("Size: {}", size_str)),
         Line::from(""),
-        Line::from(format!("Data size: {} bytes", sixel_data.len())),
+        Line::from(Span::styled("Preview: Sixel rendering coming soon!", Theme::muted())),
+        Line::from(""),
+        Line::from(Span::styled("For now, check outputs/ folder", Theme::muted())),
     ];
 
     let paragraph = Paragraph::new(lines)
-        .style(Theme::muted())
+        .style(Theme::text())
         .alignment(ratatui::layout::Alignment::Center);
 
     f.render_widget(paragraph, area);
@@ -352,6 +313,47 @@ fn render_no_preview(f: &mut Frame, area: ratatui::layout::Rect) {
         .style(Theme::muted())
         .alignment(ratatui::layout::Alignment::Center);
 
+    f.render_widget(paragraph, area);
+}
+
+fn render_backend_logs(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
+    let lines: Vec<Line> = if app.backend_logs.is_empty() {
+        vec![
+            Line::from(""),
+            Line::from(Span::styled("No backend logs yet", Theme::muted())),
+            Line::from(""),
+            Line::from(Span::styled(
+                "Logs will appear here as the backend processes requests",
+                Theme::muted(),
+            )),
+        ]
+    } else {
+        // Show last N lines that fit in the area
+        let max_lines = area.height.saturating_sub(2) as usize;
+        let start_idx = app.backend_logs.len().saturating_sub(max_lines);
+
+        app.backend_logs[start_idx..]
+            .iter()
+            .map(|log_line| {
+                // Color code log levels
+                if log_line.contains("ERROR") || log_line.contains("Error") {
+                    Line::from(Span::styled(log_line, Theme::error()))
+                } else if log_line.contains("WARN") || log_line.contains("Warning") {
+                    Line::from(Span::styled(
+                        log_line,
+                        ratatui::style::Style::default()
+                            .fg(ratatui::style::Color::Yellow),
+                    ))
+                } else if log_line.contains("INFO") {
+                    Line::from(Span::styled(log_line, Theme::text()))
+                } else {
+                    Line::from(Span::styled(log_line, Theme::muted()))
+                }
+            })
+            .collect()
+    };
+
+    let paragraph = Paragraph::new(lines);
     f.render_widget(paragraph, area);
 }
 

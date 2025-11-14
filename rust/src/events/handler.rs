@@ -40,7 +40,14 @@ impl EventHandler {
             return;
         }
 
-        // Screen navigation keys
+        // Screen-specific keys take priority on input screens
+        // (Generation and Comparison screens have text input)
+        if matches!(app.current_screen, Screen::Generation | Screen::Comparison) {
+            Self::handle_screen_specific(app, key);
+            return;
+        }
+
+        // Screen navigation keys (only when NOT on input screens)
         match key.code {
             KeyCode::Char('1') => app.navigate_to(Screen::Generation),
             KeyCode::Char('2') => app.navigate_to(Screen::Queue),
@@ -67,14 +74,77 @@ impl EventHandler {
     }
 
     fn handle_generation_keys(app: &mut App, key: crossterm::event::KeyEvent) {
+        use crossterm::event::KeyModifiers;
+
         match key.code {
+            KeyCode::Enter => {
+                Self::trigger_generation(app);
+            }
+            // Tab switching with Ctrl modifier (doesn't interfere with typing)
+            KeyCode::Tab if key.modifiers.contains(KeyModifiers::CONTROL) && app.debug_mode => {
+                app.next_preview_tab();
+            }
+            KeyCode::Char('p')
+                if key.modifiers.contains(KeyModifiers::CONTROL) && app.debug_mode =>
+            {
+                app.set_preview_tab(0);
+            }
+            KeyCode::Char('l')
+                if key.modifiers.contains(KeyModifiers::CONTROL) && app.debug_mode =>
+            {
+                app.set_preview_tab(1);
+            }
             KeyCode::Char(c) => app.input_char(c),
             KeyCode::Backspace => app.input_backspace(),
-            KeyCode::Enter => {
-                // TODO: Trigger generation
-                app.needs_redraw = true;
-            }
             _ => {}
+        }
+    }
+
+    fn trigger_generation(app: &mut App) {
+        use crate::messages::Request;
+        use tracing::{info, warn};
+
+        if app.input_buffer.trim().is_empty() {
+            warn!("Cannot generate: prompt is empty");
+            return;
+        }
+
+        if app.zmq_client.is_none() {
+            warn!("Cannot generate: backend not connected");
+            return;
+        }
+
+        let job_id = format!("job-{}", std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis());
+        let prompt = app.input_buffer.trim().to_string();
+
+        info!("Triggering generation: {}", prompt);
+
+        let request = Request::Generate {
+            id: job_id.clone(),
+            prompt: prompt.clone(),
+            model: "sd_xl_base_1.0".to_string(),
+            lora: None,
+            size: (1024, 1024),
+            steps: 30,
+            cfg_scale: 7.5,
+        };
+
+        if let Some(ref client) = app.zmq_client {
+            match client.send_request(request) {
+                Ok(_) => {
+                    info!("Generation request sent: {}", job_id);
+                    app.add_job(job_id, prompt);
+                    app.input_buffer.clear();
+                    app.cursor_pos = 0;
+                    app.needs_redraw = true;
+                }
+                Err(e) => {
+                    warn!("Failed to send generation request: {}", e);
+                }
+            }
         }
     }
 
