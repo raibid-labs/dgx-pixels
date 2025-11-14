@@ -98,7 +98,7 @@ tui-release:
     cd rust && cargo run --release
 
 # Start Python backend worker
-backend PORT="5555":
+backend:
     #!/usr/bin/env bash
     set -euo pipefail
     if [ ! -d "venv" ]; then
@@ -106,7 +106,7 @@ backend PORT="5555":
         exit 1
     fi
     source venv/bin/activate
-    python python/workers/generation_worker.py --port {{PORT}}
+    python python/workers/generation_worker.py --req-addr tcp://127.0.0.1:5555 --pub-addr tcp://127.0.0.1:5556
 
 # Start ComfyUI server (assumes installed)
 comfyui PORT="8188":
