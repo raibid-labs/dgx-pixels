@@ -4,7 +4,8 @@ import time
 import zmq
 import signal
 import sys
-from typing import Optional
+from pathlib import Path
+from typing import Optional, List
 
 try:
     from .message_protocol import (
@@ -75,6 +76,15 @@ class ZmqServer:
     - REP socket for request/response (REQ-REP pattern)
     - PUB socket for progress updates (PUB-SUB pattern)
     """
+
+    # Model directory paths
+    COMFYUI_BASE = Path.home() / "ComfyUI"
+    CHECKPOINT_DIR = COMFYUI_BASE / "models" / "checkpoints"
+    LORA_DIR = COMFYUI_BASE / "models" / "loras"
+    VAE_DIR = COMFYUI_BASE / "models" / "vae"
+
+    # Supported file extensions
+    MODEL_EXTENSIONS = {".safetensors", ".ckpt", ".pt", ".pth"}
 
     def __init__(
         self, req_addr: str = DEFAULT_REQ_REP_ADDR, pub_addr: str = DEFAULT_PUB_SUB_ADDR
@@ -201,7 +211,7 @@ class ZmqServer:
             )
 
             # Estimate time
-            estimated_time = self.job_queue.estimate_time(request.steps)
+            estimated_time = self.job_queue.estimate_time(request.steps, request.batch_size, request.animation_frames)
 
             # Publish job started update
             self._publish_update(
@@ -222,18 +232,89 @@ class ZmqServer:
                 job_id=request.job_id, error="Job not found or already completed"
             )
 
+    def _scan_model_directory(
+        self, directory: Path, model_type: ModelType
+    ) -> List[ModelInfo]:
+        """Scan a directory for model files
+
+        Args:
+            directory: Path to scan
+            model_type: Type of models in this directory
+
+        Returns:
+            List of ModelInfo objects for found models
+        """
+        models = []
+
+        # Check if directory exists
+        if not directory.exists():
+            print(f"Warning: Model directory does not exist: {directory}")
+            return models
+
+        if not directory.is_dir():
+            print(f"Warning: Path is not a directory: {directory}")
+            return models
+
+        # Scan for model files
+        try:
+            for file_path in directory.iterdir():
+                # Skip directories
+                if not file_path.is_file():
+                    continue
+
+                # Check extension
+                if file_path.suffix.lower() not in self.MODEL_EXTENSIONS:
+                    continue
+
+                # Get file size in MB
+                try:
+                    size_bytes = file_path.stat().st_size
+                    size_mb = int(size_bytes / (1024 * 1024))
+                except OSError as e:
+                    print(f"Warning: Could not get size for {file_path}: {e}")
+                    size_mb = 0
+
+                # Create ModelInfo
+                models.append(
+                    ModelInfo(
+                        name=file_path.name,
+                        path=str(file_path),
+                        model_type=model_type,
+                        size_mb=size_mb,
+                    )
+                )
+        except OSError as e:
+            print(f"Error scanning directory {directory}: {e}")
+
+        return models
+
     def _handle_list_models(self) -> ModelListResponse:
-        """Handle list models request"""
-        # TODO: This should scan the actual models directory
-        # For now, return mock data
-        models = [
-            ModelInfo(
-                name="SDXL Base 1.0",
-                path="/models/checkpoints/sd_xl_base_1.0.safetensors",
-                model_type=ModelType.CHECKPOINT,
-                size_mb=6500,
-            ),
-        ]
+        """Handle list models request
+
+        Scans the ComfyUI model directories for checkpoint, LoRA, and VAE files.
+        Returns a sorted list of all found models.
+        """
+        models = []
+
+        # Scan checkpoint directory
+        models.extend(
+            self._scan_model_directory(self.CHECKPOINT_DIR, ModelType.CHECKPOINT)
+        )
+
+        # Scan LoRA directory
+        models.extend(
+            self._scan_model_directory(self.LORA_DIR, ModelType.LORA)
+        )
+
+        # Scan VAE directory
+        models.extend(
+            self._scan_model_directory(self.VAE_DIR, ModelType.VAE)
+        )
+
+        # Sort models alphabetically by name
+        models.sort(key=lambda m: m.name.lower())
+
+        print(f"Found {len(models)} models")
         return ModelListResponse(models=models)
 
     def _handle_status(self) -> StatusInfoResponse:

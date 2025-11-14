@@ -28,6 +28,9 @@ class Job:
     steps: int
     cfg_scale: float
     lora: Optional[str] = None
+    batch_size: Optional[int] = None
+    animation_frames: Optional[int] = None
+    tileset_grid: Optional[List[int]] = None
     status: JobStatus = JobStatus.QUEUED
     created_at: float = field(default_factory=time.time)
     started_at: Optional[float] = None
@@ -51,6 +54,9 @@ class JobQueue:
         steps: int,
         cfg_scale: float,
         lora: Optional[str] = None,
+        batch_size: Optional[int] = None,
+        animation_frames: Optional[int] = None,
+        tileset_grid: Optional[List[int]] = None,
         job_id: Optional[str] = None,
     ) -> Job:
         """Add a new job to the queue"""
@@ -65,6 +71,9 @@ class JobQueue:
             steps=steps,
             cfg_scale=cfg_scale,
             lora=lora,
+            batch_size=batch_size,
+            animation_frames=animation_frames,
+            tileset_grid=tileset_grid,
         )
 
         self._jobs[job_id] = job
@@ -128,11 +137,14 @@ class JobQueue:
         """Get the number of running jobs"""
         return sum(1 for job in self._jobs.values() if job.status == JobStatus.RUNNING)
 
-    def estimate_time(self, steps: int) -> float:
-        """Estimate generation time based on steps"""
-        # Simple estimation: 0.1 seconds per step
-        # This should be updated based on actual performance
-        return steps * 0.1
+    def estimate_time(self, steps: int, batch_size: Optional[int] = None, animation_frames: Optional[int] = None) -> float:
+        """Estimate generation time based on steps and job type"""
+        base_time = steps * 0.1
+        if batch_size and batch_size > 1:
+            base_time *= batch_size
+        if animation_frames and animation_frames > 1:
+            base_time *= animation_frames
+        return base_time
 
     def get_all_jobs(self) -> List[Job]:
         """Get all jobs"""
