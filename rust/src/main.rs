@@ -9,19 +9,34 @@ mod zmq_client;
 
 use anyhow::Result;
 use app::App;
+use clap::Parser;
 use crossterm::{
     event::{self, Event},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{backend::CrosstermBackend, Terminal};
-use std::io;
+use std::fs::File;
+use std::io::{self, BufRead, BufReader, Seek, SeekFrom};
 use std::time::Duration;
 use tracing::{info, warn};
 use zmq_client::ZmqClient;
 
+/// DGX-Pixels TUI - AI Pixel Art Generation
+#[derive(Parser, Debug)]
+#[command(name = "dgx-pixels-tui")]
+#[command(about = "Terminal UI for AI pixel art generation", long_about = None)]
+struct Args {
+    /// Enable debug mode with live backend logs
+    #[arg(short, long)]
+    debug: bool,
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Parse command line arguments
+    let args = Args::parse();
+
     // Initialize logging to file (not stdout, to avoid interfering with TUI)
     let log_file = std::fs::OpenOptions::new()
         .create(true)
@@ -37,7 +52,7 @@ async fn main() -> Result<()> {
         .with_ansi(false) // No ANSI colors in log file
         .init();
 
-    info!("Starting DGX-Pixels TUI v0.1.0");
+    info!("Starting DGX-Pixels TUI v0.1.0 (debug={})", args.debug);
 
     // Setup terminal
     enable_raw_mode()?;
@@ -48,6 +63,7 @@ async fn main() -> Result<()> {
 
     // Create app state
     let mut app = App::new();
+    app.debug_mode = args.debug;
 
     // Initialize ZeroMQ client for backend communication
     match ZmqClient::new_default() {
@@ -81,7 +97,39 @@ async fn run_app<B: ratatui::backend::Backend>(
     terminal: &mut Terminal<B>,
     app: &mut App,
 ) -> Result<()> {
+    // Open backend log file if debug mode is enabled
+    let mut log_reader = if app.debug_mode {
+        match File::open("dgx-pixels-backend.log") {
+            Ok(f) => {
+                let mut reader = BufReader::new(f);
+                // Seek to end to only read new lines
+                let _ = reader.seek(SeekFrom::End(0));
+                Some(reader)
+            }
+            Err(e) => {
+                warn!("Could not open backend log file: {}", e);
+                None
+            }
+        }
+    } else {
+        None
+    };
+
     loop {
+        // Read new backend log lines if in debug mode
+        if let Some(ref mut reader) = log_reader {
+            let mut line = String::new();
+            while reader.read_line(&mut line).unwrap_or(0) > 0 {
+                app.backend_logs.push(line.trim_end().to_string());
+                // Keep only last 500 lines
+                if app.backend_logs.len() > 500 {
+                    app.backend_logs.remove(0);
+                }
+                app.needs_redraw = true;
+                line.clear();
+            }
+        }
+
         // Process preview results from async worker
         while let Some(preview_result) = app.preview_manager.try_recv_result() {
             if preview_result.entry.is_some() {

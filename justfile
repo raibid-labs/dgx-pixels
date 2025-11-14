@@ -97,6 +97,34 @@ tui:
 tui-release:
     cd rust && cargo run --release
 
+# Run in debug mode with live backend logs in TUI
+debug:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Start backend with logging to file
+    if [ ! -d "venv" ]; then
+        echo "❌ Virtual environment not found. Run 'just init' first."
+        exit 1
+    fi
+
+    echo "🔧 Starting backend with debug logging..."
+    source venv/bin/activate
+    python python/workers/generation_worker.py --req-addr tcp://127.0.0.1:5555 --pub-addr tcp://127.0.0.1:5556 > dgx-pixels-backend.log 2>&1 &
+    BACKEND_PID=$!
+    echo "Backend started (PID: $BACKEND_PID)"
+
+    # Wait for backend to start
+    sleep 2
+
+    # Start TUI with debug flag
+    echo "🚀 Starting TUI in debug mode..."
+    cd rust && cargo run --release -- --debug
+
+    # Cleanup: kill backend when TUI exits
+    echo "Stopping backend (PID: $BACKEND_PID)..."
+    kill $BACKEND_PID 2>/dev/null || true
+
 # Start Python backend worker
 backend:
     #!/usr/bin/env bash

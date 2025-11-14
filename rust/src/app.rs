@@ -96,6 +96,12 @@ pub struct App {
 
     /// ZeroMQ client for backend communication
     pub zmq_client: Option<ZmqClient>,
+
+    /// Debug mode enabled
+    pub debug_mode: bool,
+
+    /// Backend log lines (for debug mode)
+    pub backend_logs: Vec<String>,
 }
 
 impl Default for App {
@@ -128,6 +134,8 @@ impl App {
             selected_gallery_index: 0,
             comparison_state: ComparisonState::new(),
             zmq_client: None,
+            debug_mode: false,
+            backend_logs: Vec::new(),
         }
     }
 
