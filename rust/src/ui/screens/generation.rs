@@ -235,10 +235,38 @@ fn render_controls(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
 }
 
 fn render_preview(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
-    let block = create_block(" Preview ");
+    // Create title string outside to avoid lifetime issues
+    let title_string = if app.debug_mode {
+        let tab_titles = vec!["Preview", "Backend Logs"];
+        format!(
+            " {} [Tab/P/L] ",
+            tab_titles
+                .iter()
+                .enumerate()
+                .map(|(i, &t)| if i == app.preview_tab {
+                    format!("▸{}", t)
+                } else {
+                    format!(" {}", t)
+                })
+                .collect::<Vec<_>>()
+                .join(" │ ")
+        )
+    } else {
+        " Preview ".to_string()
+    };
+
+    let block = create_block(&title_string);
     let inner = block.inner(area);
     f.render_widget(block, area);
 
+    // Render content based on selected tab
+    if app.debug_mode && app.preview_tab == 1 {
+        // Render backend logs
+        render_backend_logs(f, inner, app);
+        return;
+    }
+
+    // Otherwise render preview (tab 0 or non-debug mode)
     // Check if we have a current preview
     if let Some(preview_path) = &app.current_preview {
         match app.terminal_capability {
@@ -352,6 +380,47 @@ fn render_no_preview(f: &mut Frame, area: ratatui::layout::Rect) {
         .style(Theme::muted())
         .alignment(ratatui::layout::Alignment::Center);
 
+    f.render_widget(paragraph, area);
+}
+
+fn render_backend_logs(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
+    let lines: Vec<Line> = if app.backend_logs.is_empty() {
+        vec![
+            Line::from(""),
+            Line::from(Span::styled("No backend logs yet", Theme::muted())),
+            Line::from(""),
+            Line::from(Span::styled(
+                "Logs will appear here as the backend processes requests",
+                Theme::muted(),
+            )),
+        ]
+    } else {
+        // Show last N lines that fit in the area
+        let max_lines = area.height.saturating_sub(2) as usize;
+        let start_idx = app.backend_logs.len().saturating_sub(max_lines);
+
+        app.backend_logs[start_idx..]
+            .iter()
+            .map(|log_line| {
+                // Color code log levels
+                if log_line.contains("ERROR") || log_line.contains("Error") {
+                    Line::from(Span::styled(log_line, Theme::error()))
+                } else if log_line.contains("WARN") || log_line.contains("Warning") {
+                    Line::from(Span::styled(
+                        log_line,
+                        ratatui::style::Style::default()
+                            .fg(ratatui::style::Color::Yellow),
+                    ))
+                } else if log_line.contains("INFO") {
+                    Line::from(Span::styled(log_line, Theme::text()))
+                } else {
+                    Line::from(Span::styled(log_line, Theme::muted()))
+                }
+            })
+            .collect()
+    };
+
+    let paragraph = Paragraph::new(lines);
     f.render_widget(paragraph, area);
 }
 

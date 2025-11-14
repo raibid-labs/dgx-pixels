@@ -78,6 +78,18 @@ impl EventHandler {
             KeyCode::Enter => {
                 Self::trigger_generation(app);
             }
+            KeyCode::Tab => {
+                // Switch preview tabs (only in debug mode)
+                app.next_preview_tab();
+            }
+            KeyCode::Char('p') if app.debug_mode => {
+                // Switch to Preview tab
+                app.set_preview_tab(0);
+            }
+            KeyCode::Char('l') if app.debug_mode => {
+                // Switch to Logs tab
+                app.set_preview_tab(1);
+            }
             KeyCode::Char(c) => app.input_char(c),
             KeyCode::Backspace => app.input_backspace(),
             _ => {}

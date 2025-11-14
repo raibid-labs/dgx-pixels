@@ -102,6 +102,9 @@ pub struct App {
 
     /// Backend log lines (for debug mode)
     pub backend_logs: Vec<String>,
+
+    /// Current preview tab (0=Preview, 1=Logs)
+    pub preview_tab: usize,
 }
 
 impl Default for App {
@@ -136,6 +139,23 @@ impl App {
             zmq_client: None,
             debug_mode: false,
             backend_logs: Vec::new(),
+            preview_tab: 0,
+        }
+    }
+
+    /// Switch to next preview tab
+    pub fn next_preview_tab(&mut self) {
+        if self.debug_mode {
+            self.preview_tab = (self.preview_tab + 1) % 2;
+            self.needs_redraw = true;
+        }
+    }
+
+    /// Switch to specific preview tab
+    pub fn set_preview_tab(&mut self, tab: usize) {
+        if self.debug_mode && tab < 2 {
+            self.preview_tab = tab;
+            self.needs_redraw = true;
         }
     }
 
