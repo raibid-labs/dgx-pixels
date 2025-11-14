@@ -75,14 +75,11 @@ impl EventHandler {
 
     fn handle_generation_keys(app: &mut App, key: crossterm::event::KeyEvent) {
         match key.code {
-            KeyCode::Char('g') | KeyCode::Char('G') => {
+            KeyCode::Enter => {
                 Self::trigger_generation(app);
             }
             KeyCode::Char(c) => app.input_char(c),
             KeyCode::Backspace => app.input_backspace(),
-            KeyCode::Enter => {
-                Self::trigger_generation(app);
-            }
             _ => {}
         }
     }
