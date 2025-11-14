@@ -11,7 +11,6 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 use std::time::Duration;
 use tracing::{debug, error, info, warn};
-
 /// ZeroMQ client for backend communication
 pub struct ZmqClient {
     req_sender: Sender<ClientRequest>,
@@ -20,6 +19,17 @@ pub struct ZmqClient {
     _req_thread: thread::JoinHandle<()>,
     _sub_thread: thread::JoinHandle<()>,
 }
+
+impl std::fmt::Debug for ZmqClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ZmqClient")
+            .field("req_sender", &"Sender<ClientRequest>")
+            .field("resp_receiver", &"Receiver<Response>")
+            .field("update_receiver", &"Receiver<ProgressUpdate>")
+            .finish()
+    }
+}
+
 
 /// Internal message for request thread
 enum ClientRequest {
