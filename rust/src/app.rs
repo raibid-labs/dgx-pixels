@@ -139,7 +139,7 @@ impl App {
             zmq_client: None,
             debug_mode: false,
             backend_logs: Vec::new(),
-            preview_tab: 0,
+            preview_tab: 0, // Will be set to 1 (Logs) if debug_mode is enabled
         }
     }
 

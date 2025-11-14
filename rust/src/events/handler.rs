@@ -74,20 +74,24 @@ impl EventHandler {
     }
 
     fn handle_generation_keys(app: &mut App, key: crossterm::event::KeyEvent) {
+        use crossterm::event::KeyModifiers;
+
         match key.code {
             KeyCode::Enter => {
                 Self::trigger_generation(app);
             }
-            KeyCode::Tab => {
-                // Switch preview tabs (only in debug mode)
+            // Tab switching with Ctrl modifier (doesn't interfere with typing)
+            KeyCode::Tab if key.modifiers.contains(KeyModifiers::CONTROL) && app.debug_mode => {
                 app.next_preview_tab();
             }
-            KeyCode::Char('p') if app.debug_mode => {
-                // Switch to Preview tab
+            KeyCode::Char('p')
+                if key.modifiers.contains(KeyModifiers::CONTROL) && app.debug_mode =>
+            {
                 app.set_preview_tab(0);
             }
-            KeyCode::Char('l') if app.debug_mode => {
-                // Switch to Logs tab
+            KeyCode::Char('l')
+                if key.modifiers.contains(KeyModifiers::CONTROL) && app.debug_mode =>
+            {
                 app.set_preview_tab(1);
             }
             KeyCode::Char(c) => app.input_char(c),

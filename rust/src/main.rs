@@ -65,6 +65,11 @@ async fn main() -> Result<()> {
     let mut app = App::new();
     app.debug_mode = args.debug;
 
+    // Default to Logs tab in debug mode
+    if args.debug {
+        app.preview_tab = 1;
+    }
+
     // Initialize ZeroMQ client for backend communication
     match ZmqClient::new_default() {
         Ok(client) => {

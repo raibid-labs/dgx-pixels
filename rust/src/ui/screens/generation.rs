@@ -21,62 +21,7 @@ pub fn render(f: &mut Frame, app: &App) {
     // Body
     render_body(f, chunks[1], app);
 
-    let cache_stats = app.preview_manager.cache_stats();
-    let status_text = format!(
-        "GPU: Ready | Memory: 104GB free | Cache: {:.1}MB ({} previews)",
-        cache_stats.size_mb(),
-        cache_stats.entries
-    );
-    let status = create_status_bar(&status_text);
-    f.render_widget(status, chunks[2]);
-    let cache_stats = app.preview_manager.cache_stats();
-    let status_text = format!(
-        "GPU: Ready | Memory: 104GB free | Cache: {:.1}MB ({} previews)",
-        cache_stats.size_mb(),
-        cache_stats.entries
-    );
-    let status = create_status_bar(&status_text);
-    f.render_widget(status, chunks[2]);
-    let cache_stats = app.preview_manager.cache_stats();
-    let status_text = format!(
-        "GPU: Ready | Memory: 104GB free | Cache: {:.1}MB ({} previews)",
-        cache_stats.size_mb(),
-        cache_stats.entries
-    );
-    let status = create_status_bar(&status_text);
-    f.render_widget(status, chunks[2]);
-    let cache_stats = app.preview_manager.cache_stats();
-    let status_text = format!(
-        "GPU: Ready | Memory: 104GB free | Cache: {:.1}MB ({} previews)",
-        cache_stats.size_mb(),
-        cache_stats.entries
-    );
-    let status = create_status_bar(&status_text);
-    f.render_widget(status, chunks[2]);
-    let cache_stats = app.preview_manager.cache_stats();
-    let status_text = format!(
-        "GPU: Ready | Memory: 104GB free | Cache: {:.1}MB ({} previews)",
-        cache_stats.size_mb(),
-        cache_stats.entries
-    );
-    let status = create_status_bar(&status_text);
-    f.render_widget(status, chunks[2]);
-    let cache_stats = app.preview_manager.cache_stats();
-    let status_text = format!(
-        "GPU: Ready | Memory: 104GB free | Cache: {:.1}MB ({} previews)",
-        cache_stats.size_mb(),
-        cache_stats.entries
-    );
-    let status = create_status_bar(&status_text);
-    f.render_widget(status, chunks[2]);
-    let cache_stats = app.preview_manager.cache_stats();
-    let status_text = format!(
-        "GPU: Ready | Memory: 104GB free | Cache: {:.1}MB ({} previews)",
-        cache_stats.size_mb(),
-        cache_stats.entries
-    );
-    let status = create_status_bar(&status_text);
-    f.render_widget(status, chunks[2]);
+    // Status bar
     let cache_stats = app.preview_manager.cache_stats();
     let status_text = format!(
         "GPU: Ready | Memory: 104GB free | Cache: {:.1}MB ({} previews)",
@@ -239,7 +184,7 @@ fn render_preview(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
     let title_string = if app.debug_mode {
         let tab_titles = vec!["Preview", "Backend Logs"];
         format!(
-            " {} [Tab/P/L] ",
+            " {} [Ctrl+Tab/P/L] ",
             tab_titles
                 .iter()
                 .enumerate()
