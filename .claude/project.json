@@ -1,0 +1,116 @@
+{
+  "$schema": "https://claude.ai/schemas/project-config.json",
+  "version": "1.0.0",
+  "extends": "github:raibid-labs/workspace/templates/repo-types/python-ml.json",
+
+  "project": {
+    "name": "dgx-pixels",
+    "type": "python-ml",
+    "description": "AI-powered pixel art generation system optimized for NVIDIA DGX-Spark, designed to accelerate game asset creation with seamless integration into the Bevy game engine",
+    "repository": "https://github.com/raibid-labs/dgx-pixels"
+  },
+
+  "language": {
+    "primary": "python",
+    "secondary": ["rust", "nushell", "dockerfile", "cuda"]
+  },
+
+  "contextFiles": [
+    "README.md",
+    "CONTRIBUTING.md",
+    "CLAUDE.md",
+    "justfile",
+    "docs/01-research-findings.md",
+    "docs/02-architecture-proposals.md",
+    "docs/03-technology-deep-dive.md",
+    "docs/04-bevy-integration.md",
+    "docs/05-training-roadmap.md",
+    "docs/06-implementation-plan.md",
+    "docs/07-rust-python-architecture.md",
+    "docs/08-tui-design.md",
+    "docs/ROADMAP.md",
+    "docs/hardware.md",
+    "docs/metrics.md",
+    "python/**/*.py",
+    "rust/**/*.rs",
+    "workflows/*.json"
+  ],
+
+  "specialization": {
+    "domain": "AI Image Generation",
+    "hardware": "NVIDIA DGX-Spark GB10 Grace Blackwell Superchip",
+    "models": [
+      "Stable Diffusion XL 1.0",
+      "Custom LoRA fine-tuning"
+    ],
+    "integrations": [
+      "ComfyUI for inference",
+      "Bevy game engine via MCP",
+      "Rust TUI with ZeroMQ IPC"
+    ]
+  },
+
+  "dgxContext": {
+    "workload": "Pixel art generation for game development",
+    "targetHardware": {
+      "platform": "DGX-Spark GB10",
+      "gpu": "Single NVIDIA GB10 Grace Blackwell",
+      "memory": "128GB unified LPDDR5x",
+      "cpu": "20-core ARM (10x Cortex-X925 + 10x Cortex-A725)",
+      "compute": "1000 TOPS",
+      "precision": ["FP4", "FP16", "FP32"]
+    },
+    "optimizations": {
+      "unifiedMemory": "Zero-copy CPU↔GPU transfers",
+      "inference": "2-4s per 1024x1024 sprite",
+      "batchGeneration": "15-25 sprites/min",
+      "loraTraining": "2-4 hours for 50 images"
+    }
+  },
+
+  "documentation": {
+    "primary": [
+      "README.md - Project overview and quick start",
+      "CONTRIBUTING.md - Development guidelines",
+      "CLAUDE.md - Claude-specific context"
+    ],
+    "technical": [
+      "docs/01-research-findings.md - Comprehensive research",
+      "docs/02-architecture-proposals.md - Architecture options",
+      "docs/03-technology-deep-dive.md - Technical details",
+      "docs/07-rust-python-architecture.md - Hybrid stack design",
+      "docs/08-tui-design.md - TUI mockups and workflows"
+    ],
+    "implementation": [
+      "docs/06-implementation-plan.md - Step-by-step guide",
+      "docs/ROADMAP.md - Milestone-based development plan",
+      "docs/hardware.md - Hardware specifications",
+      "docs/metrics.md - Performance benchmarks"
+    ]
+  },
+
+  "additionalRules": [
+    "This is a DGX workload - optimize for single GPU with unified memory",
+    "Pixel art generation requires specialized LoRA training",
+    "Bevy integration via Model Context Protocol (MCP)",
+    "Rust TUI for fast, responsive terminal interface",
+    "ComfyUI for inference engine flexibility",
+    "All file paths must be relative to repository root",
+    "Follow milestone-based roadmap (M0-M5)",
+    "Document all DGX-specific optimizations"
+  ],
+
+  "workflows": {
+    "development": [
+      "just init - Initialize development environment",
+      "just dev - Start development server",
+      "just test - Run test suite",
+      "just build - Build Rust components"
+    ],
+    "generation": [
+      "just generate - Generate pixel art sprite",
+      "just train-lora - Train custom LoRA model",
+      "just benchmark - Run performance benchmarks"
+    ]
+  }
+}
