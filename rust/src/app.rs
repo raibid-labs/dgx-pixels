@@ -2,6 +2,8 @@ use crate::sixel::{PreviewManager, TerminalCapability};
 use crate::ui::screens::comparison::ComparisonState;
 use std::path::PathBuf;
 use std::time::Instant;
+use crate::zmq_client::ZmqClient;
+use crate::messages::Request;
 
 /// Represents the current screen in the application
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -92,6 +94,12 @@ pub struct App {
 
     /// Comparison screen state (NEW)
     pub comparison_state: ComparisonState,
+    // Queue Management State (NEW: WS-18)
+    /// Selected queue job index
+    pub selected_queue_index: usize,
+
+    /// ZeroMQ client for backend communication
+    pub zmq_client: Option<ZmqClient>,
 }
 
 impl Default for App {
@@ -123,6 +131,8 @@ impl App {
             gallery_images: Vec::new(),
             selected_gallery_index: 0,
             comparison_state: ComparisonState::new(),
+            selected_queue_index: 0,
+            zmq_client: ZmqClient::new_default().ok(),
         }
     }
 
@@ -231,6 +241,10 @@ impl App {
     #[allow(dead_code)]
     pub fn remove_job(&mut self, job_id: &str) {
         self.active_jobs.retain(|j| j.job_id != job_id);
+        // Adjust selected index if needed (WS-18)
+        if self.selected_queue_index >= self.active_jobs.len() && self.selected_queue_index > 0 {
+            self.selected_queue_index = self.active_jobs.len().saturating_sub(1);
+        }
         self.needs_redraw = true;
     }
 
@@ -267,6 +281,103 @@ impl App {
     /// Get selected gallery image
     pub fn selected_gallery_image(&self) -> Option<&PathBuf> {
         self.gallery_images.get(self.selected_gallery_index)
+    }
+
+    // ========================================================================
+    // Queue Management Methods (NEW: WS-18)
+    // ========================================================================
+
+    /// Select next job in queue
+    pub fn queue_next(&mut self) {
+        if !self.active_jobs.is_empty() {
+            self.selected_queue_index = (self.selected_queue_index + 1) % self.active_jobs.len();
+            self.needs_redraw = true;
+        }
+    }
+
+    /// Select previous job in queue
+    pub fn queue_prev(&mut self) {
+        if !self.active_jobs.is_empty() {
+            self.selected_queue_index = if self.selected_queue_index == 0 {
+                self.active_jobs.len() - 1
+            } else {
+                self.selected_queue_index - 1
+            };
+            self.needs_redraw = true;
+        }
+    }
+
+    /// Get currently selected job
+    pub fn selected_queue_job(&self) -> Option<&ActiveJob> {
+        self.active_jobs.get(self.selected_queue_index)
+    }
+
+    /// Delete selected queued job
+    pub fn delete_selected_job(&mut self) {
+        if let Some(job) = self.selected_queue_job() {
+            // Only allow deleting queued jobs
+            if matches!(job.status, JobStatus::Queued) {
+                let job_id = job.job_id.clone();
+
+                // Send cancel request to backend if ZMQ client is available
+                if let Some(client) = &self.zmq_client {
+                    let _ = client.send_request(Request::Cancel { job_id: job_id.clone() });
+                }
+
+                self.remove_job(&job_id);
+            }
+        }
+    }
+
+    /// Cancel selected running job
+    pub fn cancel_selected_job(&mut self) {
+        if let Some(job) = self.selected_queue_job() {
+            // Only allow cancelling running jobs
+            if matches!(job.status, JobStatus::Running { .. }) {
+                let job_id = job.job_id.clone();
+
+                // Send cancel request to backend
+                if let Some(client) = &self.zmq_client {
+                    let _ = client.send_request(Request::Cancel {
+                        job_id: job_id.clone(),
+                    });
+                }
+
+                // Update status to indicate cancellation in progress
+                self.update_job_status(
+                    &job_id,
+                    JobStatus::Failed {
+                        error: "Cancelling...".to_string(),
+                    },
+                );
+            }
+        }
+    }
+
+    /// Retry selected failed job
+    pub fn retry_selected_job(&mut self) {
+        if let Some(job) = self.selected_queue_job().cloned() {
+            // Only allow retrying failed jobs
+            if matches!(job.status, JobStatus::Failed { .. }) {
+                // Update status back to queued
+                self.update_job_status(&job.job_id, JobStatus::Queued);
+
+                // Re-submit to backend if ZMQ client is available
+                if let Some(client) = &self.zmq_client {
+                    // Note: This is a simplified retry - in production you'd want to
+                    // re-submit with the original parameters stored in the job
+                    let _ = client.send_request(Request::Generate {
+                        id: job.job_id,
+                        prompt: job.prompt,
+                        model: "sdxl-base".to_string(), // Default model
+                        lora: None,
+                        size: (1024, 1024),
+                        steps: 30,
+                        cfg_scale: 7.5,
+                    });
+                }
+            }
+        }
     }
 }
 
