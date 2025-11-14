@@ -149,7 +149,7 @@ async fn run_app<B: ratatui::backend::Backend>(
                     info!(
                         "Job {} progress: {}% ({})",
                         job_id,
-                        (percent * 100.0) as u32,
+                        percent as u32,
                         stage_str
                     );
                     app.update_job_status(
@@ -160,6 +160,19 @@ async fn run_app<B: ratatui::backend::Backend>(
                             eta_s,
                         },
                     );
+                    app.needs_redraw = true;
+                }
+                ProgressUpdate::JobComplete {
+                    job_id,
+                    image_path,
+                    duration_s,
+                } => {
+                    info!(
+                        "Job {} completed in {:.1}s: {}",
+                        job_id, duration_s, image_path
+                    );
+                    // Add to gallery
+                    app.add_to_gallery(PathBuf::from(image_path));
                     app.needs_redraw = true;
                 }
                 _ => {} // Ignore other update types
