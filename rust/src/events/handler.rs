@@ -40,7 +40,14 @@ impl EventHandler {
             return;
         }
 
-        // Screen navigation keys
+        // Screen-specific keys take priority on input screens
+        // (Generation and Comparison screens have text input)
+        if matches!(app.current_screen, Screen::Generation | Screen::Comparison) {
+            Self::handle_screen_specific(app, key);
+            return;
+        }
+
+        // Screen navigation keys (only when NOT on input screens)
         match key.code {
             KeyCode::Char('1') => app.navigate_to(Screen::Generation),
             KeyCode::Char('2') => app.navigate_to(Screen::Queue),
