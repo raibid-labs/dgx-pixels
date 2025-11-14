@@ -62,6 +62,9 @@ class GenerateRequest:
     steps: int
     cfg_scale: float
     lora: Optional[str] = None
+    batch_size: Optional[int] = None
+    animation_frames: Optional[int] = None
+    tileset_grid: Optional[List[int]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         result = {
@@ -75,6 +78,12 @@ class GenerateRequest:
         }
         if self.lora is not None:
             result["lora"] = self.lora
+        if self.batch_size is not None:
+            result["batch_size"] = self.batch_size
+        if self.animation_frames is not None:
+            result["animation_frames"] = self.animation_frames
+        if self.tileset_grid is not None:
+            result["tileset_grid"] = self.tileset_grid
         return result
 
 
@@ -353,6 +362,9 @@ def deserialize_request(data: bytes) -> Request:
             steps=obj["steps"],
             cfg_scale=obj["cfg_scale"],
             lora=obj.get("lora"),
+            batch_size=obj.get("batch_size"),
+            animation_frames=obj.get("animation_frames"),
+            tileset_grid=obj.get("tileset_grid"),
         )
     elif msg_type == "cancel":
         return CancelRequest(job_id=obj["job_id"])

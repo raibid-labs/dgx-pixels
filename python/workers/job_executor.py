@@ -213,26 +213,27 @@ class JobExecutor:
                 print(f"[{job_id}] Failed to interrupt: {e}")
 
     def _load_workflow(self, job: Job) -> dict:
-        """Load workflow JSON file
-
-        Args:
-            job: Job with workflow requirements
-
-        Returns:
-            Workflow dictionary
-        """
-        # Determine workflow file
-        workflow_file = self.config.default_workflow
-
-        # TODO: Add logic to select different workflows based on job parameters
-        # For example, batch workflows, img2img, etc.
-
+        """Load workflow JSON file based on job parameters"""
+        workflow_file = self._select_workflow(job)
         workflow_path = os.path.join(self.config.workflow_dir, workflow_file)
-
         if not os.path.exists(workflow_path):
             raise FileNotFoundError(f"Workflow not found: {workflow_path}")
-
+        print(f"[{job.job_id}] Loading workflow: {workflow_file}")
         return self.client.load_workflow(workflow_path)
+
+    def _select_workflow(self, job: Job) -> str:
+        """Select appropriate workflow based on job parameters"""
+        if job.animation_frames and job.animation_frames > 1:
+            print(f"[{job.job_id}] Workflow: animation ({job.animation_frames} frames)")
+            return "animation.json"
+        if job.tileset_grid and len(job.tileset_grid) == 2:
+            print(f"[{job.job_id}] Workflow: tileset ({job.tileset_grid[0]}x{job.tileset_grid[1]})")
+            return "tileset.json"
+        if job.batch_size and job.batch_size > 1:
+            print(f"[{job.job_id}] Workflow: batch ({job.batch_size} variations)")
+            return "batch.json"
+        print(f"[{job.job_id}] Workflow: txt2img (single)")
+        return "txt2img.json"
 
     def _inject_parameters(self, job: Job, workflow: dict) -> dict:
         """Inject job parameters into workflow
@@ -252,6 +253,19 @@ class JobExecutor:
             width=job.size[0] if job.size else 1024,
             height=job.size[1] if len(job.size) > 1 else 1024,
         )
+        if job.batch_size and job.batch_size > 1:
+            workflow = self._inject_batch_size(workflow, job.batch_size)
+        return workflow
+
+    def _inject_batch_size(self, workflow: dict, batch_size: int) -> dict:
+        """Inject batch size into workflow"""
+        for node_id, node in workflow.items():
+            if node.get("class_type") == "EmptyLatentImage":
+                if "inputs" in node:
+                    node["inputs"]["batch_size"] = batch_size
+                    print(f"  Set batch_size={batch_size} in node {node_id}")
+                break
+        return workflow
 
     def _handle_progress(self, job_id: str, workflow_progress: WorkflowProgress) -> None:
         """Handle progress updates from ComfyUI

@@ -211,7 +211,7 @@ class ZmqServer:
             )
 
             # Estimate time
-            estimated_time = self.job_queue.estimate_time(request.steps)
+            estimated_time = self.job_queue.estimate_time(request.steps, request.batch_size, request.animation_frames)
 
             # Publish job started update
             self._publish_update(
