@@ -22,12 +22,19 @@ use zmq_client::ZmqClient;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize logging
+    // Initialize logging to file (not stdout, to avoid interfering with TUI)
+    let log_file = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("dgx-pixels-tui.log")?;
+
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::from_default_env()
                 .add_directive(tracing::Level::INFO.into()),
         )
+        .with_writer(std::sync::Mutex::new(log_file))
+        .with_ansi(false) // No ANSI colors in log file
         .init();
 
     info!("Starting DGX-Pixels TUI v0.1.0");
