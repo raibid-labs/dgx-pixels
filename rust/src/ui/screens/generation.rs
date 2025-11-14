@@ -214,54 +214,42 @@ fn render_preview(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
     // Otherwise render preview (tab 0 or non-debug mode)
     // Check if we have a current preview
     if let Some(preview_path) = &app.current_preview {
-        match app.terminal_capability {
-            TerminalCapability::Sixel => {
-                // Try to get cached preview
-                if let Some(preview_entry) = app.preview_manager.get_preview(preview_path) {
-                    // Render Sixel image
-                    render_sixel_preview(f, inner, &preview_entry.sixel_data);
-                } else {
-                    // Request preview if not cached
-                    let options = RenderOptions {
-                        width: inner.width.saturating_sub(2),
-                        height: inner.height.saturating_sub(2),
-                        preserve_aspect: true,
-                        high_quality: true,
-                    };
-
-                    let _ = app
-                        .preview_manager
-                        .request_preview(preview_path.clone(), options);
-
-                    // Show loading message
-                    render_loading_preview(f, inner);
-                }
-            }
-            TerminalCapability::TextOnly => {
-                // Show preview info without Sixel
-                render_text_preview_info(f, inner, preview_path);
-            }
-        }
+        // For now, just show the image info (Sixel rendering not yet implemented)
+        render_preview_info(f, inner, preview_path);
     } else {
         // No preview available
         render_no_preview(f, inner);
     }
 }
 
-fn render_sixel_preview(f: &mut Frame, area: ratatui::layout::Rect, sixel_data: &str) {
-    // Note: In a real implementation, we'd use crossterm to write raw Sixel data
-    // For now, show a placeholder indicating Sixel would render here
+fn render_preview_info(f: &mut Frame, area: ratatui::layout::Rect, path: &Path) {
+    let filename = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("unknown");
+
+    // Get file size
+    let size_str = if let Ok(metadata) = std::fs::metadata(path) {
+        let size_kb = metadata.len() / 1024;
+        format!("{} KB", size_kb)
+    } else {
+        "Unknown size".to_string()
+    };
+
     let lines = vec![
         Line::from(""),
-        Line::from(Span::styled("[Sixel Preview]", Theme::highlight())),
+        Line::from(Span::styled("✓ Generation Complete", Theme::success())),
         Line::from(""),
-        Line::from(Span::styled("Preview rendering...", Theme::muted())),
+        Line::from(format!("File: {}", filename)),
+        Line::from(format!("Size: {}", size_str)),
         Line::from(""),
-        Line::from(format!("Data size: {} bytes", sixel_data.len())),
+        Line::from(Span::styled("Preview: Sixel rendering coming soon!", Theme::muted())),
+        Line::from(""),
+        Line::from(Span::styled("For now, check outputs/ folder", Theme::muted())),
     ];
 
     let paragraph = Paragraph::new(lines)
-        .style(Theme::muted())
+        .style(Theme::text())
         .alignment(ratatui::layout::Alignment::Center);
 
     f.render_widget(paragraph, area);

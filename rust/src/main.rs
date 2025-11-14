@@ -109,13 +109,26 @@ async fn run_app<B: ratatui::backend::Backend>(
 
         match File::open("dgx-pixels-backend.log") {
             Ok(f) => {
+                info!("Successfully opened backend log file for tailing");
                 let reader = BufReader::new(f);
-                // Don't seek - we want to see all content including what's already there
+                // Read all existing content first
+                let mut initial_reader = BufReader::new(File::open("dgx-pixels-backend.log").unwrap());
+                let mut line = String::new();
+                while initial_reader.read_line(&mut line).unwrap_or(0) > 0 {
+                    app.backend_logs.push(line.trim_end().to_string());
+                    line.clear();
+                }
+                if !app.backend_logs.is_empty() {
+                    info!("Read {} initial log lines", app.backend_logs.len());
+                    app.needs_redraw = true;
+                }
                 Some(reader)
             }
             Err(e) => {
                 warn!("Could not open backend log file: {}", e);
                 app.backend_logs.push(format!("⚠️  Backend log file not found: {}", e));
+                app.backend_logs.push("Make sure the backend is running!".to_string());
+                app.needs_redraw = true;
                 None
             }
         }
