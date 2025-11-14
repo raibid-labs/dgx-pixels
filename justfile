@@ -102,6 +102,14 @@ debug:
     #!/usr/bin/env bash
     set -euo pipefail
 
+    # Kill any existing backend workers
+    echo "🧹 Cleaning up any existing backend workers..."
+    pkill -f "generation_worker.py" 2>/dev/null || true
+    sleep 1
+
+    # Clear old log file
+    > dgx-pixels-backend.log
+
     # Start backend with logging to file
     if [ ! -d "venv" ]; then
         echo "❌ Virtual environment not found. Run 'just init' first."
@@ -110,20 +118,27 @@ debug:
 
     echo "🔧 Starting backend with debug logging..."
     source venv/bin/activate
-    python python/workers/generation_worker.py --req-addr tcp://127.0.0.1:5555 --pub-addr tcp://127.0.0.1:5556 > dgx-pixels-backend.log 2>&1 &
+    python python/workers/generation_worker.py --req-addr tcp://127.0.0.1:5555 --pub-addr tcp://127.0.0.1:5556 >> dgx-pixels-backend.log 2>&1 &
     BACKEND_PID=$!
     echo "Backend started (PID: $BACKEND_PID)"
 
-    # Wait for backend to start
+    # Wait for backend to start and check if it's actually running
     sleep 2
+    if ! kill -0 $BACKEND_PID 2>/dev/null; then
+        echo "❌ Backend failed to start. Check dgx-pixels-backend.log for errors."
+        tail -20 dgx-pixels-backend.log
+        exit 1
+    fi
 
     # Start TUI with debug flag
     echo "🚀 Starting TUI in debug mode..."
     cd rust && cargo run --release -- --debug
 
     # Cleanup: kill backend when TUI exits
-    echo "Stopping backend (PID: $BACKEND_PID)..."
+    echo ""
+    echo "🛑 Stopping backend (PID: $BACKEND_PID)..."
     kill $BACKEND_PID 2>/dev/null || true
+    pkill -f "generation_worker.py" 2>/dev/null || true
 
 # Start Python backend worker
 backend:

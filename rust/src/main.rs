@@ -17,7 +17,7 @@ use crossterm::{
 };
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::fs::File;
-use std::io::{self, BufRead, BufReader, Seek, SeekFrom};
+use std::io::{self, BufRead, BufReader};
 use std::time::Duration;
 use tracing::{info, warn};
 use zmq_client::ZmqClient;
@@ -104,15 +104,18 @@ async fn run_app<B: ratatui::backend::Backend>(
 ) -> Result<()> {
     // Open backend log file if debug mode is enabled
     let mut log_reader = if app.debug_mode {
+        // Wait a moment for the log file to be created
+        std::thread::sleep(std::time::Duration::from_millis(500));
+
         match File::open("dgx-pixels-backend.log") {
             Ok(f) => {
-                let mut reader = BufReader::new(f);
-                // Seek to end to only read new lines
-                let _ = reader.seek(SeekFrom::End(0));
+                let reader = BufReader::new(f);
+                // Don't seek - we want to see all content including what's already there
                 Some(reader)
             }
             Err(e) => {
                 warn!("Could not open backend log file: {}", e);
+                app.backend_logs.push(format!("⚠️  Backend log file not found: {}", e));
                 None
             }
         }
