@@ -8,6 +8,9 @@
 //!
 //! - **Plugins**: [`DgxPixelsPlugin`] is the main plugin that initializes all systems
 //! - **Configuration**: [`BevyAppConfig`] controls update rate and runtime settings
+//! - **Resources**: Global singleton state (screen, input, gallery, etc.)
+//! - **Components**: Per-entity data (jobs, previews)
+//! - **Systems**: Logic that operates on resources and components
 //!
 //! ## Feature Flags
 //!
@@ -25,8 +28,15 @@
 //!     .run();
 //! ```
 
+pub mod components;
 pub mod config;
 pub mod plugins;
+pub mod resources;
+pub mod systems;
 
 pub use config::BevyAppConfig;
 pub use plugins::DgxPixelsPlugin;
+
+// Re-export commonly used types
+pub use components::{Job, JobStatus, PreviewImage};
+pub use resources::{AppState, CurrentScreen, GalleryState, InputBuffer, JobTracker, Screen};
