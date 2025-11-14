@@ -174,11 +174,22 @@ async fn run_app<B: ratatui::backend::Backend>(
                 Response::JobComplete {
                     job_id,
                     image_path,
-                    duration_s: _,
+                    duration_s,
                 } => {
                     info!("Job complete: {}, output: {}", job_id, image_path);
+                    let path = PathBuf::from(&image_path);
                     // Add to gallery
-                    app.add_to_gallery(PathBuf::from(image_path));
+                    app.add_to_gallery(path.clone());
+                    // Set as current preview
+                    app.current_preview = Some(path);
+                    // Update job status to complete
+                    app.update_job_status(
+                        &job_id,
+                        app::JobStatus::Complete {
+                            image_path: PathBuf::from(image_path),
+                            duration_s,
+                        },
+                    );
                     app.needs_redraw = true;
                 }
                 Response::JobError { job_id, error } => {
@@ -227,8 +238,19 @@ async fn run_app<B: ratatui::backend::Backend>(
                         "Job {} completed in {:.1}s: {}",
                         job_id, duration_s, image_path
                     );
+                    let path = PathBuf::from(&image_path);
                     // Add to gallery
-                    app.add_to_gallery(PathBuf::from(image_path));
+                    app.add_to_gallery(path.clone());
+                    // Set as current preview
+                    app.current_preview = Some(path);
+                    // Update job status to complete
+                    app.update_job_status(
+                        &job_id,
+                        app::JobStatus::Complete {
+                            image_path: PathBuf::from(image_path),
+                            duration_s,
+                        },
+                    );
                     app.needs_redraw = true;
                 }
                 _ => {} // Ignore other update types

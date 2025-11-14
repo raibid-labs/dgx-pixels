@@ -118,7 +118,7 @@ debug:
 
     echo "🔧 Starting backend with debug logging..."
     source venv/bin/activate
-    python python/workers/generation_worker.py --req-addr tcp://127.0.0.1:5555 --pub-addr tcp://127.0.0.1:5556 >> dgx-pixels-backend.log 2>&1 &
+    python -u python/workers/generation_worker.py --req-addr tcp://127.0.0.1:5555 --pub-addr tcp://127.0.0.1:5556 >> dgx-pixels-backend.log 2>&1 &
     BACKEND_PID=$!
     echo "Backend started (PID: $BACKEND_PID)"
 
