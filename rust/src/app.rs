@@ -1,5 +1,6 @@
 use crate::sixel::{PreviewManager, TerminalCapability};
 use crate::ui::screens::comparison::ComparisonState;
+use crate::zmq_client::ZmqClient;
 use std::path::PathBuf;
 use std::time::Instant;
 
@@ -92,6 +93,9 @@ pub struct App {
 
     /// Comparison screen state (NEW)
     pub comparison_state: ComparisonState,
+
+    /// ZeroMQ client for backend communication
+    pub zmq_client: Option<ZmqClient>,
 }
 
 impl Default for App {
@@ -123,6 +127,7 @@ impl App {
             gallery_images: Vec::new(),
             selected_gallery_index: 0,
             comparison_state: ComparisonState::new(),
+            zmq_client: None,
         }
     }
 

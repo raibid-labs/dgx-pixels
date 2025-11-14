@@ -17,7 +17,8 @@ use crossterm::{
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::io;
 use std::time::Duration;
-use tracing::info;
+use tracing::{info, warn};
+use zmq_client::ZmqClient;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -40,6 +41,18 @@ async fn main() -> Result<()> {
 
     // Create app state
     let mut app = App::new();
+
+    // Initialize ZeroMQ client for backend communication
+    match ZmqClient::new_default() {
+        Ok(client) => {
+            info!("ZeroMQ client connected");
+            app.zmq_client = Some(client);
+        }
+        Err(e) => {
+            warn!("Failed to connect to backend: {}", e);
+            warn!("Generation features will be disabled");
+        }
+    }
 
     // Run the app
     let result = run_app(&mut terminal, &mut app).await;
@@ -67,6 +80,82 @@ async fn run_app<B: ratatui::backend::Backend>(
             if preview_result.entry.is_some() {
                 info!("Preview ready: {:?}", preview_result.path);
                 app.needs_redraw = true;
+            }
+        }
+
+        // Poll for ZMQ responses - collect first, then process
+        use messages::{ProgressUpdate, Response};
+        use std::path::PathBuf;
+
+        let mut responses = Vec::new();
+        let mut updates = Vec::new();
+
+        if let Some(ref client) = app.zmq_client {
+            while let Some(response) = client.try_recv_response() {
+                responses.push(response);
+            }
+            while let Some(update) = client.try_recv_update() {
+                updates.push(update);
+            }
+        }
+
+        // Process responses
+        for response in responses {
+            match response {
+                Response::JobAccepted {
+                    job_id,
+                    estimated_time_s: _,
+                } => {
+                    info!("Job accepted: {}", job_id);
+                }
+                Response::JobComplete {
+                    job_id,
+                    image_path,
+                    duration_s: _,
+                } => {
+                    info!("Job complete: {}, output: {}", job_id, image_path);
+                    // Add to gallery
+                    app.add_to_gallery(PathBuf::from(image_path));
+                    app.needs_redraw = true;
+                }
+                Response::JobError { job_id, error } => {
+                    warn!("Job {} failed: {}", job_id, error);
+                }
+                Response::Error { message } => {
+                    warn!("Backend error: {}", message);
+                }
+                _ => {} // Ignore other response types
+            }
+        }
+
+        // Process progress updates
+        for update in updates {
+            match update {
+                ProgressUpdate::Progress {
+                    job_id,
+                    stage,
+                    percent,
+                    eta_s,
+                    ..
+                } => {
+                    let stage_str = format!("{:?}", stage);
+                    info!(
+                        "Job {} progress: {}% ({})",
+                        job_id,
+                        (percent * 100.0) as u32,
+                        stage_str
+                    );
+                    app.update_job_status(
+                        &job_id,
+                        app::JobStatus::Running {
+                            stage: stage_str,
+                            progress: percent / 100.0,
+                            eta_s,
+                        },
+                    );
+                    app.needs_redraw = true;
+                }
+                _ => {} // Ignore other update types
             }
         }
 
