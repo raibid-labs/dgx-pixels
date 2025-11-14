@@ -40,6 +40,16 @@ serde_json = "1.0.145"
 rmp-serde = "1.3.0"
 uuid = { version = "1.18.1", features = ["v4", "serde"] }
 
+# Bevy ECS runtime (for migration to bevy_ratatui)
+# Note: Using Bevy 0.15 for compatibility with bevy_ratatui 0.7
+bevy = { version = "0.15", default-features = false, features = [
+    "bevy_asset",
+    "bevy_core_pipeline",
+    "bevy_render",
+    "multi_threaded",
+], optional = true }
+bevy_ratatui = { version = "0.7", optional = true }
+
 # Image processing and Sixel rendering
 image = "0.24"
 viuer = "0.7"
@@ -53,6 +63,10 @@ parking_lot = "0.12"
 criterion = "0.5"
 proptest = "1.4"
 tempfile = "3.8"
+
+[features]
+default = []
+bevy_migration_foundation = ["dep:bevy", "dep:bevy_ratatui"]
 
 [profile.release]
 opt-level = 3

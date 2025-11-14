@@ -32,6 +32,7 @@ Binary size: ~1.3 MB (stripped, optimized)
 
 ### Running the TUI
 
+**Classic Mode** (stable):
 ```bash
 ./target/release/dgx-pixels-tui
 ```
@@ -41,6 +42,18 @@ or from anywhere:
 ```bash
 dgx-pixels-tui
 ```
+
+**Bevy Mode** (experimental - requires feature flag):
+```bash
+cargo run --release --features bevy_migration_foundation
+```
+
+### Feature Flags
+
+- `bevy_migration_foundation`: Enable experimental Bevy ECS-based architecture (WIP)
+  - Part of the bevy_ratatui migration (see RFD 0003)
+  - Provides foundation for GPU-accelerated rendering and MCP integration
+  - Currently in development - not recommended for production use
 
 ### Keyboard Shortcuts
 

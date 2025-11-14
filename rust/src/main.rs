@@ -1,26 +1,6 @@
-mod app;
-mod comparison; // NEW: Comparison system
-mod events;
-mod messages;
-mod reports; // NEW: Report export
-mod sixel;
-mod ui;
-mod zmq_client;
-
 use anyhow::Result;
-use app::App;
 use clap::Parser;
-use crossterm::{
-    event::{self, Event},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
-use ratatui::{backend::CrosstermBackend, Terminal};
-use std::fs::File;
-use std::io::{self, BufRead, BufReader};
-use std::time::Duration;
-use tracing::{info, warn};
-use zmq_client::ZmqClient;
+use tracing::info;
 
 /// DGX-Pixels TUI - AI Pixel Art Generation
 #[derive(Parser, Debug)]
@@ -32,8 +12,7 @@ struct Args {
     debug: bool,
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     // Parse command line arguments
     let args = Args::parse();
 
@@ -54,248 +33,35 @@ async fn main() -> Result<()> {
 
     info!("Starting DGX-Pixels TUI v0.1.0 (debug={})", args.debug);
 
-    // Setup terminal
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
-
-    // Create app state
-    let mut app = App::new();
-    app.debug_mode = args.debug;
-
-    // Default to Logs tab in debug mode
-    if args.debug {
-        app.preview_tab = 1;
+    // Run either Bevy-based or classic mode based on feature flag
+    #[cfg(feature = "bevy_migration_foundation")]
+    {
+        info!("Starting Bevy-based DGX-Pixels TUI");
+        run_bevy_app()
     }
 
-    // Initialize ZeroMQ client for backend communication
-    match ZmqClient::new_default() {
-        Ok(client) => {
-            info!("ZeroMQ client connected");
-            app.zmq_client = Some(client);
+    #[cfg(not(feature = "bevy_migration_foundation"))]
+    {
+        info!("Starting classic ratatui DGX-Pixels TUI");
+        // Set debug mode in classic app if needed
+        if args.debug {
+            // Store debug flag for classic app
+            // Note: This is a temporary workaround until WS-02 (state migration)
+            // In the future, this will be stored in Bevy resources
+            std::env::set_var("DGX_PIXELS_DEBUG", "1");
         }
-        Err(e) => {
-            warn!("Failed to connect to backend: {}", e);
-            warn!("Generation features will be disabled");
-        }
+        dgx_pixels_tui::run_classic_app()
     }
-
-    // Run the app
-    let result = run_app(&mut terminal, &mut app).await;
-
-    // Restore terminal
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-    terminal.show_cursor()?;
-
-    if let Err(err) = result {
-        eprintln!("Error: {}", err);
-    }
-
-    info!("DGX-Pixels TUI exited");
-    Ok(())
 }
 
-async fn run_app<B: ratatui::backend::Backend>(
-    terminal: &mut Terminal<B>,
-    app: &mut App,
-) -> Result<()> {
-    // Open backend log file if debug mode is enabled
-    let mut log_reader = if app.debug_mode {
-        // Wait a moment for the log file to be created
-        std::thread::sleep(std::time::Duration::from_millis(500));
+#[cfg(feature = "bevy_migration_foundation")]
+fn run_bevy_app() -> Result<()> {
+    use bevy::prelude::*;
+    use dgx_pixels_tui::bevy_app::DgxPixelsPlugin;
 
-        match File::open("dgx-pixels-backend.log") {
-            Ok(f) => {
-                info!("Successfully opened backend log file for tailing");
-                let reader = BufReader::new(f);
-                // Read all existing content first
-                let mut initial_reader = BufReader::new(File::open("dgx-pixels-backend.log").unwrap());
-                let mut line = String::new();
-                while initial_reader.read_line(&mut line).unwrap_or(0) > 0 {
-                    app.backend_logs.push(line.trim_end().to_string());
-                    line.clear();
-                }
-                if !app.backend_logs.is_empty() {
-                    info!("Read {} initial log lines", app.backend_logs.len());
-                    app.needs_redraw = true;
-                }
-                Some(reader)
-            }
-            Err(e) => {
-                warn!("Could not open backend log file: {}", e);
-                app.backend_logs.push(format!("⚠️  Backend log file not found: {}", e));
-                app.backend_logs.push("Make sure the backend is running!".to_string());
-                app.needs_redraw = true;
-                None
-            }
-        }
-    } else {
-        None
-    };
-
-    loop {
-        // Read new backend log lines if in debug mode
-        if let Some(ref mut reader) = log_reader {
-            let mut line = String::new();
-            while reader.read_line(&mut line).unwrap_or(0) > 0 {
-                app.backend_logs.push(line.trim_end().to_string());
-                // Keep only last 500 lines
-                if app.backend_logs.len() > 500 {
-                    app.backend_logs.remove(0);
-                }
-                app.needs_redraw = true;
-                line.clear();
-            }
-        }
-
-        // Process preview results from async worker
-        while let Some(preview_result) = app.preview_manager.try_recv_result() {
-            if preview_result.entry.is_some() {
-                info!("Preview ready: {:?}", preview_result.path);
-                app.needs_redraw = true;
-            }
-        }
-
-        // Poll for ZMQ responses - collect first, then process
-        use messages::{ProgressUpdate, Response};
-        use std::path::PathBuf;
-
-        let mut responses = Vec::new();
-        let mut updates = Vec::new();
-
-        if let Some(ref client) = app.zmq_client {
-            while let Some(response) = client.try_recv_response() {
-                responses.push(response);
-            }
-            while let Some(update) = client.try_recv_update() {
-                updates.push(update);
-            }
-        }
-
-        // Process responses
-        for response in responses {
-            match response {
-                Response::JobAccepted {
-                    job_id,
-                    estimated_time_s: _,
-                } => {
-                    info!("Job accepted: {}", job_id);
-                }
-                Response::JobComplete {
-                    job_id,
-                    image_path,
-                    duration_s,
-                } => {
-                    info!("Job complete: {}, output: {}", job_id, image_path);
-                    let path = PathBuf::from(&image_path);
-                    // Add to gallery
-                    app.add_to_gallery(path.clone());
-                    // Set as current preview
-                    app.current_preview = Some(path);
-                    // Update job status to complete
-                    app.update_job_status(
-                        &job_id,
-                        app::JobStatus::Complete {
-                            image_path: PathBuf::from(image_path),
-                            duration_s,
-                        },
-                    );
-                    app.needs_redraw = true;
-                }
-                Response::JobError { job_id, error } => {
-                    warn!("Job {} failed: {}", job_id, error);
-                }
-                Response::Error { message } => {
-                    warn!("Backend error: {}", message);
-                }
-                _ => {} // Ignore other response types
-            }
-        }
-
-        // Process progress updates
-        for update in updates {
-            match update {
-                ProgressUpdate::Progress {
-                    job_id,
-                    stage,
-                    percent,
-                    eta_s,
-                    ..
-                } => {
-                    let stage_str = format!("{:?}", stage);
-                    info!(
-                        "Job {} progress: {}% ({})",
-                        job_id,
-                        percent as u32,
-                        stage_str
-                    );
-                    app.update_job_status(
-                        &job_id,
-                        app::JobStatus::Running {
-                            stage: stage_str,
-                            progress: percent / 100.0,
-                            eta_s,
-                        },
-                    );
-                    app.needs_redraw = true;
-                }
-                ProgressUpdate::JobComplete {
-                    job_id,
-                    image_path,
-                    duration_s,
-                } => {
-                    info!(
-                        "Job {} completed in {:.1}s: {}",
-                        job_id, duration_s, image_path
-                    );
-                    let path = PathBuf::from(&image_path);
-                    // Add to gallery
-                    app.add_to_gallery(path.clone());
-                    // Set as current preview
-                    app.current_preview = Some(path);
-                    // Update job status to complete
-                    app.update_job_status(
-                        &job_id,
-                        app::JobStatus::Complete {
-                            image_path: PathBuf::from(image_path),
-                            duration_s,
-                        },
-                    );
-                    app.needs_redraw = true;
-                }
-                _ => {} // Ignore other update types
-            }
-        }
-
-        // Render UI
-        ui::render(terminal, app)?;
-        app.mark_rendered();
-
-        // Handle events with timeout
-        if event::poll(Duration::from_millis(16))? {
-            // 60Hz target
-            match event::read()? {
-                Event::Key(key) => {
-                    events::EventHandler::handle(app, events::AppEvent::Key(key));
-                }
-                Event::Resize(w, h) => {
-                    events::EventHandler::handle(app, events::AppEvent::Resize(w, h));
-                }
-                _ => {}
-            }
-        }
-
-        // Check if we should quit
-        if app.should_quit {
-            break;
-        }
-
-        // Small yield to prevent CPU spinning
-        tokio::time::sleep(Duration::from_millis(1)).await;
-    }
+    App::new()
+        .add_plugins(DgxPixelsPlugin)
+        .run();
 
     Ok(())
 }
