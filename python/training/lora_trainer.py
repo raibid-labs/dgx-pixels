@@ -12,6 +12,7 @@ Key Features:
 - Dataset auto-captioning support
 - Progress monitoring and checkpointing
 - ComfyUI integration for trained models
+- Validation image generation during training
 
 Target Performance:
 - Training time: 2-4 hours for 50 images @ 3000 steps
@@ -46,6 +47,7 @@ import logging
 from tqdm import tqdm
 import sys
 import os
+import hashlib
 
 # Import optimization framework from WS-05
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -88,6 +90,16 @@ class LoRAConfig:
     save_every_n_steps: int = 500
     validation_every_n_steps: int = 500
 
+    # Validation parameters
+    validation_prompts: List[str] = field(default_factory=lambda: [
+        "pixel art knight character sprite, standing pose, front view",
+        "pixel art wizard casting spell, side view, magic effects",
+        "pixel art dragon enemy sprite, flying pose, side view",
+    ])
+    validation_num_inference_steps: int = 25
+    validation_guidance_scale: float = 8.0
+    validation_seeds: Optional[List[int]] = None  # Fixed seeds for reproducibility
+
     # Optimization
     optimizer: str = "adamw_8bit"  # Memory-efficient optimizer
     lr_scheduler: str = "cosine"
@@ -126,6 +138,22 @@ class TrainingMetrics:
     time_per_step: float
     memory_allocated_gb: float
     timestamp: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class ValidationMetrics:
+    """Validation metrics for a single validation run"""
+    step: int
+    epoch: int
+    num_samples: int
+    generation_time_avg: float
+    output_dir: str
+    timestamp: str
+    prompts: List[str]
+    seeds: List[int]
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -278,6 +306,10 @@ class LoRATrainer:
         # Training state
         self.global_step = 0
         self.training_metrics: List[TrainingMetrics] = []
+        self.validation_metrics: List[ValidationMetrics] = []
+
+        # Validation pipeline (lazy loaded)
+        self._validation_pipeline: Optional[StableDiffusionXLPipeline] = None
 
         logger.info(f"Initialized LoRATrainer with config: {self.config}")
 
@@ -363,6 +395,10 @@ class LoRATrainer:
         """Main training loop"""
         logger.info("Starting LoRA training")
 
+        # Override validation prompts if provided
+        if validation_prompts is not None:
+            self.config.validation_prompts = validation_prompts
+
         # Load models
         self.load_models()
 
@@ -438,8 +474,8 @@ class LoRATrainer:
                     self._save_checkpoint()
 
                 # Run validation
-                if validation_prompts and self.global_step % self.config.validation_every_n_steps == 0:
-                    self._run_validation(validation_prompts)
+                if self.config.validation_prompts and self.global_step % self.config.validation_every_n_steps == 0:
+                    self._run_validation(self.config.validation_prompts, epoch)
 
                 self.global_step += 1
                 step_start_time = time.time()
@@ -639,24 +675,164 @@ class LoRATrainer:
 
         logger.info(f"Checkpoint saved successfully")
 
-    def _run_validation(self, prompts: List[str]):
-        """Generate validation samples"""
-        logger.info(f"Running validation with {len(prompts)} prompts")
+    def _get_validation_pipeline(self) -> StableDiffusionXLPipeline:
+        """Get or create validation pipeline with current LoRA weights"""
+        from diffusers import DPMSolverMultistepScheduler
 
-        # TODO: Implement validation generation
-        # This will be completed in validation module
-        pass
+        # Create pipeline with current model components
+        pipeline = StableDiffusionXLPipeline(
+            vae=self.vae,
+            text_encoder=self.text_encoder_1,
+            text_encoder_2=self.text_encoder_2,
+            tokenizer=self.tokenizer_1,
+            tokenizer_2=self.tokenizer_2,
+            unet=self.unet,
+            scheduler=DPMSolverMultistepScheduler.from_config(
+                self.noise_scheduler.config
+            ),
+        )
+
+        # Optimize pipeline
+        pipeline.enable_attention_slicing()
+
+        return pipeline
+
+    def _run_validation(self, prompts: List[str], epoch: int):
+        """
+        Generate validation samples during training
+
+        Args:
+            prompts: List of validation prompts
+            epoch: Current training epoch
+        """
+        logger.info(f"Running validation at step {self.global_step}, epoch {epoch}")
+
+        # Create validation output directory
+        validation_dir = self.output_dir / "validation" / f"epoch_{epoch:04d}_step_{self.global_step:06d}"
+        validation_dir.mkdir(parents=True, exist_ok=True)
+
+        # Set UNet to eval mode for validation
+        was_training = self.unet.training
+        self.unet.eval()
+
+        # Get validation seeds
+        if self.config.validation_seeds is None:
+            seeds = [42 + i for i in range(len(prompts))]
+        else:
+            seeds = self.config.validation_seeds
+            # Pad seeds if needed
+            while len(seeds) < len(prompts):
+                seeds.append(seeds[-1] + 1)
+
+        # Get validation pipeline
+        pipeline = self._get_validation_pipeline()
+
+        # Default negative prompt for pixel art
+        negative_prompt = (
+            "blurry, smooth, gradient, 3d, realistic, photograph, "
+            "low quality, distorted, dithering"
+        )
+
+        # Generate validation images
+        generation_times = []
+
+        with torch.no_grad():
+            for i, (prompt, seed) in enumerate(zip(prompts, seeds)):
+                start_time = time.time()
+
+                # Set seed for reproducibility
+                generator = torch.Generator(device=self.device).manual_seed(seed)
+
+                # Generate image
+                image = pipeline(
+                    prompt=prompt,
+                    negative_prompt=negative_prompt,
+                    num_inference_steps=self.config.validation_num_inference_steps,
+                    guidance_scale=self.config.validation_guidance_scale,
+                    generator=generator,
+                    width=self.config.resolution,
+                    height=self.config.resolution,
+                ).images[0]
+
+                generation_time = time.time() - start_time
+                generation_times.append(generation_time)
+
+                # Create hash of prompt for filename
+                prompt_hash = hashlib.md5(prompt.encode()).hexdigest()[:8]
+
+                # Save validation image
+                image_path = validation_dir / f"validation_epoch{epoch:04d}_{prompt_hash}.png"
+                image.save(image_path)
+
+                # Save metadata
+                metadata_path = validation_dir / f"validation_epoch{epoch:04d}_{prompt_hash}.json"
+                metadata = {
+                    'prompt': prompt,
+                    'negative_prompt': negative_prompt,
+                    'seed': seed,
+                    'epoch': epoch,
+                    'step': self.global_step,
+                    'num_inference_steps': self.config.validation_num_inference_steps,
+                    'guidance_scale': self.config.validation_guidance_scale,
+                    'resolution': self.config.resolution,
+                    'generation_time': generation_time,
+                    'timestamp': datetime.now().isoformat(),
+                }
+                with open(metadata_path, 'w') as f:
+                    json.dump(metadata, f, indent=2)
+
+                logger.info(
+                    f"Generated validation image {i+1}/{len(prompts)} "
+                    f"in {generation_time:.2f}s: {image_path.name}"
+                )
+
+        # Restore training mode
+        if was_training:
+            self.unet.train()
+
+        # Calculate validation metrics
+        avg_generation_time = sum(generation_times) / len(generation_times)
+
+        val_metrics = ValidationMetrics(
+            step=self.global_step,
+            epoch=epoch,
+            num_samples=len(prompts),
+            generation_time_avg=avg_generation_time,
+            output_dir=str(validation_dir),
+            timestamp=datetime.now().isoformat(),
+            prompts=prompts,
+            seeds=seeds[:len(prompts)],
+        )
+        self.validation_metrics.append(val_metrics)
+
+        # Save validation summary
+        summary_path = validation_dir / "validation_summary.json"
+        with open(summary_path, 'w') as f:
+            json.dump(val_metrics.to_dict(), f, indent=2)
+
+        logger.info(
+            f"Validation complete! {len(prompts)} images generated in "
+            f"{avg_generation_time:.2f}s average. Results saved to {validation_dir}"
+        )
+
+
 
     def _save_metrics(self):
-        """Save training metrics to JSON"""
+        """Save training and validation metrics to JSON"""
+        # Save training metrics
         metrics_path = self.output_dir / "training_metrics.json"
-
         metrics_data = [m.to_dict() for m in self.training_metrics]
-
         with open(metrics_path, 'w') as f:
             json.dump(metrics_data, f, indent=2)
 
-        logger.info(f"Training metrics saved to {metrics_path}")
+        # Save validation metrics
+        if self.validation_metrics:
+            validation_metrics_path = self.output_dir / "validation_metrics.json"
+            validation_data = [m.to_dict() for m in self.validation_metrics]
+            with open(validation_metrics_path, 'w') as f:
+                json.dump(validation_data, f, indent=2)
+
+        logger.info(f"Metrics saved to {self.output_dir}")
 
 
 def main():
@@ -672,6 +848,7 @@ def main():
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
     parser.add_argument("--steps", type=int, default=3000, help="Training steps")
     parser.add_argument("--batch-size", type=int, default=2, help="Batch size")
+    parser.add_argument("--validation-prompts", type=str, nargs='+', help="Validation prompts")
 
     args = parser.parse_args()
 
@@ -692,7 +869,10 @@ def main():
     )
 
     # Start training
-    trainer.train(dataset_path=args.dataset)
+    trainer.train(
+        dataset_path=args.dataset,
+        validation_prompts=args.validation_prompts,
+    )
 
 
 if __name__ == "__main__":
