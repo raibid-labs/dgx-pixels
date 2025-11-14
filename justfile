@@ -91,11 +91,11 @@ clean:
 
 # Run Rust TUI in debug mode
 tui:
-    cargo run --package dgx-pixels-tui
+    cd rust && cargo run
 
 # Run Rust TUI in release mode
 tui-release:
-    cargo run --package dgx-pixels-tui --release
+    cd rust && cargo run --release
 
 # Start Python backend worker
 backend PORT="5555":
