@@ -77,6 +77,16 @@ impl Plugin for DgxPixelsPlugin {
         app.add_systems(Update, systems::render::screens::queue::render_queue_screen);
         app.add_systems(Update, systems::input::screens::queue::handle_queue_input);
 
-        info!("DgxPixelsPlugin initialized with state, input, rendering, event, ZMQ systems, and Queue screen");
+        // WS-15: Settings Screen
+        app.add_systems(
+            Update,
+            systems::render::screens::settings::render_settings_screen,
+        );
+        app.add_systems(
+            Update,
+            systems::input::screens::settings::handle_settings_input,
+        );
+
+        info!("DgxPixelsPlugin initialized with state, input, rendering, event, ZMQ systems, Queue screen, and Settings screen");
     }
 }
