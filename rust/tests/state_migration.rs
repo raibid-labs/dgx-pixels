@@ -79,14 +79,10 @@ fn test_job_entity_spawning() {
     app.update();
 
     // Spawn job entities
-    app.world_mut().spawn(Job::new(
-        "job-001".to_string(),
-        "test prompt 1".to_string(),
-    ));
-    app.world_mut().spawn(Job::new(
-        "job-002".to_string(),
-        "test prompt 2".to_string(),
-    ));
+    app.world_mut()
+        .spawn(Job::new("job-001".to_string(), "test prompt 1".to_string()));
+    app.world_mut()
+        .spawn(Job::new("job-002".to_string(), "test prompt 2".to_string()));
 
     app.update();
 

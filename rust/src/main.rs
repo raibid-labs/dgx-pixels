@@ -59,9 +59,7 @@ fn run_bevy_app() -> Result<()> {
     use bevy::prelude::*;
     use dgx_pixels_tui::bevy_app::DgxPixelsPlugin;
 
-    App::new()
-        .add_plugins(DgxPixelsPlugin)
-        .run();
+    App::new().add_plugins(DgxPixelsPlugin).run();
 
     Ok(())
 }

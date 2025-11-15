@@ -39,7 +39,10 @@ pub fn poll_zmq(
                 image_path,
                 duration_s,
             } => {
-                info!("Job complete: {} -> {} ({:.1}s)", job_id, image_path, duration_s);
+                info!(
+                    "Job complete: {} -> {} ({:.1}s)",
+                    job_id, image_path, duration_s
+                );
                 // Emit event for response handler
                 response_events.send(crate::bevy_app::events::GenerationComplete {
                     job_id,
@@ -75,24 +78,50 @@ pub fn poll_zmq(
             } => {
                 debug!(
                     "Job {} progress: {:?} {}/{} ({:.1}%) ETA: {:.1}s",
-                    job_id, stage, step, total_steps, percent * 100.0, eta_s
+                    job_id,
+                    stage,
+                    step,
+                    total_steps,
+                    percent * 100.0,
+                    eta_s
                 );
                 // TODO: Update job progress
             }
-            ProgressUpdate::Preview { job_id, image_path, step } => {
-                info!("Preview available for job {} at step {}: {}", job_id, step, image_path);
+            ProgressUpdate::Preview {
+                job_id,
+                image_path,
+                step,
+            } => {
+                info!(
+                    "Preview available for job {} at step {}: {}",
+                    job_id, step, image_path
+                );
                 // TODO: Load preview image
             }
-            ProgressUpdate::JobFinished { job_id, success, duration_s } => {
+            ProgressUpdate::JobFinished {
+                job_id,
+                success,
+                duration_s,
+            } => {
                 if success {
                     info!("Job {} finished successfully in {:.1}s", job_id, duration_s);
                 } else {
-                    warn!("Job {} finished with failure after {:.1}s", job_id, duration_s);
+                    warn!(
+                        "Job {} finished with failure after {:.1}s",
+                        job_id, duration_s
+                    );
                 }
                 // Final completion handled by Response::JobComplete
             }
-            ProgressUpdate::JobComplete { job_id, image_path, duration_s } => {
-                info!("Job {} complete: {} ({:.1}s)", job_id, image_path, duration_s);
+            ProgressUpdate::JobComplete {
+                job_id,
+                image_path,
+                duration_s,
+            } => {
+                info!(
+                    "Job {} complete: {} ({:.1}s)",
+                    job_id, image_path, duration_s
+                );
                 // Handled by Response::JobComplete
             }
         }

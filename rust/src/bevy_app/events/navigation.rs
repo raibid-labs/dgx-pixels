@@ -2,8 +2,8 @@
 //!
 //! Events for screen navigation and UI state changes.
 
-use bevy::prelude::*;
 use crate::bevy_app::resources::Screen;
+use bevy::prelude::*;
 
 /// Event to navigate to a specific screen.
 #[derive(Event, Debug, Clone)]
@@ -50,11 +50,14 @@ mod tests {
         app.add_systems(Update, handle_navigation_events);
 
         // Send navigation event
-        app.world_mut().send_event(NavigateToScreen(Screen::Gallery));
+        app.world_mut()
+            .send_event(NavigateToScreen(Screen::Gallery));
         app.update();
 
         // Verify screen changed
-        let screen = app.world().resource::<crate::bevy_app::resources::CurrentScreen>();
+        let screen = app
+            .world()
+            .resource::<crate::bevy_app::resources::CurrentScreen>();
         assert_eq!(screen.0, Screen::Gallery);
     }
 
@@ -72,7 +75,9 @@ mod tests {
         app.update();
 
         // Verify back to Generation
-        let screen = app.world().resource::<crate::bevy_app::resources::CurrentScreen>();
+        let screen = app
+            .world()
+            .resource::<crate::bevy_app::resources::CurrentScreen>();
         assert_eq!(screen.0, Screen::Generation);
     }
 }

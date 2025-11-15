@@ -108,13 +108,13 @@ mod tests {
     fn test_navigation() {
         let mut state = ComparisonState::default();
         assert_eq!(state.selected_index, 0);
-        
+
         state.next();
         assert_eq!(state.selected_index, 1);
-        
+
         state.next(); // Wrap around
         assert_eq!(state.selected_index, 0);
-        
+
         state.previous(); // Wrap backwards
         assert_eq!(state.selected_index, 1);
     }

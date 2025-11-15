@@ -5,7 +5,7 @@
 use ratatui::{
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, BorderType},
+    widgets::{Block, BorderType, Borders},
 };
 
 /// Create a standard bordered block with title.

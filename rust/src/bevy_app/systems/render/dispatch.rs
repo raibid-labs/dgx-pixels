@@ -34,29 +34,61 @@ pub fn render_dispatch(
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints([
-                    Constraint::Min(0),     // Main content
-                    Constraint::Length(1),  // Status bar
+                    Constraint::Min(0),    // Main content
+                    Constraint::Length(1), // Status bar
                 ])
                 .split(frame.area());
 
             // Render screen-specific content (placeholders for now)
             match screen {
-                Screen::Generation => render_placeholder(frame, chunks[0], "Generation",
-                    "Enter prompt and press Enter to generate. Number keys 1-8 switch screens."),
-                Screen::Comparison => render_placeholder(frame, chunks[0], "Comparison",
-                    "Side-by-side model comparison. Will be implemented in WS-10."),
-                Screen::Queue => render_placeholder(frame, chunks[0], "Queue",
-                    "View generation job queue. Will be implemented in WS-11."),
-                Screen::Gallery => render_placeholder(frame, chunks[0], "Gallery",
-                    "Browse generated images. Will be implemented in WS-12."),
-                Screen::Models => render_placeholder(frame, chunks[0], "Models",
-                    "Manage AI models and LoRAs. Will be implemented in WS-13."),
-                Screen::Monitor => render_placeholder(frame, chunks[0], "Monitor",
-                    "System monitoring and performance. Will be implemented in WS-14."),
-                Screen::Settings => render_placeholder(frame, chunks[0], "Settings",
-                    "Application settings. Will be implemented in WS-15."),
-                Screen::Help => render_placeholder(frame, chunks[0], "Help",
-                    "Keyboard shortcuts and help. Will be implemented in WS-16."),
+                Screen::Generation => render_placeholder(
+                    frame,
+                    chunks[0],
+                    "Generation",
+                    "Enter prompt and press Enter to generate. Number keys 1-8 switch screens.",
+                ),
+                Screen::Comparison => render_placeholder(
+                    frame,
+                    chunks[0],
+                    "Comparison",
+                    "Side-by-side model comparison. Will be implemented in WS-10.",
+                ),
+                Screen::Queue => render_placeholder(
+                    frame,
+                    chunks[0],
+                    "Queue",
+                    "View generation job queue. Will be implemented in WS-11.",
+                ),
+                Screen::Gallery => render_placeholder(
+                    frame,
+                    chunks[0],
+                    "Gallery",
+                    "Browse generated images. Will be implemented in WS-12.",
+                ),
+                Screen::Models => render_placeholder(
+                    frame,
+                    chunks[0],
+                    "Models",
+                    "Manage AI models and LoRAs. Will be implemented in WS-13.",
+                ),
+                Screen::Monitor => render_placeholder(
+                    frame,
+                    chunks[0],
+                    "Monitor",
+                    "System monitoring and performance. Will be implemented in WS-14.",
+                ),
+                Screen::Settings => render_placeholder(
+                    frame,
+                    chunks[0],
+                    "Settings",
+                    "Application settings. Will be implemented in WS-15.",
+                ),
+                Screen::Help => render_placeholder(
+                    frame,
+                    chunks[0],
+                    "Help",
+                    "Keyboard shortcuts and help. Will be implemented in WS-16.",
+                ),
             }
 
             // Render status bar
@@ -77,18 +109,19 @@ fn render_placeholder(frame: &mut Frame, area: Rect, title: &str, description: &
 
     let text = vec![
         Line::from(""),
-        Line::from(Span::styled(
-            description,
-            Style::default().fg(Color::Gray),
-        )),
+        Line::from(Span::styled(description, Style::default().fg(Color::Gray))),
         Line::from(""),
         Line::from(Span::styled(
             "Navigation: Tab/BackTab or number keys 1-8",
-            Style::default().fg(Color::DarkGray).add_modifier(Modifier::ITALIC),
+            Style::default()
+                .fg(Color::DarkGray)
+                .add_modifier(Modifier::ITALIC),
         )),
         Line::from(Span::styled(
             "Quit: Press 'q' (except on Generation screen)",
-            Style::default().fg(Color::DarkGray).add_modifier(Modifier::ITALIC),
+            Style::default()
+                .fg(Color::DarkGray)
+                .add_modifier(Modifier::ITALIC),
         )),
     ];
 
@@ -108,8 +141,8 @@ fn render_status_bar(frame: &mut Frame, area: Rect, screen: Screen, app_state: &
         if app_state.debug_mode { "ON" } else { "OFF" }
     );
 
-    let paragraph = Paragraph::new(status_text)
-        .style(Style::default().bg(Color::DarkGray).fg(Color::White));
+    let paragraph =
+        Paragraph::new(status_text).style(Style::default().bg(Color::DarkGray).fg(Color::White));
 
     frame.render_widget(paragraph, area);
 }

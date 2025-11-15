@@ -25,9 +25,9 @@ pub fn render_comparison_screen(
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints([
-                    Constraint::Length(3),  // Title
-                    Constraint::Min(0),     // Content
-                    Constraint::Length(3),  // Controls
+                    Constraint::Length(3), // Title
+                    Constraint::Min(0),    // Content
+                    Constraint::Length(3), // Controls
                 ])
                 .split(frame.area());
 
@@ -54,18 +54,13 @@ fn render_title(frame: &mut Frame, area: Rect, theme: &AppTheme) {
     frame.render_widget(title, area);
 }
 
-fn render_content(
-    frame: &mut Frame,
-    area: Rect,
-    comparison: &ComparisonState,
-    theme: &AppTheme,
-) {
+fn render_content(frame: &mut Frame, area: Rect, comparison: &ComparisonState, theme: &AppTheme) {
     let content_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(6),  // Model selection
-            Constraint::Length(5),  // Prompt input
-            Constraint::Min(0),     // Results area
+            Constraint::Length(6), // Model selection
+            Constraint::Length(5), // Prompt input
+            Constraint::Min(0),    // Results area
         ])
         .margin(1)
         .split(area);
@@ -109,7 +104,10 @@ fn render_model_selection(
         lines.push(Line::from(vec![
             Span::styled("  + ", theme.muted()),
             Span::styled(
-                format!("Add model (press 'a') - {} slots available", 3 - comparison.models.len()),
+                format!(
+                    "Add model (press 'a') - {} slots available",
+                    3 - comparison.models.len()
+                ),
                 theme.muted(),
             ),
         ]));
@@ -162,12 +160,7 @@ fn render_prompt_input(
     frame.render_widget(paragraph, area);
 }
 
-fn render_results(
-    frame: &mut Frame,
-    area: Rect,
-    comparison: &ComparisonState,
-    theme: &AppTheme,
-) {
+fn render_results(frame: &mut Frame, area: Rect, comparison: &ComparisonState, theme: &AppTheme) {
     if comparison.is_running {
         let lines = vec![
             Line::from(""),
@@ -177,10 +170,7 @@ fn render_results(
                 theme.highlight(),
             )),
             Line::from(""),
-            Line::from(Span::styled(
-                "This may take several minutes",
-                theme.muted(),
-            )),
+            Line::from(Span::styled("This may take several minutes", theme.muted())),
         ];
 
         let paragraph = Paragraph::new(lines)
@@ -261,12 +251,7 @@ fn render_model_result(frame: &mut Frame, area: Rect, model: &str, theme: &AppTh
     frame.render_widget(paragraph, area);
 }
 
-fn render_controls(
-    frame: &mut Frame,
-    area: Rect,
-    comparison: &ComparisonState,
-    theme: &AppTheme,
-) {
+fn render_controls(frame: &mut Frame, area: Rect, comparison: &ComparisonState, theme: &AppTheme) {
     let can_run = !comparison.models.is_empty() && !comparison.prompt.is_empty();
 
     let controls = vec![Line::from(vec![
@@ -277,8 +262,19 @@ fn render_controls(
         Span::raw(" Add  "),
         Span::styled("d", theme.highlight()),
         Span::raw(" Remove  "),
-        Span::styled("Enter", if can_run { theme.highlight() } else { theme.muted() }),
-        Span::raw(if can_run { " Run" } else { " Run (need models & prompt)" }),
+        Span::styled(
+            "Enter",
+            if can_run {
+                theme.highlight()
+            } else {
+                theme.muted()
+            },
+        ),
+        Span::raw(if can_run {
+            " Run"
+        } else {
+            " Run (need models & prompt)"
+        }),
     ])];
 
     let paragraph = Paragraph::new(controls).block(

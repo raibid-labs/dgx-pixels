@@ -1,5 +1,4 @@
 use crate::app::{App, JobStatus};
-use crate::sixel::{RenderOptions, TerminalCapability};
 use crate::ui::screens::{create_block, create_header, create_status_bar};
 use crate::ui::{layout::create_layout, theme::Theme};
 use ratatui::{
@@ -12,7 +11,7 @@ use std::path::Path;
 
 /// Render the generation screen
 pub fn render(f: &mut Frame, app: &App) {
-    let chunks = create_layout(f.size());
+    let chunks = create_layout(f.area());
 
     // Header
     let header = create_header("Generation");
@@ -73,7 +72,7 @@ fn render_prompt_input(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
 
     // Show cursor if input is active
     if !app.input_buffer.is_empty() || app.current_screen == crate::app::Screen::Generation {
-        f.set_cursor(inner.x + app.cursor_pos as u16, inner.y);
+        f.set_cursor_position((inner.x + app.cursor_pos as u16, inner.y));
     }
 }
 
@@ -182,7 +181,7 @@ fn render_controls(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
 fn render_preview(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
     // Create title string outside to avoid lifetime issues
     let title_string = if app.debug_mode {
-        let tab_titles = vec!["Preview", "Backend Logs"];
+        let tab_titles = ["Preview", "Backend Logs"];
         format!(
             " {} [Ctrl+Tab/P/L] ",
             tab_titles
@@ -243,9 +242,15 @@ fn render_preview_info(f: &mut Frame, area: ratatui::layout::Rect, path: &Path) 
         Line::from(format!("File: {}", filename)),
         Line::from(format!("Size: {}", size_str)),
         Line::from(""),
-        Line::from(Span::styled("Preview: Sixel rendering coming soon!", Theme::muted())),
+        Line::from(Span::styled(
+            "Preview: Sixel rendering coming soon!",
+            Theme::muted(),
+        )),
         Line::from(""),
-        Line::from(Span::styled("For now, check outputs/ folder", Theme::muted())),
+        Line::from(Span::styled(
+            "For now, check outputs/ folder",
+            Theme::muted(),
+        )),
     ];
 
     let paragraph = Paragraph::new(lines)
@@ -255,6 +260,7 @@ fn render_preview_info(f: &mut Frame, area: ratatui::layout::Rect, path: &Path) 
     f.render_widget(paragraph, area);
 }
 
+#[allow(dead_code)]
 fn render_loading_preview(f: &mut Frame, area: ratatui::layout::Rect) {
     let lines = vec![
         Line::from(""),
@@ -271,6 +277,7 @@ fn render_loading_preview(f: &mut Frame, area: ratatui::layout::Rect) {
     f.render_widget(paragraph, area);
 }
 
+#[allow(dead_code)]
 fn render_text_preview_info(f: &mut Frame, area: ratatui::layout::Rect, path: &Path) {
     let filename = path
         .file_name()
@@ -341,8 +348,7 @@ fn render_backend_logs(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
                 } else if log_line.contains("WARN") || log_line.contains("Warning") {
                     Line::from(Span::styled(
                         log_line,
-                        ratatui::style::Style::default()
-                            .fg(ratatui::style::Color::Yellow),
+                        ratatui::style::Style::default().fg(ratatui::style::Color::Yellow),
                     ))
                 } else if log_line.contains("INFO") {
                     Line::from(Span::styled(log_line, Theme::text()))

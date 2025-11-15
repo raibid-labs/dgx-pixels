@@ -66,7 +66,8 @@ mod tests {
         app.add_systems(Update, handle_zmq_responses);
 
         // Create a job entity
-        app.world_mut().spawn(Job::new("test-123".into(), "test prompt".into()));
+        app.world_mut()
+            .spawn(Job::new("test-123".into(), "test prompt".into()));
 
         // Send completion event
         app.world_mut().send_event(GenerationComplete {

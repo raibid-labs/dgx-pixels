@@ -2,7 +2,7 @@
 //!
 //! Handles global keyboard shortcuts and special keys.
 
-use bevy::prelude::{EventReader, info, Res, ResMut};
+use bevy::prelude::{info, EventReader, Res, ResMut};
 use bevy_ratatui::event::KeyEvent;
 use crossterm::event::KeyCode;
 

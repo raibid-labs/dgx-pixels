@@ -2,7 +2,7 @@
 //!
 //! Handles screen navigation via Tab, number keys, and Escape.
 
-use bevy::prelude::{EventReader, info, ResMut};
+use bevy::prelude::{info, EventReader, ResMut};
 use bevy_ratatui::event::KeyEvent;
 use crossterm::event::KeyCode;
 

@@ -15,9 +15,7 @@ impl Plugin for DgxPixelsPlugin {
         let config = BevyAppConfig::default();
 
         // Bevy minimal plugins (no windowing)
-        app.add_plugins(
-            MinimalPlugins.set(ScheduleRunnerPlugin::run_loop(config.update_rate)),
-        );
+        app.add_plugins(MinimalPlugins.set(ScheduleRunnerPlugin::run_loop(config.update_rate)));
 
         // Add logging plugin
         app.add_plugins(LogPlugin::default());

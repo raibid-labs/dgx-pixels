@@ -9,9 +9,7 @@ use crate::bevy_app::components::Job;
 /// Handle progress updates from backend (placeholder).
 ///
 /// Future: Will update Job entity progress fields when progress tracking is added.
-pub fn handle_zmq_updates(
-    _job_query: Query<&mut Job>,
-) {
+pub fn handle_zmq_updates(_job_query: Query<&mut Job>) {
     // TODO: Process progress updates when ProgressUpdate event is added
     // For now, this is a placeholder system
 }
