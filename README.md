@@ -2,6 +2,36 @@
 
 An open-source AI-powered pixel art generation system optimized for the NVIDIA DGX-Spark, designed to accelerate game asset creation with seamless integration into the Bevy game engine.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Quick Start](#quick-start)
+  - [Prerequisites](#prerequisites)
+  - [Running the TUI](#running-the-tui)
+  - [Backend Setup](#backend-setup-python-worker--comfyui)
+- [Architecture](#architecture)
+  - [Rust TUI + Python Backend](#new-rust-tui--python-backend-recommended)
+  - [Alternative: Balanced Production Stack](#alternative-balanced-production-stack)
+- [Documentation](#documentation)
+  - [Core Documentation](#core-documentation)
+  - [Rust + Python Stack](#new-rust--python-stack)
+  - [Project Management & Operations](#new-project-management--operations)
+  - [TUI Modernization](#new-tui-modernization-bevy-ratatui-migration)
+  - [Quick Links](#quick-links)
+- [Technology Stack](#technology-stack)
+- [Training Custom Models](#training-custom-models)
+- [Bevy Integration](#bevy-integration)
+- [Performance Benchmarks](#performance-benchmarks)
+- [Project Structure](#project-structure)
+- [Roadmap](#roadmap)
+- [Use Cases and Examples](#use-cases-and-examples)
+- [Contributing](#contributing)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
+- [Resources](#resources)
+- [Support](#support)
+- [Status](#status)
+
 ## Overview
 
 DGX-Pixels leverages state-of-the-art diffusion models (Stable Diffusion XL) with custom LoRA fine-tuning to generate high-quality pixel art sprites for game development. The system is designed to run on **NVIDIA DGX-Spark (GB10 Grace Blackwell Superchip)**, utilizing its single powerful GPU with 128GB unified memory architecture for fast inference and efficient model training.
@@ -31,25 +61,55 @@ DGX-Pixels leverages state-of-the-art diffusion models (Stable Diffusion XL) wit
 ### Prerequisites
 
 - NVIDIA DGX-Spark (GB10 Grace Blackwell Superchip) with Ubuntu/Linux
+- Rust 1.75+ (for TUI frontend)
 - Python 3.10+ (ARM64-compatible packages)
 - CUDA 13.0+ (verified: 13.0.88)
 - Driver 580.95.05+
 - 500GB+ storage
 - Bevy game engine (for integration)
 
-### Installation (Rapid Path)
+### Running the TUI
+
+The Rust TUI is operational with dual-mode support:
 
 ```bash
 # Clone repository
-git clone https://github.com/YOUR_ORG/dgx-pixels.git
+git clone https://github.com/raibid-labs/dgx-pixels.git
 cd dgx-pixels
 
-# Install Automatic1111 WebUI
-git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
-cd stable-diffusion-webui
-./webui.sh --api --listen
+# Run classic ratatui mode (legacy)
+just tui
 
-# Download pixel art models (see docs/06-implementation-plan.md)
+# Run Bevy ECS mode (NEW - recommended)
+just tui-bevy
+
+# Run Bevy ECS mode (release build, optimized)
+just tui-bevy-release
+```
+
+**Bevy Mode Features** (currently available):
+- ✅ 60 FPS terminal rendering
+- ✅ Message-based input handling (<16ms latency)
+- ✅ Screen navigation (Tab, 1-8 keys)
+- ✅ Text entry with cursor editing (Generation screen)
+- ✅ ZeroMQ backend integration (optional)
+- ✅ Event-driven architecture (8 custom events)
+- 🟢 Gallery and job tracking (partial)
+- ⚪ Full screen implementations (in progress)
+
+### Backend Setup (Python Worker + ComfyUI)
+
+```bash
+# Install Python dependencies
+cd python
+pip install -r requirements.txt
+
+# Start Python ZMQ worker
+python workers/generation_worker.py
+
+# Start ComfyUI (in separate terminal)
+cd comfyui
+python main.py --listen 127.0.0.1:8188
 ```
 
 See [Implementation Plan](docs/06-implementation-plan.md) for detailed setup instructions.
@@ -151,6 +211,13 @@ See [Rust-Python Architecture](docs/07-rust-python-architecture.md) and [TUI Des
 12. **[Roadmap](docs/ROADMAP.md)** - Milestone-based development roadmap (M0-M5)
 13. **[RFD: GPT-5 Feedback](docs/rfds/gpt5-dgx-pixels.md)** - External review and recommendations
 14. **[ADR 0001](docs/adr/0001-dgx-spark-not-b200.md)** - Hardware clarification: DGX-Spark vs DGX B200
+
+### NEW: TUI Modernization (Bevy-Ratatui Migration)
+
+15. **[RFD 0003: Bevy-Ratatui Migration](docs/rfds/0003-bevy-ratatui-migration.md)** - Complete migration strategy (18 workstreams)
+16. **[Progress Report](docs/orchestration/tui-modernization/PROGRESS-REPORT.md)** - Real-time implementation status (M1 ✅ 100%, M2 🟢 75%)
+17. **[Meta Orchestrator](docs/orchestration/tui-modernization/meta-orchestrator.md)** - Parallel execution coordination
+18. **[Workstream Specs](docs/orchestration/tui-modernization/workstreams/)** - Detailed implementation guides (WS-01 through WS-18)
 
 ### Quick Links
 
@@ -305,24 +372,28 @@ dgx-pixels/
 
 See [ROADMAP.md](docs/ROADMAP.md) for the complete milestone-based development plan.
 
-### Current Milestones
+### Current Milestones (Bevy-Ratatui Migration)
 
-| Milestone | Status | Goal |
-|-----------|--------|------|
-| **M0 — Foundation** | 🟢 In Progress | Hardware verification, reproducibility, baselines |
-| **M1 — Core Inference** | ⚪ Planned | Single-GPU SDXL optimization |
-| **M2 — Interactive TUI** | ⚪ Planned | Rust TUI with ZeroMQ + Sixel preview |
-| **M3 — LoRA Training** | ⚪ Planned | Custom model fine-tuning pipeline |
-| **M4 — Bevy Integration** | ⚪ Planned | MCP-based game engine integration |
-| **M5 — Production** | ⚪ Planned | Observability, metrics, deployment |
+| Milestone | Status | Completion | Goal |
+|-----------|--------|-----------|------|
+| **M1 — Foundation** | ✅ Complete | 100% | Bevy runtime, ECS state, input systems, rendering pipeline |
+| **M2 — Core Systems** | 🟢 In Progress | 75% | ZeroMQ integration, theme, event bus, image assets |
+| **M3 — Screen Migration** | ⚪ Planned | 0% | Migrate 8 UI screens to Bevy systems |
+| **M4 — Integration** | ⚪ Planned | 0% | Finalize dual-mode, deprecate classic, performance validation |
+
+**Progress Summary**: 8 of 18 workstreams complete (44%). See [detailed progress report](docs/orchestration/tui-modernization/PROGRESS-REPORT.md).
 
 ### Recent Updates
 
-- ✅ Hardware verification complete: DGX-Spark GB10 confirmed
-- ✅ Documentation aligned with single-GPU unified memory architecture
-- ✅ Metrics framework adapted for single-GPU benchmarking
-- ✅ ADR 0001: Hardware clarification documented
-- 🟢 M0 in progress: Establishing reproducibility baseline
+- ✅ **M1 Foundation Complete** (WS-01 through WS-04): Bevy 0.15 + bevy_ratatui 0.7 runtime operational
+- ✅ **ECS State Migration**: 5 Resources + 2 Components with 37 unit tests (all passing)
+- ✅ **Input System**: Message-based keyboard/navigation/text entry (<16ms latency)
+- ✅ **Rendering Pipeline**: 60 FPS terminal rendering with placeholder screens
+- ✅ **ZeroMQ Integration** (WS-05): Non-blocking polling, thread-safe backend communication
+- ✅ **Theme System** (WS-07): Centralized AppTheme resource with 11 style methods
+- ✅ **Event Bus** (WS-08): 8 custom events for navigation, generation, gallery
+- 🟢 **M2 Core Systems**: 75% complete, WS-06 (Image Assets) pending
+- 📊 **Test Coverage**: 122 tests passing, 82% coverage (target >80%)
 
 ## Use Cases and Examples
 
@@ -423,13 +494,21 @@ For questions and support:
 
 ## Status
 
-**Project Status**: Documentation Phase ✅
+**Project Status**: Implementation In Progress 🟢
+
+**Current Focus**: Bevy-Ratatui Migration (Proposal 2B)
+- M1 Foundation: ✅ Complete (100%)
+- M2 Core Systems: 🟢 In Progress (75%)
+- 122 tests passing, 82% coverage
+- 60 FPS TUI operational
 
 **Next Steps**:
-1. Select architecture proposal
-2. Set up DGX-Spark environment
-3. Begin implementation following [Implementation Plan](docs/06-implementation-plan.md)
-4. Train initial custom models
+1. ✅ ~~Complete M1 Foundation workstreams (WS-01 through WS-04)~~
+2. 🟢 Complete M2 Core Systems (WS-06 Image Assets pending)
+3. ⚪ Migrate 8 UI screens to Bevy systems (M3, WS-09 through WS-16)
+4. ⚪ Complete integration and dual-mode finalization (M4, WS-17 through WS-18)
+
+See [Progress Report](docs/orchestration/tui-modernization/PROGRESS-REPORT.md) for detailed status.
 
 ---
 
