@@ -89,13 +89,21 @@ clean:
 
 # === Development Commands ===
 
-# Run Rust TUI in debug mode
+# Run Rust TUI in debug mode (classic ratatui)
 tui:
     cd rust && cargo run
 
-# Run Rust TUI in release mode
+# Run Rust TUI in release mode (classic ratatui)
 tui-release:
     cd rust && cargo run --release
+
+# Run Rust TUI in debug mode (Bevy ECS mode)
+tui-bevy:
+    cd rust && cargo run --features bevy_migration_foundation
+
+# Run Rust TUI in release mode (Bevy ECS mode)
+tui-bevy-release:
+    cd rust && cargo run --release --features bevy_migration_foundation
 
 # Run in debug mode with live backend logs in TUI
 debug:
