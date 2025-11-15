@@ -6,6 +6,7 @@
 //! separation of concerns.
 
 pub mod app_state;
+pub mod comparison_state;
 pub mod gallery_state;
 pub mod input_state;
 pub mod job_state;
@@ -13,6 +14,7 @@ pub mod screen_state;
 pub mod theme;
 
 pub use app_state::AppState;
+pub use comparison_state::ComparisonState;
 pub use gallery_state::GalleryState;
 pub use input_state::InputBuffer;
 pub use job_state::JobTracker;

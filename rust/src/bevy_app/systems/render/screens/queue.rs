@@ -22,31 +22,35 @@ pub fn render_queue_screen(
         return;
     }
 
-    ratatui.draw(|frame| {
-        let chunks = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Length(3),   // Title
-                Constraint::Min(0),      // Content
-                Constraint::Length(1),   // Status bar
-            ])
-            .split(frame.area());
+    ratatui
+        .draw(|frame| {
+            let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Length(3), // Title
+                    Constraint::Min(0),    // Content
+                    Constraint::Length(1), // Status bar
+                ])
+                .split(frame.area());
 
-        // Title
-        render_title(frame, chunks[0], &theme);
+            // Title
+            render_title(frame, chunks[0], &theme);
 
-        // Content
-        render_content(frame, chunks[1], &jobs, &job_tracker, &theme);
+            // Content
+            render_content(frame, chunks[1], &jobs, &job_tracker, &theme);
 
-        // Status bar
-        render_status_bar(frame, chunks[2], &job_tracker, &theme);
-    }).expect("Failed to render queue screen");
+            // Status bar
+            render_status_bar(frame, chunks[2], &job_tracker, &theme);
+        })
+        .expect("Failed to render queue screen");
 }
 
 fn render_title(frame: &mut Frame, area: Rect, theme: &AppTheme) {
-    let title = Paragraph::new(" Job Queue")
-        .style(theme.header())
-        .block(Block::default().borders(Borders::ALL).border_style(theme.highlight()));
+    let title = Paragraph::new(" Job Queue").style(theme.header()).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_style(theme.highlight()),
+    );
     frame.render_widget(title, area);
 }
 
@@ -80,7 +84,12 @@ fn render_content(
 fn render_active_jobs(frame: &mut Frame, area: Rect, jobs: &Query<&Job>, theme: &AppTheme) {
     let active_jobs: Vec<&Job> = jobs
         .iter()
-        .filter(|j| matches!(j.status, JobStatus::Pending | JobStatus::Queued | JobStatus::Generating { .. }))
+        .filter(|j| {
+            matches!(
+                j.status,
+                JobStatus::Pending | JobStatus::Queued | JobStatus::Generating { .. }
+            )
+        })
         .collect();
 
     let mut lines = vec![Line::from("")];
@@ -96,36 +105,35 @@ fn render_active_jobs(frame: &mut Frame, area: Rect, jobs: &Query<&Job>, theme: 
             };
 
             let status_line = match &job.status {
-                JobStatus::Pending => {
-                    Line::from(vec![
-                        Span::styled("⏳ ", theme.muted()),
-                        Span::styled(&job.id[..12], theme.muted()),
-                        Span::raw(" | "),
-                        Span::styled(prompt_preview, theme.text()),
-                        Span::raw(" | "),
-                        Span::styled("Pending", theme.muted()),
-                    ])
-                }
-                JobStatus::Queued => {
-                    Line::from(vec![
-                        Span::styled("📋 ", theme.text()),
-                        Span::styled(&job.id[..12], theme.text()),
-                        Span::raw(" | "),
-                        Span::styled(prompt_preview, theme.text()),
-                        Span::raw(" | "),
-                        Span::styled("Queued", theme.text()),
-                    ])
-                }
-                JobStatus::Generating { stage, progress, .. } => {
-                    Line::from(vec![
-                        Span::styled("⚙ ", theme.highlight()),
-                        Span::styled(&job.id[..12], theme.highlight()),
-                        Span::raw(" | "),
-                        Span::styled(prompt_preview, theme.text()),
-                        Span::raw(" | "),
-                        Span::styled(format!("{} {:.0}%", stage, progress * 100.0), theme.highlight()),
-                    ])
-                }
+                JobStatus::Pending => Line::from(vec![
+                    Span::styled("⏳ ", theme.muted()),
+                    Span::styled(&job.id[..12], theme.muted()),
+                    Span::raw(" | "),
+                    Span::styled(prompt_preview, theme.text()),
+                    Span::raw(" | "),
+                    Span::styled("Pending", theme.muted()),
+                ]),
+                JobStatus::Queued => Line::from(vec![
+                    Span::styled("📋 ", theme.text()),
+                    Span::styled(&job.id[..12], theme.text()),
+                    Span::raw(" | "),
+                    Span::styled(prompt_preview, theme.text()),
+                    Span::raw(" | "),
+                    Span::styled("Queued", theme.text()),
+                ]),
+                JobStatus::Generating {
+                    stage, progress, ..
+                } => Line::from(vec![
+                    Span::styled("⚙ ", theme.highlight()),
+                    Span::styled(&job.id[..12], theme.highlight()),
+                    Span::raw(" | "),
+                    Span::styled(prompt_preview, theme.text()),
+                    Span::raw(" | "),
+                    Span::styled(
+                        format!("{} {:.0}%", stage, progress * 100.0),
+                        theme.highlight(),
+                    ),
+                ]),
                 _ => Line::from(""),
             };
 
@@ -146,7 +154,12 @@ fn render_active_jobs(frame: &mut Frame, area: Rect, jobs: &Query<&Job>, theme: 
 fn render_completed_jobs(frame: &mut Frame, area: Rect, jobs: &Query<&Job>, theme: &AppTheme) {
     let completed_jobs: Vec<&Job> = jobs
         .iter()
-        .filter(|j| matches!(j.status, JobStatus::Complete { .. } | JobStatus::Failed { .. }))
+        .filter(|j| {
+            matches!(
+                j.status,
+                JobStatus::Complete { .. } | JobStatus::Failed { .. }
+            )
+        })
         .collect();
 
     let mut lines = vec![Line::from("")];
@@ -162,16 +175,14 @@ fn render_completed_jobs(frame: &mut Frame, area: Rect, jobs: &Query<&Job>, them
             };
 
             let status_line = match &job.status {
-                JobStatus::Complete { duration_s, .. } => {
-                    Line::from(vec![
-                        Span::styled("✓ ", theme.success()),
-                        Span::styled(&job.id[..12], theme.success()),
-                        Span::raw(" | "),
-                        Span::styled(prompt_preview, theme.text()),
-                        Span::raw(" | "),
-                        Span::styled(format!("{:.1}s", duration_s), theme.success()),
-                    ])
-                }
+                JobStatus::Complete { duration_s, .. } => Line::from(vec![
+                    Span::styled("✓ ", theme.success()),
+                    Span::styled(&job.id[..12], theme.success()),
+                    Span::raw(" | "),
+                    Span::styled(prompt_preview, theme.text()),
+                    Span::raw(" | "),
+                    Span::styled(format!("{:.1}s", duration_s), theme.success()),
+                ]),
                 JobStatus::Failed { error } => {
                     let error_preview = if error.len() > 30 {
                         format!("{}...", &error[..30])

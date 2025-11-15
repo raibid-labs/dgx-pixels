@@ -136,10 +136,13 @@ impl EventHandler {
             return;
         }
 
-        let job_id = format!("job-{}", std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_millis());
+        let job_id = format!(
+            "job-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis()
+        );
         let prompt = app.input_buffer.trim().to_string();
 
         info!("Triggering generation: {}", prompt);

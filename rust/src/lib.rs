@@ -84,13 +84,13 @@ async fn run_classic_event_loop<B: ratatui::backend::Backend>(
     terminal: &mut ratatui::Terminal<B>,
     app: &mut app::App,
 ) -> Result<()> {
+    use crossterm::event::{self, Event};
+    use messages::{ProgressUpdate, Response};
     use std::fs::File;
     use std::io::{BufRead, BufReader};
     use std::path::PathBuf;
     use std::time::Duration;
-    use crossterm::event::{self, Event};
     use tracing::{info, warn};
-    use messages::{ProgressUpdate, Response};
 
     // Open backend log file if debug mode is enabled
     let mut log_reader = if app.debug_mode {
@@ -218,9 +218,7 @@ async fn run_classic_event_loop<B: ratatui::backend::Backend>(
                     let stage_str = format!("{:?}", stage);
                     info!(
                         "Job {} progress: {}% ({})",
-                        job_id,
-                        percent as u32,
-                        stage_str
+                        job_id, percent as u32, stage_str
                     );
                     app.update_job_status(
                         &job_id,

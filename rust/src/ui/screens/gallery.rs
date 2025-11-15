@@ -10,7 +10,7 @@ use ratatui::{
 };
 
 pub fn render(f: &mut Frame, app: &App) {
-    let chunks = create_layout(f.size());
+    let chunks = create_layout(f.area());
 
     let header = create_header("Gallery");
     f.render_widget(header, chunks[0]);

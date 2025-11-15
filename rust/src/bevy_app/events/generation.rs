@@ -53,7 +53,10 @@ pub fn handle_generation_events(
                 error!("Failed to send generation request: {}", e);
             } else {
                 // Create pending job entity
-                commands.spawn(crate::bevy_app::components::Job::new(job_id, event.prompt.clone()));
+                commands.spawn(crate::bevy_app::components::Job::new(
+                    job_id,
+                    event.prompt.clone(),
+                ));
                 job_tracker.submit_job();
                 info!("Job submitted to backend");
             }
@@ -63,7 +66,10 @@ pub fn handle_generation_events(
     }
 
     for event in complete_events.read() {
-        info!("Generation complete: {} -> {:?}", event.job_id, event.image_path);
+        info!(
+            "Generation complete: {} -> {:?}",
+            event.job_id, event.image_path
+        );
         // Handled by zmq::response_handler
     }
 

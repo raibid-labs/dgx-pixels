@@ -5,7 +5,7 @@ use ratatui::{text::Line, widgets::Paragraph, Frame};
 
 #[allow(unused_variables)]
 pub fn render(f: &mut Frame, app: &App) {
-    let chunks = create_layout(f.size());
+    let chunks = create_layout(f.area());
 
     let header = create_header("System Monitor");
     f.render_widget(header, chunks[0]);

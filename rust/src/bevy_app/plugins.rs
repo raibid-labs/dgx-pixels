@@ -15,9 +15,7 @@ impl Plugin for DgxPixelsPlugin {
         let config = BevyAppConfig::default();
 
         // Bevy minimal plugins (no windowing)
-        app.add_plugins(
-            MinimalPlugins.set(ScheduleRunnerPlugin::run_loop(config.update_rate)),
-        );
+        app.add_plugins(MinimalPlugins.set(ScheduleRunnerPlugin::run_loop(config.update_rate)));
 
         // Add logging plugin
         app.add_plugins(LogPlugin::default());
@@ -30,6 +28,9 @@ impl Plugin for DgxPixelsPlugin {
 
         // WS-07: Theme resource
         app.insert_resource(super::resources::AppTheme::default());
+
+        // WS-11: Comparison state resource
+        app.insert_resource(super::resources::ComparisonState::default());
 
         // WS-03: Input systems (run in PreUpdate schedule)
         app.add_systems(
@@ -47,6 +48,10 @@ impl Plugin for DgxPixelsPlugin {
 
         // WS-04: Rendering system (run in Update schedule)
         app.add_systems(Update, systems::render::render_dispatch);
+
+        // WS-11: Comparison screen rendering and input
+        app.add_systems(Update, systems::render::screens::render_comparison_screen);
+        app.add_systems(Update, systems::input::screens::handle_comparison_input);
 
         // WS-08: Event bus
         app.add_event::<super::events::NavigateToScreen>();

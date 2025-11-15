@@ -116,7 +116,7 @@ impl ComparisonState {
 
 /// Render the comparison screen
 pub fn render(f: &mut Frame, app: &App, state: &ComparisonState) {
-    let chunks = create_layout(f.size());
+    let chunks = create_layout(f.area());
 
     // Header
     let header = create_header("Side-by-Side Model Comparison");
@@ -271,7 +271,7 @@ fn render_prompt_input(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
 
     // Show cursor
     if app.current_screen == crate::app::Screen::Comparison {
-        f.set_cursor(inner.x + app.cursor_pos as u16, inner.y);
+        f.set_cursor_position((inner.x + app.cursor_pos as u16, inner.y));
     }
 }
 
