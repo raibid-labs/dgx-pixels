@@ -89,6 +89,7 @@ impl Plugin for DgxPixelsPlugin {
             ),
         );
 
+<<<<<<< HEAD
         // WS-13: Queue Screen
         app.add_systems(Update, systems::render::screens::render_queue_screen);
         app.add_systems(Update, systems::input::screens::handle_queue_input);
