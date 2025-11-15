@@ -73,10 +73,18 @@ impl Plugin for DgxPixelsPlugin {
             ),
         );
 
+<<<<<<< HEAD
         // WS-13: Queue Screen
         app.add_systems(Update, systems::render::screens::queue::render_queue_screen);
         app.add_systems(Update, systems::input::screens::queue::handle_queue_input);
 
         info!("DgxPixelsPlugin initialized with state, input, rendering, event, ZMQ systems, and Queue screen");
+=======
+        // WS-09: Generation Screen
+        app.add_systems(Update, systems::render::screens::generation::render_generation_screen);
+        app.add_systems(Update, systems::input::screens::generation::handle_generation_input);
+
+        info!("DgxPixelsPlugin initialized with state, input, rendering, event, ZMQ systems, and Generation screen");
+>>>>>>> f9cc230 (WS-09: Implement Generation Screen migration to Bevy ECS)
     }
 }
