@@ -28,6 +28,9 @@ impl Plugin for DgxPixelsPlugin {
         // WS-02: State initialization
         app.add_systems(Startup, systems::init_app_state);
 
+        // WS-07: Theme resource
+        app.insert_resource(super::resources::AppTheme::default());
+
         // WS-03: Input systems (run in PreUpdate schedule)
         app.add_systems(
             PreUpdate,
