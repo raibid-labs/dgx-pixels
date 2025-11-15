@@ -43,6 +43,12 @@ logs/
 target/
 Cargo.lock
 
+# External tools
+ComfyUI/
+
+# Docker environment files (may contain secrets)
+docker/.env
+
 # Bevy example assets (generated)
 examples/bevy_integration/assets/sprites/*.png
 examples/bevy_integration/assets/.backup/
