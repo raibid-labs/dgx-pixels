@@ -28,9 +28,19 @@ impl Plugin for DgxPixelsPlugin {
         // WS-02: State initialization
         app.add_systems(Startup, systems::init_app_state);
 
-        // Future: Add input systems (WS-03)
+        // WS-03: Input systems (run in PreUpdate schedule)
+        app.add_systems(
+            PreUpdate,
+            (
+                systems::input::handle_keyboard_input,
+                systems::input::handle_navigation,
+                systems::input::handle_text_input,
+            )
+                .chain(), // Run in order
+        );
+
         // Future: Add rendering systems (WS-04)
 
-        info!("DgxPixelsPlugin initialized with state resources");
+        info!("DgxPixelsPlugin initialized with state and input systems");
     }
 }

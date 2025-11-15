@@ -40,23 +40,45 @@ impl EventHandler {
             return;
         }
 
-        // Screen-specific keys take priority on input screens
-        // (Generation and Comparison screens have text input)
-        if matches!(app.current_screen, Screen::Generation | Screen::Comparison) {
-            Self::handle_screen_specific(app, key);
-            return;
+        // Screen navigation number keys work on ALL screens (including input screens)
+        match key.code {
+            KeyCode::Char('1') => {
+                app.navigate_to(Screen::Generation);
+                return;
+            }
+            KeyCode::Char('2') => {
+                app.navigate_to(Screen::Comparison);
+                return;
+            }
+            KeyCode::Char('3') => {
+                app.navigate_to(Screen::Queue);
+                return;
+            }
+            KeyCode::Char('4') => {
+                app.navigate_to(Screen::Gallery);
+                return;
+            }
+            KeyCode::Char('5') => {
+                app.navigate_to(Screen::Models);
+                return;
+            }
+            KeyCode::Char('6') => {
+                app.navigate_to(Screen::Monitor);
+                return;
+            }
+            KeyCode::Char('7') => {
+                app.navigate_to(Screen::Settings);
+                return;
+            }
+            KeyCode::Char('8') => {
+                app.navigate_to(Screen::Help);
+                return;
+            }
+            _ => {}
         }
 
-        // Screen navigation keys (only when NOT on input screens)
-        match key.code {
-            KeyCode::Char('1') => app.navigate_to(Screen::Generation),
-            KeyCode::Char('2') => app.navigate_to(Screen::Queue),
-            KeyCode::Char('3') => app.navigate_to(Screen::Gallery),
-            KeyCode::Char('4') => app.navigate_to(Screen::Models),
-            KeyCode::Char('5') => app.navigate_to(Screen::Monitor),
-            KeyCode::Char('6') => app.navigate_to(Screen::Settings),
-            _ => Self::handle_screen_specific(app, key),
-        }
+        // Now handle screen-specific keys
+        Self::handle_screen_specific(app, key);
     }
 
     /// Handle screen-specific keyboard input
@@ -212,11 +234,11 @@ mod tests {
 
         let event = AppEvent::Key(KeyEvent::from(KeyCode::Char('2')));
         EventHandler::handle(&mut app, event);
-        assert_eq!(app.current_screen, Screen::Queue);
+        assert_eq!(app.current_screen, Screen::Comparison);
 
         let event = AppEvent::Key(KeyEvent::from(KeyCode::Char('3')));
         EventHandler::handle(&mut app, event);
-        assert_eq!(app.current_screen, Screen::Gallery);
+        assert_eq!(app.current_screen, Screen::Queue);
     }
 
     #[tokio::test]
