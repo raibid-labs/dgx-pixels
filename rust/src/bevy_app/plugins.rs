@@ -31,18 +31,6 @@ impl Plugin for DgxPixelsPlugin {
 
         // WS-11: Comparison state resource
         app.insert_resource(super::resources::ComparisonState::default());
-
-        // WS-12: Models state resource
-        app.insert_resource(super::resources::ModelsState::default());
-
-        // WS-15: Settings resource
-        app.insert_resource(super::resources::SettingsState::load().unwrap_or_else(|e| {
-            warn!("Failed to load settings, using defaults: {}", e);
-            super::resources::SettingsState::default()
-        }));
-
-        // WS-16: Help state resource
-        app.insert_resource(super::resources::HelpState::default());
         // WS-03: Input systems (run in PreUpdate schedule)
         app.add_systems(
             PreUpdate,
@@ -73,17 +61,9 @@ impl Plugin for DgxPixelsPlugin {
             ),
         );
 
-        // WS-12: Models screen rendering and input
-        app.add_systems(Update, systems::render::screens::render_models_screen);
-        app.add_systems(Update, systems::input::screens::handle_models_input);
-
-        // WS-15: Settings screen rendering and input
-        app.add_systems(Update, systems::render::screens::render_settings_screen);
-        app.add_systems(Update, systems::input::screens::handle_settings_input);
-
-        // WS-16: Help screen rendering and input
-        app.add_systems(Update, systems::render::screens::render_help_screen);
-        app.add_systems(Update, systems::input::screens::handle_help_input);
+        // WS-10: Gallery screen rendering and input
+        app.add_systems(Update, systems::render::screens::render_gallery_screen);
+        app.add_systems(Update, systems::input::screens::handle_gallery_input);
 
         // WS-11: Comparison screen rendering and input
         app.add_systems(Update, systems::render::screens::render_comparison_screen);
@@ -110,8 +90,8 @@ impl Plugin for DgxPixelsPlugin {
         );
 
         // WS-13: Queue Screen
-        app.add_systems(Update, systems::render::screens::queue::render_queue_screen);
-        app.add_systems(Update, systems::input::screens::queue::handle_queue_input);
+        app.add_systems(Update, systems::render::screens::render_queue_screen);
+        app.add_systems(Update, systems::input::screens::handle_queue_input);
 
         info!("DgxPixelsPlugin initialized with state, input, rendering, event, ZMQ systems, and Queue screen");
     }

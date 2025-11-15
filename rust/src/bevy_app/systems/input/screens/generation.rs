@@ -74,7 +74,11 @@ pub fn handle_generation_input(
                         app_state.set_preview_tab(1);
                     }
                 }
-                KeyCode::Tab if message.modifiers.contains(bevy_ratatui::event::KeyModifiers::CONTROL) => {
+                KeyCode::Tab
+                    if message
+                        .modifiers
+                        .contains(bevy_ratatui::event::KeyModifiers::CONTROL) =>
+                {
                     // Ctrl+Tab: cycle preview tabs (in debug mode)
                     app_state.next_preview_tab();
                 }

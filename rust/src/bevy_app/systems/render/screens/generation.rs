@@ -35,14 +35,7 @@ pub fn render_generation_screen(
 
     ratatui
         .draw(|frame| {
-            render_frame(
-                frame,
-                &input_buffer,
-                &theme,
-                &app_state,
-                &gallery,
-                &jobs,
-            );
+            render_frame(frame, &input_buffer, &theme, &app_state, &gallery, &jobs);
         })
         .ok();
 }
@@ -59,10 +52,10 @@ fn render_frame(
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(5),  // Prompt input
-            Constraint::Length(3),  // Options row
-            Constraint::Min(8),     // Main content (controls + preview)
-            Constraint::Length(6),  // Recent generations
+            Constraint::Length(5), // Prompt input
+            Constraint::Length(3), // Options row
+            Constraint::Min(8),    // Main content (controls + preview)
+            Constraint::Length(6), // Recent generations
         ])
         .margin(1)
         .split(frame.area());
@@ -107,13 +100,11 @@ fn render_prompt_input(
 /// Render options row (model, LoRA, size, steps).
 fn render_options_row(frame: &mut Frame, area: Rect, theme: &AppTheme) {
     let options_text = " Model: [SDXL Base ▼]  LoRA: [None ▼]  Size: [1024x1024]  Steps: [30] ";
-    let paragraph = Paragraph::new(options_text)
-        .style(theme.text())
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(theme.border()),
-        );
+    let paragraph = Paragraph::new(options_text).style(theme.text()).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_style(theme.border()),
+    );
 
     frame.render_widget(paragraph, area);
 }
@@ -172,10 +163,7 @@ fn render_controls(
         lines.push(Line::from(""));
         lines.push(Line::from(vec![
             Span::styled("Active Job: ", theme.highlight()),
-            Span::styled(
-                &job.prompt[..job.prompt.len().min(30)],
-                theme.text(),
-            ),
+            Span::styled(&job.prompt[..job.prompt.len().min(30)], theme.text()),
         ]));
 
         match &job.status {
@@ -297,7 +285,10 @@ fn render_preview_content(frame: &mut Frame, area: Rect, app_state: &AppState, t
                 theme.muted(),
             )),
             Line::from(""),
-            Line::from(Span::styled("For now, check outputs/ folder", theme.muted())),
+            Line::from(Span::styled(
+                "For now, check outputs/ folder",
+                theme.muted(),
+            )),
         ];
 
         let paragraph = Paragraph::new(lines)
