@@ -69,6 +69,10 @@ impl Plugin for DgxPixelsPlugin {
         app.add_systems(Update, systems::render::screens::render_comparison_screen);
         app.add_systems(Update, systems::input::screens::handle_comparison_input);
 
+        // WS-14: Monitor screen rendering and input
+        app.add_systems(Update, systems::render::screens::render_monitor_screen);
+        app.add_systems(Update, systems::input::screens::handle_monitor_input);
+
         // WS-08: Event bus
         app.add_event::<super::events::NavigateToScreen>();
         app.add_event::<super::events::NavigateBack>();
