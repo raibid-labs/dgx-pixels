@@ -68,6 +68,10 @@ impl Plugin for DgxPixelsPlugin {
             ),
         );
 
-        info!("DgxPixelsPlugin initialized with state, input, rendering, event, and ZMQ systems");
+        // WS-13: Queue Screen
+        app.add_systems(Update, systems::render::screens::queue::render_queue_screen);
+        app.add_systems(Update, systems::input::screens::queue::handle_queue_input);
+
+        info!("DgxPixelsPlugin initialized with state, input, rendering, event, ZMQ systems, and Queue screen");
     }
 }
