@@ -31,6 +31,9 @@ impl Plugin for DgxPixelsPlugin {
 
         // WS-11: Comparison state resource
         app.insert_resource(super::resources::ComparisonState::default());
+
+        // WS-12: Models state resource
+        app.insert_resource(super::resources::ModelsState::default());
         // WS-03: Input systems (run in PreUpdate schedule)
         app.add_systems(
             PreUpdate,
