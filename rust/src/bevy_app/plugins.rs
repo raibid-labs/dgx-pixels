@@ -52,6 +52,15 @@ impl Plugin for DgxPixelsPlugin {
         // WS-05: ZeroMQ polling (run in PreUpdate before other systems)
         app.add_systems(PreUpdate, systems::zmq::poll_zmq);
 
+        // WS-06B: Preview systems (run in Update schedule)
+        app.add_systems(
+            Update,
+            (
+                systems::preview::load_preview_images,
+                systems::preview::track_loading_status,
+            ),
+        );
+
         // WS-04: Rendering system (run in Update schedule)
         app.add_systems(
             Update,
