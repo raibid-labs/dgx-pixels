@@ -30,6 +30,7 @@
 
 pub mod components;
 pub mod config;
+pub mod events;
 pub mod plugins;
 pub mod resources;
 pub mod systems;
@@ -39,4 +40,8 @@ pub use plugins::DgxPixelsPlugin;
 
 // Re-export commonly used types
 pub use components::{Job, JobStatus, PreviewImage};
+pub use events::{
+    CancelJob, DeleteImage, GenerationComplete, NavigateBack, NavigateToScreen,
+    SelectNextImage, SelectPreviousImage, SubmitGenerationJob,
+};
 pub use resources::{AppState, CurrentScreen, GalleryState, InputBuffer, JobTracker, Screen};

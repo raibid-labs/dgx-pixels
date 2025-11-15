@@ -45,6 +45,25 @@ impl Plugin for DgxPixelsPlugin {
         // WS-04: Rendering system (run in Update schedule)
         app.add_systems(Update, systems::render::render_dispatch);
 
-        info!("DgxPixelsPlugin initialized with state, input, and rendering systems");
+        // WS-08: Event bus
+        app.add_event::<super::events::NavigateToScreen>();
+        app.add_event::<super::events::NavigateBack>();
+        app.add_event::<super::events::SubmitGenerationJob>();
+        app.add_event::<super::events::GenerationComplete>();
+        app.add_event::<super::events::CancelJob>();
+        app.add_event::<super::events::SelectNextImage>();
+        app.add_event::<super::events::SelectPreviousImage>();
+        app.add_event::<super::events::DeleteImage>();
+
+        app.add_systems(
+            Update,
+            (
+                super::events::handle_navigation_events,
+                super::events::handle_generation_events,
+                super::events::handle_gallery_events,
+            ),
+        );
+
+        info!("DgxPixelsPlugin initialized with state, input, rendering, and event systems");
     }
 }
