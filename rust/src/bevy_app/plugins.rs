@@ -110,6 +110,14 @@ impl Plugin for DgxPixelsPlugin {
             systems::input::screens::settings::handle_settings_input,
         );
 
-        info!("DgxPixelsPlugin initialized with state, input, rendering, event, ZMQ systems, Queue screen, and Settings screen");
+        // WS-12: Models Screen
+        app.add_systems(Update, systems::render::screens::render_models_screen);
+        app.add_systems(Update, systems::input::screens::handle_models_input);
+
+        // WS-16: Help Screen
+        app.add_systems(Update, systems::render::screens::render_help_screen);
+        app.add_systems(Update, systems::input::screens::handle_help_input);
+
+        info!("DgxPixelsPlugin initialized with all screens and systems");
     }
 }
