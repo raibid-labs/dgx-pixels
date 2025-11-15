@@ -42,6 +42,9 @@ impl Plugin for DgxPixelsPlugin {
                 .chain(), // Run in order
         );
 
+        // WS-05: ZeroMQ polling (run in PreUpdate before other systems)
+        app.add_systems(PreUpdate, systems::zmq::poll_zmq);
+
         // WS-04: Rendering system (run in Update schedule)
         app.add_systems(Update, systems::render::render_dispatch);
 
@@ -61,9 +64,10 @@ impl Plugin for DgxPixelsPlugin {
                 super::events::handle_navigation_events,
                 super::events::handle_generation_events,
                 super::events::handle_gallery_events,
+                systems::zmq::handle_zmq_responses,
             ),
         );
 
-        info!("DgxPixelsPlugin initialized with state, input, rendering, and event systems");
+        info!("DgxPixelsPlugin initialized with state, input, rendering, event, and ZMQ systems");
     }
 }

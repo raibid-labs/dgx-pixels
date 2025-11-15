@@ -6,5 +6,6 @@
 pub mod input;
 pub mod render;
 pub mod state_init;
+pub mod zmq;
 
 pub use state_init::init_app_state;
