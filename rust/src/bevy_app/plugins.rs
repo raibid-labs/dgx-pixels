@@ -39,8 +39,9 @@ impl Plugin for DgxPixelsPlugin {
                 .chain(), // Run in order
         );
 
-        // Future: Add rendering systems (WS-04)
+        // WS-04: Rendering system (run in Update schedule)
+        app.add_systems(Update, systems::render::render_dispatch);
 
-        info!("DgxPixelsPlugin initialized with state and input systems");
+        info!("DgxPixelsPlugin initialized with state, input, and rendering systems");
     }
 }
