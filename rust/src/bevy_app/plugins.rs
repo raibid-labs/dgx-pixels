@@ -53,6 +53,14 @@ impl Plugin for DgxPixelsPlugin {
         app.add_systems(Update, systems::render::screens::render_comparison_screen);
         app.add_systems(Update, systems::input::screens::handle_comparison_input);
 
+        // WS-13: Queue Screen
+        app.add_systems(Update, systems::render::screens::queue::render_queue_screen);
+        app.add_systems(Update, systems::input::screens::queue::handle_queue_input);
+
+        // WS-16: Help Screen
+        app.add_systems(Update, systems::render::screens::help::render_help_screen);
+        app.add_systems(Update, systems::input::screens::help::handle_help_input);
+
         // WS-08: Event bus
         app.add_event::<super::events::NavigateToScreen>();
         app.add_event::<super::events::NavigateBack>();
@@ -73,18 +81,6 @@ impl Plugin for DgxPixelsPlugin {
             ),
         );
 
-<<<<<<< HEAD
-        // WS-13: Queue Screen
-        app.add_systems(Update, systems::render::screens::queue::render_queue_screen);
-        app.add_systems(Update, systems::input::screens::queue::handle_queue_input);
-
-        info!("DgxPixelsPlugin initialized with state, input, rendering, event, ZMQ systems, and Queue screen");
-=======
-        // WS-09: Generation Screen
-        app.add_systems(Update, systems::render::screens::generation::render_generation_screen);
-        app.add_systems(Update, systems::input::screens::generation::handle_generation_input);
-
-        info!("DgxPixelsPlugin initialized with state, input, rendering, event, ZMQ systems, and Generation screen");
->>>>>>> f9cc230 (WS-09: Implement Generation Screen migration to Bevy ECS)
+        info!("DgxPixelsPlugin initialized with state, input, rendering, event, ZMQ systems, Comparison, Queue, and Help screens");
     }
 }
