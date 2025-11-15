@@ -5,10 +5,7 @@ use crossterm::event::KeyCode;
 use crate::bevy_app::resources::{CurrentScreen, Screen};
 
 /// Handle input for the Monitor screen
-pub fn handle_monitor_input(
-    mut events: EventReader<KeyEvent>,
-    current_screen: Res<CurrentScreen>,
-) {
+pub fn handle_monitor_input(mut events: EventReader<KeyEvent>, current_screen: Res<CurrentScreen>) {
     if current_screen.0 != Screen::Monitor {
         return;
     }

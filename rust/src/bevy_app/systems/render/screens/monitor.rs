@@ -27,9 +27,9 @@ pub fn render_monitor_screen(
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints([
-                    Constraint::Length(3),  // Title
-                    Constraint::Min(0),     // Content
-                    Constraint::Length(1),  // Status bar
+                    Constraint::Length(3), // Title
+                    Constraint::Min(0),    // Content
+                    Constraint::Length(1), // Status bar
                 ])
                 .split(frame.area());
 
@@ -96,17 +96,11 @@ fn render_job_statistics(
         Line::from(""),
         Line::from(vec![
             Span::styled("Total Submitted:  ", theme.muted()),
-            Span::styled(
-                format!("{}", job_tracker.total_submitted),
-                theme.text(),
-            ),
+            Span::styled(format!("{}", job_tracker.total_submitted), theme.text()),
         ]),
         Line::from(vec![
             Span::styled("Completed:        ", theme.muted()),
-            Span::styled(
-                format!("{}", job_tracker.total_completed),
-                theme.success(),
-            ),
+            Span::styled(format!("{}", job_tracker.total_completed), theme.success()),
         ]),
         Line::from(vec![
             Span::styled("Failed:           ", theme.muted()),
@@ -156,7 +150,7 @@ fn render_system_metrics(frame: &mut Frame, area: Rect, jobs: &Query<&Job>, them
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(3), // Queue pressure gauge
-            Constraint::Min(0),     // Other metrics
+            Constraint::Min(0),    // Other metrics
         ])
         .split(area);
 
@@ -218,14 +212,12 @@ fn render_active_jobs(frame: &mut Frame, area: Rect, jobs: &Query<&Job>, theme: 
             let status_text = match &job.status {
                 crate::bevy_app::components::JobStatus::Pending => "Pending",
                 crate::bevy_app::components::JobStatus::Queued => "Queued",
-                crate::bevy_app::components::JobStatus::Generating { stage, .. } => {
-                    stage.as_str()
-                }
+                crate::bevy_app::components::JobStatus::Generating { stage, .. } => stage.as_str(),
                 _ => "Unknown",
             };
 
             lines.push(Line::from(vec![
-                Span::styled("¸ ", theme.highlight()),
+                Span::styled("â€¢ ", theme.highlight()),
                 Span::styled(format!("{:12} ", &job.id[..12]), theme.muted()),
                 Span::styled(format!("{:15} ", status_text), theme.text()),
                 Span::styled(prompt_preview, theme.text()),

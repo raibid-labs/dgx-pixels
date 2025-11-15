@@ -8,7 +8,7 @@ use ratatui::{
     Frame,
 };
 
-use crate::bevy_app::resources::{AppTheme, CurrentScreen, ModelsState, ModelStatus, Screen};
+use crate::bevy_app::resources::{AppTheme, CurrentScreen, ModelStatus, ModelsState, Screen};
 
 /// Render the Models screen with model table and optional metadata panel
 pub fn render_models_screen(
@@ -96,9 +96,7 @@ fn render_models_table(
             let (status_text, status_style) = match &model.status {
                 ModelStatus::Downloaded => ("✅".to_string(), theme.success()),
                 ModelStatus::Available => ("⏳".to_string(), theme.warning()),
-                ModelStatus::Downloading(pct) => {
-                    (format!("📊 {}%", pct), theme.info())
-                }
+                ModelStatus::Downloading(pct) => (format!("📊 {}%", pct), theme.info()),
                 ModelStatus::Failed => ("❌".to_string(), theme.error()),
             };
 
@@ -160,7 +158,10 @@ fn render_metadata_panel(
 
     let lines = if let Some(model) = selected_model {
         vec![
-            Line::from(vec![Span::styled("Name: ", theme.highlight()), Span::raw(&model.name)]),
+            Line::from(vec![
+                Span::styled("Name: ", theme.highlight()),
+                Span::raw(&model.name),
+            ]),
             Line::from(""),
             Line::from(vec![
                 Span::styled("Version: ", theme.highlight()),
