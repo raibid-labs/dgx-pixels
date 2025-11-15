@@ -1,9 +1,8 @@
-//! # Rendering Systems
-//!
-//! Bevy ECS rendering pipeline using bevy_ratatui's RatatuiContext.
+//! Rendering systems and utilities.
 
 mod dispatch;
 mod layout;
+pub mod screens;
 mod widgets;
 
 pub mod screens;

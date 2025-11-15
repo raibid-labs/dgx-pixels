@@ -32,6 +32,17 @@ impl Plugin for DgxPixelsPlugin {
         // WS-11: Comparison state resource
         app.insert_resource(super::resources::ComparisonState::default());
 
+        // WS-12: Models state resource
+        app.insert_resource(super::resources::ModelsState::default());
+
+        // WS-15: Settings resource
+        app.insert_resource(super::resources::SettingsState::load().unwrap_or_else(|e| {
+            warn!("Failed to load settings, using defaults: {}", e);
+            super::resources::SettingsState::default()
+        }));
+
+        // WS-16: Help state resource
+        app.insert_resource(super::resources::HelpState::default());
         // WS-03: Input systems (run in PreUpdate schedule)
         app.add_systems(
             PreUpdate,
@@ -39,6 +50,10 @@ impl Plugin for DgxPixelsPlugin {
                 systems::input::handle_keyboard_input,
                 systems::input::handle_navigation,
                 systems::input::handle_text_input,
+                // WS-09: Generation screen input
+                systems::input::handle_generation_input,
+                // WS-11: Comparison screen input
+                systems::input::handle_comparison_input,
             )
                 .chain(), // Run in order
         );
@@ -47,7 +62,28 @@ impl Plugin for DgxPixelsPlugin {
         app.add_systems(PreUpdate, systems::zmq::poll_zmq);
 
         // WS-04: Rendering system (run in Update schedule)
-        app.add_systems(Update, systems::render::render_dispatch);
+        app.add_systems(
+            Update,
+            (
+                systems::render::render_dispatch,
+                // WS-09: Generation screen renderer
+                systems::render::render_generation_screen,
+                // WS-11: Comparison screen renderer
+                systems::render::render_comparison_screen,
+            ),
+        );
+
+        // WS-12: Models screen rendering and input
+        app.add_systems(Update, systems::render::screens::render_models_screen);
+        app.add_systems(Update, systems::input::screens::handle_models_input);
+
+        // WS-15: Settings screen rendering and input
+        app.add_systems(Update, systems::render::screens::render_settings_screen);
+        app.add_systems(Update, systems::input::screens::handle_settings_input);
+
+        // WS-16: Help screen rendering and input
+        app.add_systems(Update, systems::render::screens::render_help_screen);
+        app.add_systems(Update, systems::input::screens::handle_help_input);
 
         // WS-11: Comparison screen rendering and input
         app.add_systems(Update, systems::render::screens::render_comparison_screen);
