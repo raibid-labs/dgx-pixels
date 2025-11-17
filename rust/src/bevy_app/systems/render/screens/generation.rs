@@ -14,7 +14,7 @@ use ratatui::{
 
 use crate::bevy_app::{
     components::{Job, JobStatus},
-    resources::{AppState, AppTheme, CurrentScreen, GalleryState, InputBuffer, Screen},
+    resources::{AppState, AppTheme, CurrentScreen, GalleryState, InputBuffer, PreviewManagerResource, Screen},
 };
 
 /// Render the Generation screen.
@@ -27,6 +27,7 @@ pub fn render_generation_screen(
     theme: Res<AppTheme>,
     app_state: Res<AppState>,
     gallery: Res<GalleryState>,
+    preview_manager: Res<PreviewManagerResource>,
     jobs: Query<&Job>,
 ) {
     if current_screen.0 != Screen::Generation {
@@ -35,7 +36,7 @@ pub fn render_generation_screen(
 
     ratatui
         .draw(|frame| {
-            render_frame(frame, &input_buffer, &theme, &app_state, &gallery, &jobs);
+            render_frame(frame, &input_buffer, &theme, &app_state, &gallery, &preview_manager, &jobs);
         })
         .ok();
 }
@@ -47,6 +48,7 @@ fn render_frame(
     theme: &AppTheme,
     app_state: &AppState,
     gallery: &GalleryState,
+    preview_manager: &PreviewManagerResource,
     jobs: &Query<&Job>,
 ) {
     let chunks = Layout::default()
@@ -62,7 +64,7 @@ fn render_frame(
 
     render_prompt_input(frame, chunks[0], input_buffer, theme);
     render_options_row(frame, chunks[1], theme);
-    render_main_content(frame, chunks[2], app_state, theme, jobs);
+    render_main_content(frame, chunks[2], app_state, theme, preview_manager, jobs);
     render_recent_generations(frame, chunks[3], gallery, theme);
 }
 
@@ -115,6 +117,7 @@ fn render_main_content(
     area: Rect,
     app_state: &AppState,
     theme: &AppTheme,
+    preview_manager: &PreviewManagerResource,
     jobs: &Query<&Job>,
 ) {
     let main_chunks = Layout::default()
@@ -126,7 +129,7 @@ fn render_main_content(
         .split(area);
 
     render_controls(frame, main_chunks[0], app_state, theme, jobs);
-    render_preview(frame, main_chunks[1], app_state, theme);
+    render_preview(frame, main_chunks[1], app_state, theme, preview_manager);
 }
 
 /// Render generation controls and active job status.
@@ -221,7 +224,13 @@ fn render_controls(
 }
 
 /// Render preview area with tabs support for debug mode.
-fn render_preview(frame: &mut Frame, area: Rect, app_state: &AppState, theme: &AppTheme) {
+fn render_preview(
+    frame: &mut Frame,
+    area: Rect,
+    app_state: &AppState,
+    theme: &AppTheme,
+    preview_manager: &PreviewManagerResource,
+) {
     // Create title with tab support if debug mode
     let title_string = if app_state.debug_mode {
         let tab_titles = vec!["Preview", "Backend Logs"];
@@ -254,12 +263,18 @@ fn render_preview(frame: &mut Frame, area: Rect, app_state: &AppState, theme: &A
     if app_state.debug_mode && app_state.preview_tab == 1 {
         render_backend_logs(frame, inner, app_state, theme);
     } else {
-        render_preview_content(frame, inner, app_state, theme);
+        render_preview_content(frame, inner, app_state, theme, preview_manager);
     }
 }
 
 /// Render preview content (image info or placeholder).
-fn render_preview_content(frame: &mut Frame, area: Rect, app_state: &AppState, theme: &AppTheme) {
+fn render_preview_content(
+    frame: &mut Frame,
+    area: Rect,
+    app_state: &AppState,
+    theme: &AppTheme,
+    preview_manager: &PreviewManagerResource,
+) {
     if let Some(preview_path) = &app_state.current_preview {
         let filename = preview_path
             .file_name()
@@ -273,29 +288,66 @@ fn render_preview_content(frame: &mut Frame, area: Rect, app_state: &AppState, t
             "Unknown size".to_string()
         };
 
-        let lines = vec![
-            Line::from(""),
-            Line::from(Span::styled("✓ Generation Complete", theme.success())),
-            Line::from(""),
-            Line::from(format!("File: {}", filename)),
-            Line::from(format!("Size: {}", size_str)),
-            Line::from(""),
-            Line::from(Span::styled(
-                "Preview: Sixel rendering coming soon!",
-                theme.muted(),
-            )),
-            Line::from(""),
-            Line::from(Span::styled(
-                "For now, check outputs/ folder",
-                theme.muted(),
-            )),
-        ];
+        // Try to get the preview from cache
+        if let Some(preview_entry) = preview_manager.manager.get_preview(preview_path) {
+            // We have a Sixel preview available!
+            let lines = vec![
+                Line::from(""),
+                Line::from(Span::styled("✓ Preview Ready", theme.success())),
+                Line::from(""),
+                Line::from(format!("File: {}", filename)),
+                Line::from(format!("Size: {}", size_str)),
+                Line::from(format!(
+                    "Dimensions: {}x{}",
+                    preview_entry.dimensions.0, preview_entry.dimensions.1
+                )),
+                Line::from(""),
+                Line::from(Span::styled(
+                    "Sixel preview rendering is supported!",
+                    theme.highlight(),
+                )),
+                Line::from(""),
+                Line::from(Span::styled(
+                    format!("Preview cached: {} bytes", preview_entry.size_bytes),
+                    theme.muted(),
+                )),
+                Line::from(""),
+                Line::from(Span::styled(
+                    "Note: Sixel display requires compatible terminal",
+                    theme.muted(),
+                )),
+                Line::from(Span::styled(
+                    "(kitty, WezTerm, iTerm2, xterm with sixel support)",
+                    theme.muted(),
+                )),
+            ];
 
-        let paragraph = Paragraph::new(lines)
-            .style(theme.text())
-            .alignment(Alignment::Center);
+            let paragraph = Paragraph::new(lines)
+                .style(theme.text())
+                .alignment(Alignment::Center);
 
-        frame.render_widget(paragraph, area);
+            frame.render_widget(paragraph, area);
+        } else {
+            // Preview is being loaded
+            let lines = vec![
+                Line::from(""),
+                Line::from(Span::styled("⏳ Loading Preview...", theme.muted())),
+                Line::from(""),
+                Line::from(format!("File: {}", filename)),
+                Line::from(format!("Size: {}", size_str)),
+                Line::from(""),
+                Line::from(Span::styled(
+                    "Preview is being rendered...",
+                    theme.muted(),
+                )),
+            ];
+
+            let paragraph = Paragraph::new(lines)
+                .style(theme.text())
+                .alignment(Alignment::Center);
+
+            frame.render_widget(paragraph, area);
+        }
     } else {
         // No preview available
         let lines = vec![
@@ -305,6 +357,11 @@ fn render_preview_content(frame: &mut Frame, area: Rect, app_state: &AppState, t
             Line::from("  Image preview will"),
             Line::from("  appear here after"),
             Line::from("  generation"),
+            Line::from(""),
+            Line::from(Span::styled(
+                "Press Ctrl+T to load test image",
+                theme.muted(),
+            )),
         ];
 
         let paragraph = Paragraph::new(lines)

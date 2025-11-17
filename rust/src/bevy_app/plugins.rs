@@ -34,6 +34,9 @@ impl Plugin for DgxPixelsPlugin {
 
         // WS-12: Models state resource
         app.insert_resource(super::resources::ModelsState::default());
+
+        // Preview manager for Sixel image rendering
+        app.insert_resource(super::resources::PreviewManagerResource::default());
         // WS-03: Input systems (run in PreUpdate schedule)
         app.add_systems(
             PreUpdate,
@@ -51,6 +54,16 @@ impl Plugin for DgxPixelsPlugin {
 
         // WS-05: ZeroMQ polling (run in PreUpdate before other systems)
         app.add_systems(PreUpdate, systems::zmq::poll_zmq);
+
+        // Preview systems (run in Update schedule)
+        app.add_systems(
+            Update,
+            (
+                systems::request_preview_rendering,
+                systems::poll_preview_results,
+            )
+                .chain(),
+        );
 
         // WS-04: Rendering system (run in Update schedule)
         app.add_systems(
