@@ -29,38 +29,46 @@ pub fn handle_navigation(
                 info!("Navigated to screen: {:?}", current_screen.0);
             }
 
-            // Number key shortcuts
+            // Number key shortcuts (matching task requirements)
             KeyCode::Char('1') => {
                 current_screen.0 = Screen::Generation;
                 app_state.request_redraw();
+                info!("Navigated to Generation screen");
             }
             KeyCode::Char('2') => {
-                current_screen.0 = Screen::Comparison;
-                app_state.request_redraw();
-            }
-            KeyCode::Char('3') => {
-                current_screen.0 = Screen::Queue;
-                app_state.request_redraw();
-            }
-            KeyCode::Char('4') => {
                 current_screen.0 = Screen::Gallery;
                 app_state.request_redraw();
+                info!("Navigated to Gallery screen");
             }
-            KeyCode::Char('5') => {
+            KeyCode::Char('3') => {
+                current_screen.0 = Screen::Comparison;
+                app_state.request_redraw();
+                info!("Navigated to Comparison screen");
+            }
+            KeyCode::Char('4') => {
                 current_screen.0 = Screen::Models;
                 app_state.request_redraw();
+                info!("Navigated to Models screen");
+            }
+            KeyCode::Char('5') => {
+                current_screen.0 = Screen::Queue;
+                app_state.request_redraw();
+                info!("Navigated to Queue screen");
             }
             KeyCode::Char('6') => {
                 current_screen.0 = Screen::Monitor;
                 app_state.request_redraw();
+                info!("Navigated to Monitor screen");
             }
             KeyCode::Char('7') => {
                 current_screen.0 = Screen::Settings;
                 app_state.request_redraw();
+                info!("Navigated to Settings screen");
             }
             KeyCode::Char('8') => {
                 current_screen.0 = Screen::Help;
                 app_state.request_redraw();
+                info!("Navigated to Help screen");
             }
 
             // Escape - navigate back (using history in future)
@@ -69,6 +77,7 @@ pub fn handle_navigation(
                 // WS-08 will add proper screen history
                 current_screen.0 = Screen::Generation;
                 app_state.request_redraw();
+                info!("Navigated back to Generation screen");
             }
 
             _ => {}

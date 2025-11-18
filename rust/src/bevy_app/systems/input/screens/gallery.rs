@@ -31,12 +31,12 @@ pub fn handle_gallery_input(
 
     for event in events.read() {
         match event.code {
-            // Navigation: Arrow keys
-            KeyCode::Up | KeyCode::Char('k') => {
+            // Navigation: Arrow keys and vi-style keys
+            KeyCode::Up | KeyCode::Left | KeyCode::Char('k') | KeyCode::Char('h') => {
                 select_prev.send(SelectPreviousImage);
                 debug!("Gallery: Navigate to previous image");
             }
-            KeyCode::Down | KeyCode::Char('j') => {
+            KeyCode::Down | KeyCode::Right | KeyCode::Char('j') | KeyCode::Char('l') => {
                 select_next.send(SelectNextImage);
                 debug!("Gallery: Navigate to next image");
             }
@@ -47,7 +47,7 @@ pub fn handle_gallery_input(
             }
 
             // Delete current image
-            KeyCode::Char('d') | KeyCode::Char('D') => {
+            KeyCode::Char('d') | KeyCode::Char('D') | KeyCode::Delete => {
                 if let Some(image_path) = gallery.current_image() {
                     delete.send(DeleteImage {
                         image_path: image_path.clone(),
@@ -101,7 +101,11 @@ mod tests {
     use std::path::PathBuf;
 
     fn create_key_event(code: KeyCode) -> KeyEvent {
-        crossterm::event::KeyEvent::new(code, crossterm::event::KeyModifiers::NONE)
+        // bevy_ratatui::event::KeyEvent is a newtype wrapper around crossterm::event::KeyEvent
+        KeyEvent(crossterm::event::KeyEvent::new(
+            code,
+            crossterm::event::KeyModifiers::NONE,
+        ))
     }
 
     #[test]
@@ -227,5 +231,74 @@ mod tests {
         let mut next_events = app.world_mut().resource_mut::<Events<SelectNextImage>>();
         let mut reader = next_events.get_cursor();
         assert_eq!(reader.read(&next_events).count(), 5);
+    }
+
+    #[test]
+    fn test_vi_style_keys() {
+        let mut app = App::new();
+
+        // Setup resources
+        app.insert_resource(CurrentScreen(Screen::Gallery));
+        let mut gallery = GalleryState::default();
+        gallery.add_image(PathBuf::from("/test/img1.png"));
+        gallery.add_image(PathBuf::from("/test/img2.png"));
+        app.insert_resource(gallery);
+
+        // Register events
+        app.add_event::<KeyEvent>();
+        app.add_event::<SelectNextImage>();
+        app.add_event::<SelectPreviousImage>();
+        app.add_event::<DeleteImage>();
+
+        // Add system
+        app.add_systems(Update, handle_gallery_input);
+
+        // Test 'j' key (next)
+        app.world_mut().send_event(create_key_event(KeyCode::Char('j')));
+        app.update();
+
+        let mut next_events = app.world_mut().resource_mut::<Events<SelectNextImage>>();
+        let mut reader = next_events.get_cursor();
+        assert_eq!(reader.read(&next_events).count(), 1);
+
+        // Test 'k' key (previous)
+        app.world_mut().send_event(create_key_event(KeyCode::Char('k')));
+        app.update();
+
+        let mut prev_events = app.world_mut().resource_mut::<Events<SelectPreviousImage>>();
+        let mut reader = prev_events.get_cursor();
+        assert_eq!(reader.read(&prev_events).count(), 1);
+    }
+
+    #[test]
+    fn test_home_end_navigation() {
+        let mut app = App::new();
+
+        // Setup resources with 10 images
+        app.insert_resource(CurrentScreen(Screen::Gallery));
+        let mut gallery = GalleryState::default();
+        for i in 0..10 {
+            gallery.add_image(PathBuf::from(format!("/test/img{}.png", i)));
+        }
+        // Set selected to middle
+        gallery.selected = 5;
+        app.insert_resource(gallery);
+
+        // Register events
+        app.add_event::<KeyEvent>();
+        app.add_event::<SelectNextImage>();
+        app.add_event::<SelectPreviousImage>();
+        app.add_event::<DeleteImage>();
+
+        // Add system
+        app.add_systems(Update, handle_gallery_input);
+
+        // Test Home key - should send 5 prev events (to go from index 5 to 0)
+        app.world_mut().send_event(create_key_event(KeyCode::Home));
+        app.update();
+
+        let mut prev_events = app.world_mut().resource_mut::<Events<SelectPreviousImage>>();
+        let mut reader = prev_events.get_cursor();
+        assert_eq!(reader.read(&prev_events).count(), 5);
     }
 }

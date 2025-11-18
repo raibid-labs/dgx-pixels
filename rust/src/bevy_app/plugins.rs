@@ -42,17 +42,30 @@ impl Plugin for DgxPixelsPlugin {
         // WS-12: Models state resource
         app.insert_resource(super::resources::ModelsState::default());
 
-        // WS-03: Input systems (run in PreUpdate schedule)
+        // WS-03: Global input systems (run in PreUpdate schedule)
+        // These systems handle cross-screen functionality like quit, help, and navigation
         app.add_systems(
             PreUpdate,
             (
-                systems::input::handle_keyboard_input,
-                systems::input::handle_navigation,
-                systems::input::handle_text_input,
-                // WS-09: Generation screen input
-                systems::input::handle_generation_input,
-                // WS-11: Comparison screen input
-                systems::input::handle_comparison_input,
+                systems::input::handle_keyboard_input,   // Global keys: q, ?, h
+                systems::input::handle_navigation,       // Tab, numbers 1-8, Esc
+                systems::input::handle_text_input,       // Text entry on Generation screen
+            ),
+        );
+
+        // WS-03: Screen-specific input handlers (run in PreUpdate after global handlers)
+        // Each handler checks CurrentScreen and only processes events for its screen
+        app.add_systems(
+            PreUpdate,
+            (
+                systems::input::screens::handle_generation_input,  // Enter, G, C, P, L
+                systems::input::screens::handle_gallery_input,     // Arrow keys, d, Home/End
+                systems::input::screens::handle_comparison_input,  // Arrow keys, a, d, Enter
+                systems::input::screens::handle_models_input,      // Arrow keys, Enter, d, i
+                systems::input::screens::handle_queue_input,       // (Future: job navigation)
+                systems::input::screens::handle_monitor_input,     // r, p (refresh/pause)
+                systems::input::screens::settings::handle_settings_input, // Settings toggles
+                systems::input::screens::handle_help_input,        // Read-only screen
             ),
         );
 
@@ -95,16 +108,7 @@ impl Plugin for DgxPixelsPlugin {
             ).chain(),
         );
 
-        // Input handlers (don't conflict, can run in parallel)
-        app.add_systems(Update, systems::input::screens::handle_gallery_input);
-        app.add_systems(Update, systems::input::screens::handle_comparison_input);
-        app.add_systems(Update, systems::input::screens::handle_models_input);
-        app.add_systems(Update, systems::input::screens::handle_queue_input);
-        app.add_systems(Update, systems::input::screens::handle_monitor_input);
-        app.add_systems(Update, systems::input::screens::settings::handle_settings_input);
-        app.add_systems(Update, systems::input::screens::handle_help_input);
-
-        // WS-08: Event bus
+        // WS-08: Event bus registration
         app.add_event::<super::events::NavigateToScreen>();
         app.add_event::<super::events::NavigateBack>();
         app.add_event::<super::events::SubmitGenerationJob>();
@@ -114,7 +118,7 @@ impl Plugin for DgxPixelsPlugin {
         app.add_event::<super::events::SelectPreviousImage>();
         app.add_event::<super::events::DeleteImage>();
 
-        // Event handlers
+        // Event handlers (run in Update after input processing)
         app.add_systems(
             Update,
             (

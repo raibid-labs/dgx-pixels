@@ -1,10 +1,17 @@
 //! # Text Entry System
 //!
 //! Handles text input on the Generation screen (prompt entry).
+//!
+//! Supports:
+//! - Character input
+//! - Backspace/Delete
+//! - Cursor movement (Left/Right/Home/End)
+//! - Word deletion (Ctrl+W)
+//! - Clear to start (Ctrl+U)
 
 use bevy::prelude::{info, EventReader, Res, ResMut};
 use bevy_ratatui::event::KeyEvent;
-use crossterm::event::KeyCode;
+use crossterm::event::{KeyCode, KeyModifiers};
 
 use crate::bevy_app::resources::*;
 
@@ -21,11 +28,24 @@ pub fn handle_text_input(
     }
 
     for event in events.read() {
+        let modifiers = event.modifiers;
+
         match event.code {
             // Character input
-            KeyCode::Char(c) => {
-                // Skip 'q' and 'Q' as they might be for quitting
-                // (though keyboard system already handles this by checking screen)
+            KeyCode::Char('w') | KeyCode::Char('W') if modifiers.contains(KeyModifiers::CONTROL) => {
+                // Ctrl+W: Delete word before cursor
+                input_buffer.delete_word();
+                app_state.request_redraw();
+            }
+
+            KeyCode::Char('u') | KeyCode::Char('U') if modifiers.contains(KeyModifiers::CONTROL) => {
+                // Ctrl+U: Clear all text before cursor
+                input_buffer.delete_to_start();
+                app_state.request_redraw();
+            }
+
+            KeyCode::Char(c) if !modifiers.contains(KeyModifiers::CONTROL) => {
+                // Regular character input (no Ctrl modifier)
                 input_buffer.insert(c);
                 app_state.request_redraw();
             }
@@ -37,13 +57,8 @@ pub fn handle_text_input(
             }
 
             KeyCode::Delete => {
-                // Delete character after cursor
-                let cursor = input_buffer.cursor;
-                let text_len = input_buffer.text.len();
-                if cursor < text_len {
-                    input_buffer.text.remove(cursor);
-                    app_state.request_redraw();
-                }
+                input_buffer.delete();
+                app_state.request_redraw();
             }
 
             // Cursor movement
