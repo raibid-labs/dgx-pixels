@@ -223,24 +223,9 @@ backend-setup:
     echo "Installing dependencies..."
     pip install pyzmq msgpack-python
 
-    # Create requirements.txt if it doesn't exist
-    if [ ! -f "python/requirements.txt" ]; then
-        echo "Creating python/requirements.txt..."
-        mkdir -p python
-        cat > python/requirements.txt << 'EOF'
-# Core dependencies
-pyzmq>=25.0.0
-msgpack-python>=0.5.6
-
-# Optional: ComfyUI integration
-# requests>=2.31.0
-# pillow>=10.0.0
-EOF
-    fi
-
     # Install from requirements.txt if it exists
     if [ -f "python/requirements.txt" ]; then
-        echo "Installing from requirements.txt..."
+        echo "Installing additional dependencies from requirements.txt..."
         pip install -r python/requirements.txt
     fi
 

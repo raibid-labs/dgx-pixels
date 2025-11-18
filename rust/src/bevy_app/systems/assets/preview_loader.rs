@@ -163,7 +163,7 @@ pub fn scan_gallery_directory(
 /// Runs every frame in Update schedule.
 pub fn check_preview_loading(
     asset_server: Res<AssetServer>,
-    images: Res<Assets<Image>>,
+    images: Option<Res<Assets<Image>>>,
     preview_query: Query<(Entity, &PreviewImage), Changed<PreviewImage>>,
 ) {
     for (entity, preview) in preview_query.iter() {
@@ -176,11 +176,13 @@ pub fn check_preview_loading(
                     );
                 }
                 bevy::asset::LoadState::Loaded => {
-                    // Verify image is in Assets storage
-                    if images.get(handle).is_some() {
-                        debug!("Preview image loaded: {:?}", preview.path);
-                    } else {
-                        warn!("Preview handle loaded but image not in storage: {:?}", preview.path);
+                    // Verify image is in Assets storage (if available)
+                    if let Some(images) = images.as_ref() {
+                        if images.get(handle).is_some() {
+                            debug!("Preview image loaded: {:?}", preview.path);
+                        } else {
+                            warn!("Preview handle loaded but image not in storage: {:?}", preview.path);
+                        }
                     }
                 }
                 bevy::asset::LoadState::Loading => {

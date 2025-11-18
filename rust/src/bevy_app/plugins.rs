@@ -109,6 +109,7 @@ impl Plugin for DgxPixelsPlugin {
 
         // Screen Rendering: All render systems chained sequentially
         // This is necessary because all screens need ResMut<RatatuiContext> exclusively
+        // Only run when RatatuiContext is available
         app.add_systems(
             Update,
             (
@@ -120,7 +121,8 @@ impl Plugin for DgxPixelsPlugin {
                 systems::render::screens::render_monitor_screen,
                 systems::render::screens::settings::render_settings_screen,
                 systems::render::screens::render_help_screen,
-            ).chain(),
+            ).chain()
+             .run_if(bevy::prelude::resource_exists::<bevy_ratatui::terminal::RatatuiContext>),
         );
 
         // WS-08: Event bus registration
