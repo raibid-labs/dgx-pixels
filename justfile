@@ -143,10 +143,10 @@ debug:
     cd rust && cargo run --release -- --debug
 
     # Cleanup: kill backend when TUI exits
-    echo ""
-    echo "🛑 Stopping backend (PID: $BACKEND_PID)..."
-    kill $BACKEND_PID 2>/dev/null || true
-    pkill -f "generation_worker.py" 2>/dev/null || true
+    # echo ""
+    # echo "🛑 Stopping backend (PID: $BACKEND_PID)..."
+    # kill $BACKEND_PID 2>/dev/null || true
+    # pkill -f "generation_worker.py" 2>/dev/null || true
 
 # Start Python backend worker
 backend:

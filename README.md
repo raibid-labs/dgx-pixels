@@ -17,6 +17,7 @@ An open-source AI-powered pixel art generation system optimized for the NVIDIA D
   - [Rust + Python Stack](#new-rust--python-stack)
   - [Project Management & Operations](#new-project-management--operations)
   - [TUI Modernization](#new-tui-modernization-bevy-ratatui-migration)
+  - [Session Logs & Completion Reports](#session-logs--completion-reports)
   - [Quick Links](#quick-links)
 - [Technology Stack](#technology-stack)
 - [Training Custom Models](#training-custom-models)
@@ -219,6 +220,14 @@ See [Rust-Python Architecture](docs/07-rust-python-architecture.md) and [TUI Des
 17. **[Meta Orchestrator](docs/orchestration/tui-modernization/meta-orchestrator.md)** - Parallel execution coordination
 18. **[Workstream Specs](docs/orchestration/tui-modernization/workstreams/)** - Detailed implementation guides (WS-01 through WS-18)
 
+### Session Logs & Completion Reports
+
+19. **[Session Logs](docs/session-logs/)** - Implementation session reports, completion summaries, and validation checklists
+    - **[LoRA Setup](docs/session-logs/LORA-SETUP-COMPLETE.md)** - Pixel Art LoRA integration guide
+    - **[Sixel Preview](docs/session-logs/SIXEL-PREVIEW-UPDATE.md)** - Terminal image preview implementation
+    - **[AI Generation Fix](docs/session-logs/AI-GENERATION-FIX.md)** - Random seed and quality improvements
+    - **[Workstream Completions](docs/session-logs/)** - WS-05 through WS-17 completion reports
+
 ### Quick Links
 
 | Topic | Documentation |
@@ -385,6 +394,9 @@ See [ROADMAP.md](docs/ROADMAP.md) for the complete milestone-based development p
 
 ### Recent Updates
 
+- ✅ **Pixel Art LoRA Integration**: SDXL checkpoint + Pixel Art XL v1.1 LoRA for authentic pixel art generation
+- ✅ **Sixel Preview**: Terminal image preview with WezTerm support, gallery navigation fixes
+- ✅ **Random Seed Generation**: Fixed hardcoded seed issue for unique image generation
 - ✅ **M1 Foundation Complete** (WS-01 through WS-04): Bevy 0.15 + bevy_ratatui 0.7 runtime operational
 - ✅ **ECS State Migration**: 5 Resources + 2 Components with 37 unit tests (all passing)
 - ✅ **Input System**: Message-based keyboard/navigation/text entry (<16ms latency)
