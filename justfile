@@ -148,16 +148,193 @@ debug:
     # kill $BACKEND_PID 2>/dev/null || true
     # pkill -f "generation_worker.py" 2>/dev/null || true
 
+# Check Python environment and dependencies
+backend-check:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔍 Checking Python backend environment..."
+    echo ""
+
+    # Check Python version
+    if ! command -v python3 &> /dev/null; then
+        echo "❌ Python 3 not found. Please install Python 3.8+"
+        exit 1
+    fi
+    echo "✓ Python: $(python3 --version)"
+
+    # Check venv
+    if [ ! -d "venv" ]; then
+        echo "❌ Virtual environment not found."
+        echo "   Run: just backend-setup"
+        exit 1
+    fi
+    echo "✓ Virtual environment exists"
+
+    # Check worker file
+    if [ ! -f "python/workers/generation_worker.py" ]; then
+        echo "❌ Backend worker not found: python/workers/generation_worker.py"
+        exit 1
+    fi
+    echo "✓ Worker file exists"
+
+    # Check dependencies
+    source venv/bin/activate
+    echo ""
+    echo "📦 Checking Python packages..."
+
+    MISSING=0
+    for pkg in zmq msgpack; do
+        if ! python -c "import $pkg" 2>/dev/null; then
+            echo "❌ Missing package: $pkg"
+            MISSING=1
+        else
+            echo "✓ $pkg installed"
+        fi
+    done
+
+    if [ $MISSING -eq 1 ]; then
+        echo ""
+        echo "Run: just backend-setup"
+        exit 1
+    fi
+
+    echo ""
+    echo "✅ Backend environment ready!"
+
+# Setup Python backend (install dependencies)
+backend-setup:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔧 Setting up Python backend environment..."
+
+    # Create venv if needed
+    if [ ! -d "venv" ]; then
+        echo "Creating virtual environment..."
+        python3 -m venv venv
+    fi
+
+    source venv/bin/activate
+
+    # Upgrade pip
+    echo "Upgrading pip..."
+    pip install --upgrade pip
+
+    # Install core dependencies
+    echo "Installing dependencies..."
+    pip install pyzmq msgpack-python
+
+    # Create requirements.txt if it doesn't exist
+    if [ ! -f "python/requirements.txt" ]; then
+        echo "Creating python/requirements.txt..."
+        mkdir -p python
+        cat > python/requirements.txt << 'EOF'
+# Core dependencies
+pyzmq>=25.0.0
+msgpack-python>=0.5.6
+
+# Optional: ComfyUI integration
+# requests>=2.31.0
+# pillow>=10.0.0
+EOF
+    fi
+
+    # Install from requirements.txt if it exists
+    if [ -f "python/requirements.txt" ]; then
+        echo "Installing from requirements.txt..."
+        pip install -r python/requirements.txt
+    fi
+
+    echo ""
+    echo "✅ Backend setup complete!"
+    echo ""
+    echo "Next steps:"
+    echo "  1. Run 'just backend-check' to verify"
+    echo "  2. Run 'just backend' to start worker"
+    echo "  3. Run 'just tui-bevy' in another terminal"
+
 # Start Python backend worker
 backend:
     #!/usr/bin/env bash
     set -euo pipefail
-    if [ ! -d "venv" ]; then
-        echo "❌ Virtual environment not found. Run 'just init' first."
+
+    # Check environment first
+    if ! just backend-check > /dev/null 2>&1; then
+        echo "❌ Backend environment check failed!"
+        echo ""
+        just backend-check
         exit 1
     fi
+
+    echo "🚀 Starting Python backend worker..."
+    echo ""
+    echo "Listening on:"
+    echo "  REQ socket: tcp://127.0.0.1:5555"
+    echo "  PUB socket: tcp://127.0.0.1:5556"
+    echo ""
+    echo "Press Ctrl+C to stop"
+    echo ""
+
     source venv/bin/activate
     python python/workers/generation_worker.py --req-addr tcp://127.0.0.1:5555 --pub-addr tcp://127.0.0.1:5556
+
+# Start backend in background and run TUI
+run-all:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Check backend environment
+    if ! just backend-check > /dev/null 2>&1; then
+        echo "❌ Backend not ready. Run: just backend-setup"
+        exit 1
+    fi
+
+    # Kill any existing backend
+    pkill -f "generation_worker.py" 2>/dev/null || true
+    sleep 0.5
+
+    # Start backend in background
+    echo "🚀 Starting backend in background..."
+    source venv/bin/activate
+    python python/workers/generation_worker.py --req-addr tcp://127.0.0.1:5555 --pub-addr tcp://127.0.0.1:5556 > backend.log 2>&1 &
+    BACKEND_PID=$!
+    echo "Backend started (PID: $BACKEND_PID)"
+
+    # Wait for backend to start
+    sleep 2
+    if ! kill -0 $BACKEND_PID 2>/dev/null; then
+        echo "❌ Backend failed to start. Check backend.log"
+        tail -20 backend.log
+        exit 1
+    fi
+
+    echo "✓ Backend running"
+    echo ""
+
+    # Start TUI
+    echo "🚀 Starting TUI..."
+    echo ""
+    cd rust && cargo run --features bevy_migration_foundation
+
+    # Cleanup on exit
+    echo ""
+    echo "Stopping backend..."
+    kill $BACKEND_PID 2>/dev/null || true
+
+# Stop backend worker if running
+backend-stop:
+    #!/usr/bin/env bash
+    echo "🛑 Stopping backend worker..."
+    pkill -f "generation_worker.py" 2>/dev/null && echo "✓ Backend stopped" || echo "⚠️  No backend running"
+
+# Show backend logs (if running in background)
+backend-logs:
+    #!/usr/bin/env bash
+    if [ -f "backend.log" ]; then
+        tail -f backend.log
+    else
+        echo "❌ No backend.log found. Backend not running in background."
+        echo "   Run: just run-all"
+    fi
 
 # Start ComfyUI server (assumes installed)
 comfyui PORT="8188":
