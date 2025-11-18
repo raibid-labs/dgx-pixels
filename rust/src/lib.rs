@@ -51,6 +51,12 @@ pub async fn run_classic_app() -> Result<()> {
         app.preview_tab = 1; // Default to Logs tab in debug mode
     }
 
+    // Load existing images from outputs directory
+    app.load_gallery_from_outputs("../outputs");
+    if !app.gallery_images.is_empty() {
+        info!("Loaded {} existing images into gallery", app.gallery_images.len());
+    }
+
     // Initialize ZeroMQ client for backend communication
     match ZmqClient::new_default() {
         Ok(client) => {
@@ -97,13 +103,13 @@ async fn run_classic_event_loop<B: ratatui::backend::Backend>(
         // Wait a moment for the log file to be created
         std::thread::sleep(std::time::Duration::from_millis(500));
 
-        match File::open("dgx-pixels-backend.log") {
+        match File::open("../dgx-pixels-backend.log") {
             Ok(f) => {
                 info!("Successfully opened backend log file for tailing");
                 let reader = BufReader::new(f);
                 // Read all existing content first
                 let mut initial_reader =
-                    BufReader::new(File::open("dgx-pixels-backend.log").unwrap());
+                    BufReader::new(File::open("../dgx-pixels-backend.log").unwrap());
                 let mut line = String::new();
                 while initial_reader.read_line(&mut line).unwrap_or(0) > 0 {
                     app.backend_logs.push(line.trim_end().to_string());

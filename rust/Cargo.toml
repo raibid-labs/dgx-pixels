@@ -53,6 +53,7 @@ bevy_ratatui = { version = "0.7", optional = true }
 # Image processing and Sixel rendering
 image = "0.24"
 viuer = "0.7"
+tempfile = "3.8"
 
 # Performance
 dashmap = "5.5"

@@ -301,6 +301,27 @@ impl App {
     pub fn selected_gallery_image(&self) -> Option<&PathBuf> {
         self.gallery_images.get(self.selected_gallery_index)
     }
+
+    /// Load existing images from outputs directory
+    pub fn load_gallery_from_outputs(&mut self, outputs_dir: &str) {
+        use std::fs;
+
+        if let Ok(entries) = fs::read_dir(outputs_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_file() {
+                    if let Some(ext) = path.extension() {
+                        let ext_str = ext.to_string_lossy().to_lowercase();
+                        if ext_str == "png" || ext_str == "jpg" || ext_str == "jpeg" {
+                            self.add_to_gallery(path);
+                        }
+                    }
+                }
+            }
+            // Sort gallery images by filename (most recent first based on timestamp in filename)
+            self.gallery_images.sort_by(|a, b| b.cmp(a));
+        }
+    }
 }
 
 #[cfg(test)]

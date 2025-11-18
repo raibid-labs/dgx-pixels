@@ -8,6 +8,8 @@ use ratatui::{
     widgets::Paragraph,
     Frame,
 };
+use crate::ui::widgets::sixel_image::SixelImage;
+use tracing::debug;
 
 pub fn render(f: &mut Frame, app: &App) {
     let chunks = create_layout(f.area());
@@ -66,13 +68,20 @@ fn render_main_preview(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
     let inner = block.inner(area);
     f.render_widget(block, area);
 
+    debug!("render_main_preview called.");
+    debug!("Selected gallery image: {:?}", app.selected_gallery_image());
+    debug!("Terminal capability: {:?}", app.terminal_capability);
+
     if let Some(selected_path) = app.selected_gallery_image() {
         match app.terminal_capability {
             TerminalCapability::Sixel => {
+                debug!("Terminal capability is Sixel.");
                 // Check if preview is cached
                 if let Some(preview_entry) = app.preview_manager.get_preview(selected_path) {
+                    debug!("Preview found in cache for path: {:?}", selected_path);
                     render_sixel_large_preview(f, inner, &preview_entry.sixel_data, selected_path);
                 } else {
+                    debug!("Preview not found in cache for path: {:?}. Requesting preview.", selected_path);
                     // Request preview
                     let options = RenderOptions {
                         width: inner.width.saturating_sub(4),
@@ -90,10 +99,12 @@ fn render_main_preview(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
                 }
             }
             TerminalCapability::TextOnly => {
+                debug!("Terminal capability is TextOnly.");
                 render_text_only_info(f, inner, selected_path);
             }
         }
     } else {
+        debug!("No image selected in gallery.");
         render_no_selection(f, inner);
     }
 }
@@ -133,20 +144,9 @@ fn render_thumbnail_list(f: &mut Frame, area: ratatui::layout::Rect, app: &App) 
             Span::styled(filename, style),
         ]));
 
-        // Request thumbnail preview for visible items
-        if matches!(app.terminal_capability, TerminalCapability::Sixel)
-            && !app.preview_manager.has_preview(path)
-        {
-            let thumbnail_opts = RenderOptions {
-                width: 10,
-                height: 10,
-                preserve_aspect: true,
-                high_quality: false,
-            };
-            let _ = app
-                .preview_manager
-                .request_preview(path.clone(), thumbnail_opts);
-        }
+        // Don't request thumbnails - they conflict with full-size previews in cache
+        // The cache is keyed by path only, not by size, so requesting both
+        // small thumbnails and large previews causes flashing
     }
 
     let paragraph = Paragraph::new(lines);
@@ -156,35 +156,36 @@ fn render_thumbnail_list(f: &mut Frame, area: ratatui::layout::Rect, app: &App) 
 fn render_sixel_large_preview(
     f: &mut Frame,
     area: ratatui::layout::Rect,
-    _sixel_data: &str,
+    sixel_data: &str,
     path: &std::path::Path,
 ) {
+    debug!("render_sixel_large_preview called for path: {:?}", path);
+
+    // Split area to show filename at top, image below
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3), // Filename area
+            Constraint::Min(0),    // Image area
+        ])
+        .split(area);
+
+    // Render filename at top
     let filename = path
         .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("unknown");
 
-    let lines = vec![
-        Line::from(""),
-        Line::from(""),
-        Line::from(Span::styled(
-            "[Sixel Preview Would Appear Here]",
-            Theme::highlight(),
-        )),
-        Line::from(""),
-        Line::from(Span::styled(filename, Theme::text())),
-        Line::from(""),
-        Line::from(Span::styled(
-            "Full Sixel rendering available",
-            Theme::muted(),
-        )),
-        Line::from(""),
-        Line::from("Use arrow keys to navigate"),
-    ];
+    let filename_para = Paragraph::new(Line::from(Span::styled(filename, Theme::highlight())))
+        .alignment(ratatui::layout::Alignment::Center);
 
-    let paragraph = Paragraph::new(lines).alignment(ratatui::layout::Alignment::Center);
+    f.render_widget(filename_para, chunks[0]);
 
-    f.render_widget(paragraph, area);
+    // Render the SixelImage widget in the remaining area
+    let sixel_image_widget = SixelImage::new(sixel_data);
+    f.render_widget(sixel_image_widget, chunks[1]);
+
+    debug!("Sixel preview rendered with filename at top");
 }
 
 fn render_loading(f: &mut Frame, area: ratatui::layout::Rect) {

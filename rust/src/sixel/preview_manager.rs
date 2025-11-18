@@ -118,6 +118,7 @@ impl PreviewManager {
 
     /// Request a preview (async, returns immediately)
     pub fn request_preview(&self, path: PathBuf, options: RenderOptions) -> Result<()> {
+        debug!("Requesting preview for path: {:?}", path);
         // Check cache first
         if let Some(entry) = self.cache.get(&path) {
             debug!("Preview cache hit: {:?}", path);
@@ -136,7 +137,9 @@ impl PreviewManager {
 
     /// Try to get a preview from cache (non-blocking)
     pub fn get_preview(&self, path: &Path) -> Option<PreviewEntry> {
+        debug!("Attempting to get preview from cache for path: {:?}", path);
         self.cache.get(path).map(|entry| {
+            debug!("Preview found in cache for path: {:?}", path);
             let mut entry = entry.clone();
             entry.last_access = Instant::now();
             entry

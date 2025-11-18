@@ -1,6 +1,7 @@
 pub mod layout;
 pub mod screens;
 pub mod theme;
+pub mod widgets;
 
 use crate::app::App;
 use ratatui::{backend::Backend, Frame, Terminal};

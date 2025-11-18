@@ -186,10 +186,23 @@ impl EventHandler {
     }
 
     fn handle_gallery_keys(app: &mut App, key: crossterm::event::KeyEvent) {
+        use tracing::info;
+        info!("Gallery key event: {:?}", key);
+
         match key.code {
-            KeyCode::Left => app.gallery_prev(),
-            KeyCode::Right => app.gallery_next(),
-            _ => {}
+            KeyCode::Left => {
+                info!("Arrow Left: calling gallery_prev()");
+                app.gallery_prev();
+                info!("After gallery_prev: selected_index = {}", app.selected_gallery_index);
+            }
+            KeyCode::Right => {
+                info!("Arrow Right: calling gallery_next()");
+                app.gallery_next();
+                info!("After gallery_next: selected_index = {}", app.selected_gallery_index);
+            }
+            _ => {
+                info!("Unhandled gallery key: {:?}", key.code);
+            }
         }
     }
 

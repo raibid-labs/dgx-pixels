@@ -232,8 +232,8 @@ class JobExecutor:
         if job.batch_size and job.batch_size > 1:
             print(f"[{job.job_id}] Workflow: batch ({job.batch_size} variations)")
             return "batch.json"
-        print(f"[{job.job_id}] Workflow: txt2img (single)")
-        return "txt2img.json"
+        print(f"[{job.job_id}] Workflow: pixel_art_lora (single with LoRA)")
+        return "pixel_art_lora.json"
 
     def _inject_parameters(self, job: Job, workflow: dict) -> dict:
         """Inject job parameters into workflow
@@ -245,11 +245,18 @@ class JobExecutor:
         Returns:
             Modified workflow
         """
-        return self.client.inject_parameters(
+        import random
+
+        # Generate random seed if not provided
+        seed = job.seed if hasattr(job, 'seed') and job.seed is not None else random.randint(0, 2**32 - 1)
+        print(f"[{job.job_id}] Using seed: {seed}")
+
+        workflow = self.client.inject_parameters(
             workflow=workflow,
             prompt=job.prompt,
             steps=job.steps,
             cfg_scale=job.cfg_scale,
+            seed=seed,
             width=job.size[0] if job.size else 1024,
             height=job.size[1] if len(job.size) > 1 else 1024,
         )

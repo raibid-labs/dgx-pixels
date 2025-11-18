@@ -1,0 +1,126 @@
+{
+  "1": {
+    "inputs": {
+      "ckpt_name": "sd_xl_base_1.0.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "2": {
+    "inputs": {
+      "lora_name": "pixel-art-xl-v1.1.safetensors",
+      "strength_model": 1.0,
+      "strength_clip": 1.0,
+      "model": [
+        "1",
+        0
+      ],
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "Load LoRA - Pixel Art XL"
+    }
+  },
+  "3": {
+    "inputs": {
+      "text": "masterpiece, best quality, 8bit character sprite, retro game, isometric view, game asset, crisp pixels, limited palette",
+      "clip": [
+        "2",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Positive Prompt"
+    }
+  },
+  "4": {
+    "inputs": {
+      "text": "blurry, smooth, antialiased, 3d render, realistic, photo, gradient, soft edges, watermark, detailed, painting",
+      "clip": [
+        "2",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Negative Prompt"
+    }
+  },
+  "5": {
+    "inputs": {
+      "width": 512,
+      "height": 512,
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "Empty Latent Image"
+    }
+  },
+  "6": {
+    "inputs": {
+      "seed": 42,
+      "steps": 30,
+      "cfg": 7.0,
+      "sampler_name": "euler_ancestral",
+      "scheduler": "normal",
+      "denoise": 1.0,
+      "model": [
+        "2",
+        0
+      ],
+      "positive": [
+        "3",
+        0
+      ],
+      "negative": [
+        "4",
+        0
+      ],
+      "latent_image": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "7": {
+    "inputs": {
+      "samples": [
+        "6",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "8": {
+    "inputs": {
+      "filename_prefix": "dgx_pixels_lora",
+      "images": [
+        "7",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  }
+}

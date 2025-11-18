@@ -2,8 +2,9 @@
 
 use anyhow::{Context, Result};
 use image::{imageops::FilterType, DynamicImage, GenericImageView};
-use std::io::Write;
 use std::path::Path;
+use std::process::Command;
+use tempfile::NamedTempFile;
 use tracing::{debug, warn};
 use viuer::Config;
 
@@ -151,30 +152,36 @@ impl ImageRenderer {
         &self,
         img: &DynamicImage,
         buffer: &mut Vec<u8>,
-        options: &RenderOptions,
+        _options: &RenderOptions,
     ) -> Result<()> {
-        // Use viuer to convert to Sixel
-        let _config = viuer::Config {
-            width: Some(options.width as u32),
-            height: Some(options.height as u32),
-            transparent: false,
-            absolute_offset: false,
-            ..Default::default()
-        };
-
         // Convert image to RGB8
         let rgb_img = img.to_rgb8();
-        let (width, height) = (rgb_img.width(), rgb_img.height());
 
-        // Write a simplified Sixel sequence as placeholder
-        // Note: Full Sixel encoding would require libsixel or manual implementation
-        writeln!(buffer, "\x1bP0;1;0q\"1;1;{};{}", width, height)?;
+        // Create a temporary file
+        let temp_file = NamedTempFile::new().context("Failed to create temporary file")?;
+        let temp_path = temp_file.path();
 
-        // Simplified Sixel data (viuer handles this properly in print mode)
-        buffer.extend_from_slice(b"#0;2;0;0;0"); // Black color
-        buffer.extend_from_slice(b"\x1b\\"); // End of Sixel
+        // Save the image to the temporary file as PNG
+        rgb_img
+            .save_with_format(temp_path, image::ImageFormat::Png)
+            .context("Failed to save image to temporary file")?;
 
-        warn!("Using simplified Sixel placeholder - full Sixel encoding requires libsixel");
+        // Execute img2sixel to convert the PNG to Sixel
+        let output = Command::new("img2sixel")
+            .arg(temp_path)
+            .output()
+            .context("Failed to execute img2sixel. Is it installed and in PATH?")?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            warn!("img2sixel failed: {}", stderr);
+            return Err(anyhow::anyhow!("img2sixel failed: {}", stderr));
+        }
+
+        // Write the Sixel output to our buffer
+        buffer.extend_from_slice(&output.stdout);
+
+        debug!("Successfully encoded image to Sixel using img2sixel");
 
         Ok(())
     }
