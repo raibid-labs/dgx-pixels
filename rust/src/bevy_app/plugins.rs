@@ -45,6 +45,9 @@ impl Plugin for DgxPixelsPlugin {
         // WS-12: Models state resource
         app.insert_resource(super::resources::ModelsState::default());
 
+        // T3: Settings state resource (needed by gallery screen)
+        app.insert_resource(super::resources::SettingsState::default());
+
         // WS-03: Global input systems (run in PreUpdate schedule)
         // These systems handle cross-screen functionality like quit, help, and navigation
         app.add_systems(
