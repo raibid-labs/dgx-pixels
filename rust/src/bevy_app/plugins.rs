@@ -81,6 +81,7 @@ impl Plugin for DgxPixelsPlugin {
 
         // Screen Rendering: All render systems chained sequentially
         // This is necessary because all screens need ResMut<RatatuiContext> exclusively
+        // Run condition ensures RatatuiContext is available before attempting to access it
         app.add_systems(
             Update,
             (
@@ -92,7 +93,8 @@ impl Plugin for DgxPixelsPlugin {
                 systems::render::screens::render_monitor_screen,
                 systems::render::screens::settings::render_settings_screen,
                 systems::render::screens::render_help_screen,
-            ).chain(),
+            ).chain()
+            .run_if(resource_exists::<bevy_ratatui::terminal::RatatuiContext>),
         );
 
         // Input handlers (don't conflict, can run in parallel)
