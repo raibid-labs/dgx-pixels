@@ -21,6 +21,9 @@ impl Plugin for DgxPixelsPlugin {
         // Add logging plugin
         app.add_plugins(LogPlugin::default());
 
+        // Add asset plugin for image loading (WS-06)
+        app.add_plugins(bevy::asset::AssetPlugin::default());
+
         // Ratatui terminal rendering
         app.add_plugins(RatatuiPlugins::default());
 
@@ -73,44 +76,32 @@ impl Plugin for DgxPixelsPlugin {
                 .run_if(on_timer(std::time::Duration::from_secs(60))),
         );
 
-        // WS-04: Rendering dispatch (coordinates frame state only)
+        // WS-04: Rendering dispatch (tracks frame state, runs independently)
         app.add_systems(Update, systems::render::render_dispatch);
 
-        // WS-09: Generation Screen
-        app.add_systems(Update, systems::render::screens::render_generation_screen);
+        // Screen Rendering: All render systems chained sequentially
+        // This is necessary because all screens need ResMut<RatatuiContext> exclusively
+        app.add_systems(
+            Update,
+            (
+                systems::render::screens::render_generation_screen,
+                systems::render::screens::render_gallery_screen,
+                systems::render::screens::render_comparison_screen,
+                systems::render::screens::render_models_screen,
+                systems::render::screens::render_queue_screen,
+                systems::render::screens::render_monitor_screen,
+                systems::render::screens::settings::render_settings_screen,
+                systems::render::screens::render_help_screen,
+            ).chain(),
+        );
 
-        // WS-10: Gallery Screen
-        app.add_systems(Update, systems::render::screens::render_gallery_screen);
+        // Input handlers (don't conflict, can run in parallel)
         app.add_systems(Update, systems::input::screens::handle_gallery_input);
-
-        // WS-11: Comparison Screen
-        app.add_systems(Update, systems::render::screens::render_comparison_screen);
         app.add_systems(Update, systems::input::screens::handle_comparison_input);
-
-        // WS-12: Models Screen
-        app.add_systems(Update, systems::render::screens::render_models_screen);
         app.add_systems(Update, systems::input::screens::handle_models_input);
-
-        // WS-13: Queue Screen
-        app.add_systems(Update, systems::render::screens::render_queue_screen);
         app.add_systems(Update, systems::input::screens::handle_queue_input);
-
-        // WS-14: Monitor Screen
-        app.add_systems(Update, systems::render::screens::render_monitor_screen);
         app.add_systems(Update, systems::input::screens::handle_monitor_input);
-
-        // WS-15: Settings Screen
-        app.add_systems(
-            Update,
-            systems::render::screens::settings::render_settings_screen,
-        );
-        app.add_systems(
-            Update,
-            systems::input::screens::settings::handle_settings_input,
-        );
-
-        // WS-16: Help Screen
-        app.add_systems(Update, systems::render::screens::render_help_screen);
+        app.add_systems(Update, systems::input::screens::settings::handle_settings_input);
         app.add_systems(Update, systems::input::screens::handle_help_input);
 
         // WS-08: Event bus
