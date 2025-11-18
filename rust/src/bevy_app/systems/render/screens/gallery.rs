@@ -30,8 +30,8 @@ pub fn render_gallery_screen(
     gallery: Res<GalleryState>,
     theme: Res<AppTheme>,
     preview_query: Query<&PreviewImage>,
-    images: Res<Assets<Image>>,
-    asset_server: Res<AssetServer>,
+    images: Option<Res<Assets<Image>>>,
+    asset_server: Option<Res<AssetServer>>,
     mut ratatui: ResMut<RatatuiContext>,
 ) {
     // Only render when on Gallery screen
@@ -46,16 +46,19 @@ pub fn render_gallery_screen(
 
             if gallery.is_empty() {
                 render_empty_gallery(frame, area, &theme);
-            } else {
+            } else if let (Some(images), Some(asset_server)) = (images.as_ref(), asset_server.as_ref()) {
                 render_gallery_body(
                     frame,
                     area,
                     &gallery,
                     &theme,
                     &preview_query,
-                    &images,
-                    &asset_server,
+                    images,
+                    asset_server,
                 );
+            } else {
+                // Assets not loaded yet, show loading message
+                render_loading_gallery(frame, area, &theme);
             }
         })
         .ok(); // Ignore render errors for now
@@ -76,6 +79,26 @@ fn render_empty_gallery(frame: &mut Frame, area: Rect, theme: &AppTheme) {
             "Press 1 to go to Generation screen",
             theme.muted(),
         )),
+    ];
+
+    let block = Block::default()
+        .title(" Image Gallery ")
+        .borders(Borders::ALL)
+        .border_style(theme.border());
+
+    let paragraph = Paragraph::new(lines)
+        .block(block)
+        .alignment(Alignment::Center);
+
+    frame.render_widget(paragraph, area);
+}
+
+/// Render loading placeholder when assets aren't ready yet.
+fn render_loading_gallery(frame: &mut Frame, area: Rect, theme: &AppTheme) {
+    let lines = vec![
+        Line::from(""),
+        Line::from(Span::styled("Loading assets...", theme.muted())),
+        Line::from(""),
     ];
 
     let block = Block::default()
