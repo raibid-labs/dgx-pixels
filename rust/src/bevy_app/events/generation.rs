@@ -35,10 +35,17 @@ pub fn handle_generation_events(
     for event in submit_events.read() {
         info!("Generation job submitted: {}", event.prompt);
 
+        // Always create a job entity for UI feedback
+        let job_id = format!("job-{}", uuid::Uuid::new_v4());
+        commands.spawn(crate::bevy_app::components::Job::new(
+            job_id.clone(),
+            event.prompt.clone(),
+        ));
+        job_tracker.submit_job();
+
+        // Try to send to backend if available
         if let Some(ref zmq_client) = zmq_client {
-            // Send request to backend via ZMQ
             let client = zmq_client.0.lock();
-            let job_id = format!("job-{}", uuid::Uuid::new_v4());
             let request = crate::messages::Request::Generate {
                 id: job_id.clone(),
                 prompt: event.prompt.clone(),
@@ -50,18 +57,12 @@ pub fn handle_generation_events(
             };
 
             if let Err(e) = client.send_request(request) {
-                error!("Failed to send generation request: {}", e);
+                error!("Failed to send generation request to backend: {}", e);
             } else {
-                // Create pending job entity
-                commands.spawn(crate::bevy_app::components::Job::new(
-                    job_id,
-                    event.prompt.clone(),
-                ));
-                job_tracker.submit_job();
-                info!("Job submitted to backend");
+                info!("Job {} sent to backend", job_id);
             }
         } else {
-            warn!("No ZMQ client configured, cannot submit job");
+            warn!("No backend connected - job {} created but will not be processed", job_id);
         }
     }
 
