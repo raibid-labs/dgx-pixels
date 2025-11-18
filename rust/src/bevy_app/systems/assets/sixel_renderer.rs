@@ -102,7 +102,7 @@ fn resize_image(
     img: DynamicImage,
     options: &SixelRenderOptions,
 ) -> Result<DynamicImage> {
-    let (orig_width, orig_height) = img.dimensions();
+    let (orig_width, orig_height) = (img.width(), img.height());
 
     // Terminal cells are approximately 8x16 pixels
     let target_width = options.width as u32 * 8;

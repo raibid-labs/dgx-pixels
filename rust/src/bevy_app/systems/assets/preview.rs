@@ -187,8 +187,8 @@ impl SixelCacheStats {
 /// This system runs whenever images are loaded and need to be displayed.
 /// It converts Bevy Image assets to Sixel format and caches the results.
 pub fn cache_image_as_sixel(
-    images: Res<Assets<Image>>,
-    cache: Res<SixelPreviewCache>,
+    images: &Assets<Image>,
+    cache: &SixelPreviewCache,
     handle: Handle<Image>,
     path: PathBuf,
     options: SixelRenderOptions,
@@ -238,8 +238,8 @@ pub fn get_or_render_sixel(
 
     // Render and cache
     let entry = cache_image_as_sixel(
-        Res::clone(&Res::from(images)),
-        Res::clone(&Res::from(cache)),
+        images,
+        cache,
         handle,
         path.to_path_buf(),
         options.clone(),
