@@ -50,8 +50,7 @@ impl Plugin for DgxPixelsPlugin {
                 systems::input::handle_generation_input,
                 // WS-11: Comparison screen input
                 systems::input::handle_comparison_input,
-            )
-                .chain(), // Run in order
+            ),
         );
 
         // WS-05: ZeroMQ polling (run in PreUpdate before other systems)

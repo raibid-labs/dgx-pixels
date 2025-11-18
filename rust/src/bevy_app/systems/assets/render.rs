@@ -141,11 +141,12 @@ pub fn render_image_placeholder(path: &std::path::Path, error: Option<&str>) -> 
     let filename = path
         .file_name()
         .and_then(|n| n.to_str())
-        .unwrap_or("unknown");
+        .unwrap_or("unknown")
+        .to_string(); // Convert to owned String
 
     let mut lines = vec![
         Line::from(""),
-        Line::from(Span::raw("[Image Preview]")),
+        Line::from(Span::raw("[Image Preview]".to_string())),
         Line::from(""),
         Line::from(Span::raw(filename)),
         Line::from(""),
@@ -155,7 +156,7 @@ pub fn render_image_placeholder(path: &std::path::Path, error: Option<&str>) -> 
         warn!("Image loading error for {:?}: {}", path, err);
         lines.push(Line::from(Span::raw(format!("Error: {}", err))));
     } else {
-        lines.push(Line::from(Span::raw("Loading...")));
+        lines.push(Line::from(Span::raw("Loading...".to_string())));
     }
 
     lines

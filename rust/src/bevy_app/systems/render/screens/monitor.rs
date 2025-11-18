@@ -202,7 +202,7 @@ fn render_active_jobs(frame: &mut Frame, area: Rect, jobs: &Query<&Job>, theme: 
     if active_jobs.is_empty() {
         lines.push(Line::from(Span::styled("No active jobs", theme.muted())));
     } else {
-        for job in active_jobs {
+        for job in &active_jobs {
             let prompt_preview = if job.prompt.len() > 30 {
                 format!("{}...", &job.prompt[..30])
             } else {

@@ -4,7 +4,8 @@
 //! Primary interactions: Enter (submit job), Esc (clear input), G (generate), C (compare).
 
 use bevy::prelude::*;
-use bevy_ratatui::event::{KeyCode, KeyEvent, KeyMessage, MessageReader};
+use bevy_ratatui::event::KeyEvent;
+use crossterm::event::{KeyCode, KeyModifiers};
 
 use crate::bevy_app::{
     events::SubmitGenerationJob,
@@ -17,7 +18,7 @@ use crate::bevy_app::{
 /// Text input (typing, backspace, cursor movement) is handled by the global
 /// text_entry system.
 pub fn handle_generation_input(
-    mut messages: MessageReader<KeyMessage>,
+    mut key_events: EventReader<KeyEvent>,
     current_screen: Res<CurrentScreen>,
     mut input_buffer: ResMut<InputBuffer>,
     mut submit_events: EventWriter<SubmitGenerationJob>,
@@ -27,9 +28,8 @@ pub fn handle_generation_input(
         return;
     }
 
-    for message in messages.read() {
-        if let KeyMessage::Key(KeyEvent { code, .. }) = message {
-            match code {
+    for event in key_events.read() {
+        match event.code {
                 KeyCode::Enter => {
                     // Submit generation job if input is not empty
                     if !input_buffer.text.trim().is_empty() {
@@ -75,9 +75,9 @@ pub fn handle_generation_input(
                     }
                 }
                 KeyCode::Tab
-                    if message
+                    if event
                         .modifiers
-                        .contains(bevy_ratatui::event::KeyModifiers::CONTROL) =>
+                        .contains(KeyModifiers::CONTROL) =>
                 {
                     // Ctrl+Tab: cycle preview tabs (in debug mode)
                     app_state.next_preview_tab();
@@ -86,7 +86,6 @@ pub fn handle_generation_input(
                     // Other keys handled by global text_entry system
                 }
             }
-        }
     }
 }
 

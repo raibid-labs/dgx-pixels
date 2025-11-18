@@ -29,7 +29,8 @@ pub fn handle_comparison_input(
             // Add model (future: open model selection dialog)
             KeyCode::Char('a') | KeyCode::Char('A') => {
                 // For now, add a placeholder model
-                comparison.add_model(format!("model-{}", comparison.models.len() + 1));
+                let new_model_id = comparison.models.len() + 1;
+                comparison.add_model(format!("model-{}", new_model_id));
                 info!("Comparison: Add model placeholder");
             }
 
