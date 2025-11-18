@@ -1,6 +1,7 @@
 use bevy::app::ScheduleRunnerPlugin;
 use bevy::log::LogPlugin;
 use bevy::prelude::*;
+use bevy::time::common_conditions::on_timer;
 use bevy_ratatui::RatatuiPlugins;
 
 use super::systems;
@@ -26,6 +27,9 @@ impl Plugin for DgxPixelsPlugin {
         // WS-02: State initialization
         app.add_systems(Startup, systems::init_app_state);
 
+        // WS-06: Image asset cache
+        app.insert_resource(systems::assets::ImageCache::default());
+
         // WS-07: Theme resource
         app.insert_resource(super::resources::AppTheme::default());
 
@@ -34,6 +38,7 @@ impl Plugin for DgxPixelsPlugin {
 
         // WS-12: Models state resource
         app.insert_resource(super::resources::ModelsState::default());
+
         // WS-03: Input systems (run in PreUpdate schedule)
         app.add_systems(
             PreUpdate,
@@ -52,53 +57,48 @@ impl Plugin for DgxPixelsPlugin {
         // WS-05: ZeroMQ polling (run in PreUpdate before other systems)
         app.add_systems(PreUpdate, systems::zmq::poll_zmq);
 
-        // WS-04: Rendering system (run in Update schedule)
+        // WS-06: Image asset loading systems
         app.add_systems(
             Update,
             (
-                systems::render::render_dispatch,
-                // WS-09: Generation screen renderer
-                systems::render::render_generation_screen,
-                // WS-11: Comparison screen renderer
-                systems::render::render_comparison_screen,
+                systems::assets::load_preview_images,
+                systems::assets::loader::load_gallery_images,
+                systems::assets::loader::check_asset_loading,
             ),
         );
 
-        // WS-10: Gallery screen rendering and input
+        // WS-06: Periodic cache eviction (run every 60 seconds)
+        app.add_systems(
+            Update,
+            systems::assets::cache::evict_old_cache_entries
+                .run_if(on_timer(std::time::Duration::from_secs(60))),
+        );
+
+        // WS-04: Rendering dispatch (coordinates frame state only)
+        app.add_systems(Update, systems::render::render_dispatch);
+
+        // WS-09: Generation Screen
+        app.add_systems(Update, systems::render::screens::render_generation_screen);
+
+        // WS-10: Gallery Screen
         app.add_systems(Update, systems::render::screens::render_gallery_screen);
         app.add_systems(Update, systems::input::screens::handle_gallery_input);
 
-        // WS-11: Comparison screen rendering and input
+        // WS-11: Comparison Screen
         app.add_systems(Update, systems::render::screens::render_comparison_screen);
         app.add_systems(Update, systems::input::screens::handle_comparison_input);
 
-        // WS-14: Monitor screen rendering and input
-        app.add_systems(Update, systems::render::screens::render_monitor_screen);
-        app.add_systems(Update, systems::input::screens::handle_monitor_input);
-
-        // WS-08: Event bus
-        app.add_event::<super::events::NavigateToScreen>();
-        app.add_event::<super::events::NavigateBack>();
-        app.add_event::<super::events::SubmitGenerationJob>();
-        app.add_event::<super::events::GenerationComplete>();
-        app.add_event::<super::events::CancelJob>();
-        app.add_event::<super::events::SelectNextImage>();
-        app.add_event::<super::events::SelectPreviousImage>();
-        app.add_event::<super::events::DeleteImage>();
-
-        app.add_systems(
-            Update,
-            (
-                super::events::handle_navigation_events,
-                super::events::handle_generation_events,
-                super::events::handle_gallery_events,
-                systems::zmq::handle_zmq_responses,
-            ),
-        );
+        // WS-12: Models Screen
+        app.add_systems(Update, systems::render::screens::render_models_screen);
+        app.add_systems(Update, systems::input::screens::handle_models_input);
 
         // WS-13: Queue Screen
         app.add_systems(Update, systems::render::screens::render_queue_screen);
         app.add_systems(Update, systems::input::screens::handle_queue_input);
+
+        // WS-14: Monitor Screen
+        app.add_systems(Update, systems::render::screens::render_monitor_screen);
+        app.add_systems(Update, systems::input::screens::handle_monitor_input);
 
         // WS-15: Settings Screen
         app.add_systems(
@@ -110,14 +110,31 @@ impl Plugin for DgxPixelsPlugin {
             systems::input::screens::settings::handle_settings_input,
         );
 
-        // WS-12: Models Screen
-        app.add_systems(Update, systems::render::screens::render_models_screen);
-        app.add_systems(Update, systems::input::screens::handle_models_input);
-
         // WS-16: Help Screen
         app.add_systems(Update, systems::render::screens::render_help_screen);
         app.add_systems(Update, systems::input::screens::handle_help_input);
 
-        info!("DgxPixelsPlugin initialized with all screens and systems");
+        // WS-08: Event bus
+        app.add_event::<super::events::NavigateToScreen>();
+        app.add_event::<super::events::NavigateBack>();
+        app.add_event::<super::events::SubmitGenerationJob>();
+        app.add_event::<super::events::GenerationComplete>();
+        app.add_event::<super::events::CancelJob>();
+        app.add_event::<super::events::SelectNextImage>();
+        app.add_event::<super::events::SelectPreviousImage>();
+        app.add_event::<super::events::DeleteImage>();
+
+        // Event handlers
+        app.add_systems(
+            Update,
+            (
+                super::events::handle_navigation_events,
+                super::events::handle_generation_events,
+                super::events::handle_gallery_events,
+                systems::zmq::handle_zmq_responses,
+            ),
+        );
+
+        info!("DgxPixelsPlugin initialized with WS-06 Image Asset System and all 8 screens");
     }
 }

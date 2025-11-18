@@ -10,6 +10,7 @@ pub mod comparison_state;
 pub mod gallery_state;
 pub mod input_state;
 pub mod job_state;
+pub mod models;
 pub mod screen_state;
 pub mod theme;
 
@@ -18,5 +19,6 @@ pub use comparison_state::ComparisonState;
 pub use gallery_state::GalleryState;
 pub use input_state::InputBuffer;
 pub use job_state::JobTracker;
+pub use models::ModelsState;
 pub use screen_state::{CurrentScreen, Screen};
 pub use theme::AppTheme;

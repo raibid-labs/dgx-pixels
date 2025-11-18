@@ -1,6 +1,7 @@
 //! # Gallery Screen Renderer
 //!
 //! WS-10: Gallery screen rendering system for Bevy-Ratatui migration.
+//! WS-06: Image asset loading integration.
 //! Displays a grid of generated images with detail view and navigation.
 
 use bevy::prelude::*;
@@ -15,6 +16,9 @@ use ratatui::{
 
 use crate::bevy_app::components::PreviewImage;
 use crate::bevy_app::resources::{AppTheme, CurrentScreen, GalleryState, Screen};
+use crate::bevy_app::systems::assets::render::{
+    calculate_ascii_dimensions, render_image_placeholder, render_image_to_unicode,
+};
 
 /// Main gallery screen render system.
 ///
@@ -27,6 +31,7 @@ pub fn render_gallery_screen(
     theme: Res<AppTheme>,
     preview_query: Query<&PreviewImage>,
     images: Res<Assets<Image>>,
+    asset_server: Res<AssetServer>,
     mut ratatui: ResMut<RatatuiContext>,
 ) {
     // Only render when on Gallery screen
@@ -42,7 +47,15 @@ pub fn render_gallery_screen(
             if gallery.is_empty() {
                 render_empty_gallery(frame, area, &theme);
             } else {
-                render_gallery_body(frame, area, &gallery, &theme, &preview_query, &images);
+                render_gallery_body(
+                    frame,
+                    area,
+                    &gallery,
+                    &theme,
+                    &preview_query,
+                    &images,
+                    &asset_server,
+                );
             }
         })
         .ok(); // Ignore render errors for now
@@ -83,8 +96,9 @@ fn render_gallery_body(
     area: Rect,
     gallery: &GalleryState,
     theme: &AppTheme,
-    _preview_query: &Query<&PreviewImage>,
-    _images: &Assets<Image>,
+    preview_query: &Query<&PreviewImage>,
+    images: &Assets<Image>,
+    asset_server: &AssetServer,
 ) {
     // Split into preview (left) and thumbnail list (right)
     let chunks = Layout::default()
@@ -96,12 +110,28 @@ fn render_gallery_body(
         .margin(1)
         .split(area);
 
-    render_main_preview(frame, chunks[0], gallery, theme);
+    render_main_preview(
+        frame,
+        chunks[0],
+        gallery,
+        theme,
+        preview_query,
+        images,
+        asset_server,
+    );
     render_thumbnail_list(frame, chunks[1], gallery, theme);
 }
 
 /// Render main preview panel.
-fn render_main_preview(frame: &mut Frame, area: Rect, gallery: &GalleryState, theme: &AppTheme) {
+fn render_main_preview(
+    frame: &mut Frame,
+    area: Rect,
+    gallery: &GalleryState,
+    theme: &AppTheme,
+    preview_query: &Query<&PreviewImage>,
+    images: &Assets<Image>,
+    asset_server: &AssetServer,
+) {
     let block = Block::default()
         .title(" Preview ")
         .borders(Borders::ALL)
@@ -111,32 +141,38 @@ fn render_main_preview(frame: &mut Frame, area: Rect, gallery: &GalleryState, th
     frame.render_widget(block, area);
 
     if let Some(selected_path) = gallery.current_image() {
-        let filename = selected_path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("unknown");
+        // Find PreviewImage component for this path
+        let preview = preview_query
+            .iter()
+            .find(|p| &p.path == selected_path);
 
-        // TODO: WS-06 integration - render actual image using PreviewImage component
-        // For now, show placeholder with filename
-        let lines = vec![
-            Line::from(""),
-            Line::from(""),
-            Line::from(Span::styled("[Image Preview]", theme.highlight())),
-            Line::from(""),
-            Line::from(Span::styled(filename, theme.text())),
-            Line::from(""),
-            Line::from(Span::styled(
-                "Full image preview will be available after WS-06 integration",
-                theme.muted(),
-            )),
-            Line::from(""),
-            Line::from(Span::styled("Use arrow keys to navigate", theme.muted())),
-            Line::from(""),
-            Line::from(Span::styled(
-                format!("Image {} of {}", gallery.selected + 1, gallery.len()),
-                theme.text(),
-            )),
-        ];
+        let lines = if let Some(preview) = preview {
+            // Check if image asset is loaded
+            if let Some(handle) = &preview.asset_handle {
+                match asset_server.load_state(handle) {
+                    bevy::asset::LoadState::Loaded => {
+                        // Image is loaded, render it
+                        if let Some(image) = images.get(handle) {
+                            render_image_preview(image, inner, theme)
+                        } else {
+                            render_image_placeholder(selected_path, Some("Image asset not found"))
+                        }
+                    }
+                    bevy::asset::LoadState::Failed(err) => {
+                        render_image_placeholder(selected_path, Some(&err.to_string()))
+                    }
+                    _ => {
+                        // Still loading
+                        render_image_placeholder(selected_path, None)
+                    }
+                }
+            } else {
+                render_image_placeholder(selected_path, Some("No asset handle"))
+            }
+        } else {
+            // No PreviewImage component found
+            render_image_placeholder(selected_path, Some("Preview not loaded"))
+        };
 
         let paragraph = Paragraph::new(lines).alignment(Alignment::Center);
         frame.render_widget(paragraph, inner);
@@ -150,6 +186,29 @@ fn render_main_preview(frame: &mut Frame, area: Rect, gallery: &GalleryState, th
         let paragraph = Paragraph::new(lines).alignment(Alignment::Center);
         frame.render_widget(paragraph, inner);
     }
+}
+
+/// Render image preview using Unicode block characters.
+fn render_image_preview(image: &Image, area: Rect, theme: &AppTheme) -> Vec<Line<'static>> {
+    // Calculate dimensions for ASCII rendering
+    let (width, height) = calculate_ascii_dimensions(
+        image.width(),
+        image.height(),
+        area.width.saturating_sub(2),  // Account for padding
+        area.height.saturating_sub(4), // Account for header/footer
+    );
+
+    // Render image as Unicode block characters
+    let mut lines = render_image_to_unicode(image, width, height);
+
+    // Add image info at bottom
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        format!("{}x{} pixels", image.width(), image.height()),
+        theme.muted(),
+    )));
+
+    lines
 }
 
 /// Render thumbnail list panel.
