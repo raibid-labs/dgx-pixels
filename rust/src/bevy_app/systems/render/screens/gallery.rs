@@ -2,6 +2,7 @@
 //!
 //! WS-10: Gallery screen rendering system for Bevy-Ratatui migration.
 //! WS-06: Image asset loading integration.
+//! T9: Sixel rendering support for high-quality terminal image display.
 //! Displays a grid of generated images with detail view and navigation.
 
 use bevy::prelude::*;
@@ -10,14 +11,19 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::Modifier,
     text::{Line, Span},
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders, Paragraph, Widget},
     Frame,
 };
+use std::io::{self, Write};
+use tracing::{debug, warn};
 
 use crate::bevy_app::components::PreviewImage;
-use crate::bevy_app::resources::{AppTheme, CurrentScreen, GalleryState, Screen};
+use crate::bevy_app::resources::{AppTheme, CurrentScreen, GalleryState, Screen, SettingsState};
 use crate::bevy_app::systems::assets::render::{
     calculate_ascii_dimensions, render_image_placeholder, render_image_to_unicode,
+};
+use crate::bevy_app::systems::assets::{
+    SixelPreviewCache, SixelRenderOptions, render_image_sixel, supports_sixel,
 };
 
 /// Main gallery screen render system.
@@ -25,13 +31,17 @@ use crate::bevy_app::systems::assets::render::{
 /// Renders a two-panel layout:
 /// - Left panel (70%): Large preview of selected image
 /// - Right panel (30%): Thumbnail list of all images
+///
+/// Supports both Sixel (high-quality) and Unicode fallback rendering.
 pub fn render_gallery_screen(
     current_screen: Res<CurrentScreen>,
     gallery: Res<GalleryState>,
     theme: Res<AppTheme>,
+    settings: Res<SettingsState>,
     preview_query: Query<&PreviewImage>,
     images: Option<Res<Assets<Image>>>,
     asset_server: Option<Res<AssetServer>>,
+    sixel_cache: Option<Res<SixelPreviewCache>>,
     mut ratatui: ResMut<RatatuiContext>,
 ) {
     // Only render when on Gallery screen
@@ -52,9 +62,11 @@ pub fn render_gallery_screen(
                     area,
                     &gallery,
                     &theme,
+                    &settings,
                     &preview_query,
                     images,
                     asset_server,
+                    sixel_cache.as_deref(),
                 );
             } else {
                 // Assets not loaded yet, show loading message
@@ -119,9 +131,11 @@ fn render_gallery_body(
     area: Rect,
     gallery: &GalleryState,
     theme: &AppTheme,
+    settings: &SettingsState,
     preview_query: &Query<&PreviewImage>,
     images: &Assets<Image>,
     asset_server: &AssetServer,
+    sixel_cache: Option<&SixelPreviewCache>,
 ) {
     // Split into preview (left) and thumbnail list (right)
     let chunks = Layout::default()
@@ -138,9 +152,11 @@ fn render_gallery_body(
         chunks[0],
         gallery,
         theme,
+        settings,
         preview_query,
         images,
         asset_server,
+        sixel_cache,
     );
     render_thumbnail_list(frame, chunks[1], gallery, theme);
 }
@@ -151,9 +167,11 @@ fn render_main_preview(
     area: Rect,
     gallery: &GalleryState,
     theme: &AppTheme,
+    settings: &SettingsState,
     preview_query: &Query<&PreviewImage>,
     images: &Assets<Image>,
     asset_server: &AssetServer,
+    sixel_cache: Option<&SixelPreviewCache>,
 ) {
     let block = Block::default()
         .title(" Preview ")
@@ -169,36 +187,55 @@ fn render_main_preview(
             .iter()
             .find(|p| &p.path == selected_path);
 
-        let lines = if let Some(preview) = preview {
+        if let Some(preview) = preview {
             // Check if image asset is loaded
             if let Some(handle) = &preview.asset_handle {
                 match asset_server.load_state(handle) {
                     bevy::asset::LoadState::Loaded => {
                         // Image is loaded, render it
                         if let Some(image) = images.get(handle) {
-                            render_image_preview(image, inner, theme)
+                            render_image_with_sixel_support(
+                                frame,
+                                inner,
+                                image,
+                                handle.clone(),
+                                selected_path,
+                                theme,
+                                settings,
+                                sixel_cache,
+                            );
                         } else {
-                            render_image_placeholder(selected_path, Some("Image asset not found"))
+                            let lines = render_image_placeholder(
+                                selected_path,
+                                Some("Image asset not found"),
+                            );
+                            let paragraph = Paragraph::new(lines).alignment(Alignment::Center);
+                            frame.render_widget(paragraph, inner);
                         }
                     }
                     bevy::asset::LoadState::Failed(err) => {
-                        render_image_placeholder(selected_path, Some(&err.to_string()))
+                        let lines = render_image_placeholder(selected_path, Some(&err.to_string()));
+                        let paragraph = Paragraph::new(lines).alignment(Alignment::Center);
+                        frame.render_widget(paragraph, inner);
                     }
                     _ => {
                         // Still loading
-                        render_image_placeholder(selected_path, None)
+                        let lines = render_image_placeholder(selected_path, None);
+                        let paragraph = Paragraph::new(lines).alignment(Alignment::Center);
+                        frame.render_widget(paragraph, inner);
                     }
                 }
             } else {
-                render_image_placeholder(selected_path, Some("No asset handle"))
+                let lines = render_image_placeholder(selected_path, Some("No asset handle"));
+                let paragraph = Paragraph::new(lines).alignment(Alignment::Center);
+                frame.render_widget(paragraph, inner);
             }
         } else {
             // No PreviewImage component found
-            render_image_placeholder(selected_path, Some("Preview not loaded"))
-        };
-
-        let paragraph = Paragraph::new(lines).alignment(Alignment::Center);
-        frame.render_widget(paragraph, inner);
+            let lines = render_image_placeholder(selected_path, Some("Preview not loaded"));
+            let paragraph = Paragraph::new(lines).alignment(Alignment::Center);
+            frame.render_widget(paragraph, inner);
+        }
     } else {
         let lines = vec![
             Line::from(""),
@@ -211,9 +248,93 @@ fn render_main_preview(
     }
 }
 
-/// Render image preview using Unicode block characters.
-fn render_image_preview(image: &Image, area: Rect, theme: &AppTheme) -> Vec<Line<'static>> {
-    // Calculate dimensions for ASCII rendering
+/// Render image with Sixel support if available, fallback to Unicode.
+fn render_image_with_sixel_support(
+    frame: &mut Frame,
+    area: Rect,
+    image: &Image,
+    handle: Handle<Image>,
+    path: &std::path::Path,
+    theme: &AppTheme,
+    settings: &SettingsState,
+    sixel_cache: Option<&SixelPreviewCache>,
+) {
+    // Check if Sixel is enabled and supported
+    let use_sixel = settings.ui.show_image_previews && supports_sixel();
+
+    if use_sixel && sixel_cache.is_some() {
+        // Try Sixel rendering
+        match render_sixel_preview(
+            image,
+            handle,
+            path,
+            area,
+            theme,
+            sixel_cache.unwrap(),
+        ) {
+            Ok(sixel_data) => {
+                // Render Sixel widget
+                let sixel_widget = SixelImageWidget::new(&sixel_data);
+                frame.render_widget(sixel_widget, area);
+                debug!("Rendered Sixel preview for {:?}", path);
+            }
+            Err(e) => {
+                warn!("Sixel rendering failed, falling back to Unicode: {}", e);
+                let lines = render_unicode_preview(image, area, theme);
+                let paragraph = Paragraph::new(lines).alignment(Alignment::Center);
+                frame.render_widget(paragraph, area);
+            }
+        }
+    } else {
+        // Fall back to Unicode block characters
+        let lines = render_unicode_preview(image, area, theme);
+        let paragraph = Paragraph::new(lines).alignment(Alignment::Center);
+        frame.render_widget(paragraph, area);
+    }
+}
+
+/// Render Sixel preview (with caching).
+fn render_sixel_preview(
+    image: &Image,
+    _handle: Handle<Image>,
+    path: &std::path::Path,
+    area: Rect,
+    _theme: &AppTheme,
+    cache: &SixelPreviewCache,
+) -> anyhow::Result<String> {
+    // Check cache first
+    if let Some(entry) = cache.get(path) {
+        debug!("Sixel cache hit: {:?}", path);
+        return Ok(entry.sixel_data);
+    }
+
+    // Render and cache
+    let options = SixelRenderOptions {
+        width: area.width.saturating_sub(4),
+        height: area.height.saturating_sub(4),
+        preserve_aspect: true,
+        high_quality: true,
+    };
+
+    let sixel_data = render_image_sixel(image, &options)?;
+
+    // Cache the result
+    let entry = crate::bevy_app::systems::assets::SixelCacheEntry {
+        path: path.to_path_buf(),
+        sixel_data: sixel_data.clone(),
+        size_bytes: sixel_data.len(),
+        last_access: std::time::Instant::now(),
+        dimensions: (image.width(), image.height()),
+    };
+
+    cache.insert(entry);
+
+    Ok(sixel_data)
+}
+
+/// Render Unicode block character preview (fallback).
+fn render_unicode_preview(image: &Image, area: Rect, theme: &AppTheme) -> Vec<Line<'static>> {
+    // Calculate dimensions for Unicode rendering
     let (width, height) = calculate_ascii_dimensions(
         image.width(),
         image.height(),
@@ -232,6 +353,43 @@ fn render_image_preview(image: &Image, area: Rect, theme: &AppTheme) -> Vec<Line
     )));
 
     lines
+}
+
+/// Sixel image widget for ratatui.
+struct SixelImageWidget<'a> {
+    sixel_data: &'a str,
+}
+
+impl<'a> SixelImageWidget<'a> {
+    fn new(sixel_data: &'a str) -> Self {
+        Self { sixel_data }
+    }
+}
+
+impl<'a> Widget for SixelImageWidget<'a> {
+    fn render(self, area: Rect, _buf: &mut ratatui::buffer::Buffer) {
+        debug!("SixelImageWidget rendering at {:?}", area);
+        debug!("Sixel data length: {} bytes", self.sixel_data.len());
+
+        let mut stdout = io::stdout();
+
+        // Position cursor at top-left of render area
+        let row = area.y + 1; // Convert to 1-indexed
+        let col = area.x + 1;
+
+        // Clear the area first
+        for line in 0..area.height {
+            let line_row = row + line as u16;
+            let _ = write!(stdout, "\x1b[{};{}H", line_row, col);
+            let _ = write!(stdout, "{}", " ".repeat(area.width as usize));
+        }
+
+        // Write Sixel data
+        let _ = write!(stdout, "\x1b[{};{}H{}", row, col, self.sixel_data);
+        let _ = stdout.flush();
+
+        debug!("Sixel data written to stdout at ({}, {})", row, col);
+    }
 }
 
 /// Render thumbnail list panel.

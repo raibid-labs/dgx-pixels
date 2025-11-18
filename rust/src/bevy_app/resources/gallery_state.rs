@@ -18,6 +18,7 @@
 
 use bevy::prelude::*;
 use std::path::PathBuf;
+use std::time::SystemTime;
 
 /// Gallery state resource.
 #[derive(Resource, Debug, Clone)]
@@ -26,6 +27,8 @@ pub struct GalleryState {
     pub images: Vec<PathBuf>,
     /// Currently selected image index
     pub selected: usize,
+    /// Last time the gallery was updated (for change detection)
+    pub last_updated: SystemTime,
 }
 
 impl Default for GalleryState {
@@ -33,6 +36,7 @@ impl Default for GalleryState {
         Self {
             images: Vec::new(),
             selected: 0,
+            last_updated: SystemTime::now(),
         }
     }
 }
@@ -42,6 +46,23 @@ impl GalleryState {
     pub fn add_image(&mut self, path: PathBuf) {
         if !self.images.contains(&path) {
             self.images.push(path);
+            self.last_updated = SystemTime::now();
+        }
+    }
+
+    /// Remove image from gallery.
+    pub fn remove_image(&mut self, path: &PathBuf) -> bool {
+        if let Some(pos) = self.images.iter().position(|p| p == path) {
+            self.images.remove(pos);
+            self.last_updated = SystemTime::now();
+
+            // Adjust selection if needed
+            if self.selected >= self.images.len() && !self.images.is_empty() {
+                self.selected = self.images.len() - 1;
+            }
+            true
+        } else {
+            false
         }
     }
 
@@ -77,6 +98,13 @@ impl GalleryState {
     pub fn is_empty(&self) -> bool {
         self.images.is_empty()
     }
+
+    /// Clear all images from gallery.
+    pub fn clear(&mut self) {
+        self.images.clear();
+        self.selected = 0;
+        self.last_updated = SystemTime::now();
+    }
 }
 
 #[cfg(test)]
@@ -108,6 +136,35 @@ mod tests {
         gallery.add_image(PathBuf::from("image1.png"));
 
         assert_eq!(gallery.len(), 1); // Should not add duplicate
+    }
+
+    #[test]
+    fn test_remove_image() {
+        let mut gallery = GalleryState::default();
+        let path1 = PathBuf::from("image1.png");
+        let path2 = PathBuf::from("image2.png");
+
+        gallery.add_image(path1.clone());
+        gallery.add_image(path2.clone());
+        assert_eq!(gallery.len(), 2);
+
+        let removed = gallery.remove_image(&path1);
+        assert!(removed);
+        assert_eq!(gallery.len(), 1);
+        assert_eq!(gallery.images[0], path2);
+    }
+
+    #[test]
+    fn test_remove_image_adjusts_selection() {
+        let mut gallery = GalleryState::default();
+        gallery.add_image(PathBuf::from("image1.png"));
+        gallery.add_image(PathBuf::from("image2.png"));
+        gallery.add_image(PathBuf::from("image3.png"));
+
+        gallery.selected = 2; // Select last image
+        gallery.remove_image(&PathBuf::from("image3.png"));
+
+        assert_eq!(gallery.selected, 1); // Should adjust to last valid index
     }
 
     #[test]
@@ -151,5 +208,18 @@ mod tests {
         gallery.add_image(PathBuf::from("image2.png"));
         gallery.select_next();
         assert_eq!(gallery.current_image(), Some(&PathBuf::from("image2.png")));
+    }
+
+    #[test]
+    fn test_clear() {
+        let mut gallery = GalleryState::default();
+        gallery.add_image(PathBuf::from("image1.png"));
+        gallery.add_image(PathBuf::from("image2.png"));
+        gallery.select_next();
+
+        gallery.clear();
+        assert_eq!(gallery.len(), 0);
+        assert_eq!(gallery.selected, 0);
+        assert!(gallery.is_empty());
     }
 }

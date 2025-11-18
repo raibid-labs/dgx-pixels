@@ -33,6 +33,9 @@ impl Plugin for DgxPixelsPlugin {
         // WS-06: Image asset cache
         app.insert_resource(systems::assets::ImageCache::default());
 
+        // T10: Gallery scan state for preview manager
+        app.insert_resource(systems::assets::GalleryScanState::default());
+
         // WS-07: Theme resource
         app.insert_resource(super::resources::AppTheme::default());
 
@@ -82,6 +85,18 @@ impl Plugin for DgxPixelsPlugin {
             ),
         );
 
+        // T10: Preview manager - periodic gallery scan (every 2 seconds)
+        app.add_systems(
+            Update,
+            systems::assets::scan_gallery_directory
+                .run_if(on_timer(std::time::Duration::from_secs(
+                    systems::assets::SCAN_INTERVAL_SECS,
+                ))),
+        );
+
+        // T10: Preview loading status checker (runs every frame)
+        app.add_systems(Update, systems::assets::check_preview_loading);
+
         // WS-06: Periodic cache eviction (run every 60 seconds)
         app.add_systems(
             Update,
@@ -129,6 +144,6 @@ impl Plugin for DgxPixelsPlugin {
             ),
         );
 
-        info!("DgxPixelsPlugin initialized with WS-06 Image Asset System and all 8 screens");
+        info!("DgxPixelsPlugin initialized with T10 Preview Manager and all 8 screens");
     }
 }
