@@ -1,0 +1,13 @@
+# DGX-Pixels Root Requirements
+# This file aggregates dependencies for local development
+
+# Worker dependencies
+-r python/requirements-worker.txt
+
+# Additional dependencies for development and testing
+# (already included in python/requirements-worker.txt but listed here for visibility)
+# - pyzmq: ZeroMQ bindings for IPC
+# - msgpack: Efficient serialization
+# - pydantic: Type validation
+# - requests: HTTP client for ComfyUI API
+# - pytest: Testing framework

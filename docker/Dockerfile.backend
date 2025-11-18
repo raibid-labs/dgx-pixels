@@ -45,7 +45,7 @@ WORKDIR /app
 
 # Copy requirements files
 COPY python/requirements.txt /app/requirements.txt
-COPY python/workers/requirements-worker.txt /app/requirements-worker.txt 2>/dev/null || true
+COPY python/requirements-worker.txt /app/requirements-worker.txt
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r /app/requirements.txt

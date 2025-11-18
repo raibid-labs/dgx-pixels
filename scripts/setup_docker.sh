@@ -186,14 +186,19 @@ if [ ! -d "ComfyUI/.git" ]; then
 else
     echo -e "${BLUE}ℹ${NC} ComfyUI already exists"
 
-    # Offer to update
-    echo -e "${YELLOW}Update ComfyUI to latest version? (y/N)${NC}"
-    read -r response
-    if [[ "$response" =~ ^[Yy]$ ]]; then
-        cd ComfyUI
-        git pull
-        cd ..
-        echo -e "${GREEN}✓${NC} ComfyUI updated"
+    # Offer to update (only in interactive mode)
+    if [ -t 0 ]; then
+        echo -e "${YELLOW}Update ComfyUI to latest version? (y/N)${NC}"
+        read -r response
+        if [[ "$response" =~ ^[Yy]$ ]]; then
+            cd ComfyUI
+            git pull
+            cd ..
+            echo -e "${GREEN}✓${NC} ComfyUI updated"
+        fi
+    else
+        echo -e "${BLUE}ℹ${NC} Skipping ComfyUI update (non-interactive mode)"
+        echo -e "${YELLOW}  Run 'cd ComfyUI && git pull' to update manually${NC}"
     fi
 fi
 

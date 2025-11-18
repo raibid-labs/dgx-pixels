@@ -236,14 +236,17 @@ def main() -> None:
     )
 
     # Workflow configuration
+    import os
+    project_root = os.environ.get("DGX_PIXELS_ROOT", os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+
     parser.add_argument(
         "--workflow-dir",
-        default="/home/beengud/raibid-labs/dgx-pixels/workflows",
+        default=os.path.join(project_root, "workflows"),
         help="Workflow directory",
     )
     parser.add_argument(
         "--output-dir",
-        default="/home/beengud/raibid-labs/dgx-pixels/outputs",
+        default=os.path.join(project_root, "outputs"),
         help="Output directory for generated images",
     )
 

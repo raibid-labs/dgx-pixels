@@ -66,26 +66,37 @@ DGX-Pixels leverages state-of-the-art diffusion models (Stable Diffusion XL) wit
 - Python 3.10+ (ARM64-compatible packages)
 - CUDA 13.0+ (verified: 13.0.88)
 - Driver 580.95.05+
+- Docker 20.10+ and Docker Compose v2+ (for containerized deployment)
 - 500GB+ storage
+- [just](https://github.com/casey/just) command runner
 - Bevy game engine (for integration)
 
-### Running the TUI
-
-The Rust TUI is operational with dual-mode support:
+### First-Time Setup
 
 ```bash
 # Clone repository
 git clone https://github.com/raibid-labs/dgx-pixels.git
 cd dgx-pixels
 
-# Run classic ratatui mode (legacy)
-just tui
+# Initialize project (creates venv, installs Python dependencies, creates directories)
+just init
 
-# Run Bevy ECS mode (NEW - recommended)
-just tui-bevy
+# (Optional) Setup Docker environment for production deployment
+just docker-setup
+```
 
-# Run Bevy ECS mode (release build, optimized)
-just tui-bevy-release
+### Running the TUI
+
+The Rust TUI is operational with dual-mode support:
+
+```bash
+# Run with integrated backend (recommended for development)
+just debug
+
+# Or run TUI only (requires separate backend)
+just tui              # Classic ratatui mode (legacy)
+just tui-bevy         # Bevy ECS mode (NEW - recommended)
+just tui-bevy-release # Bevy ECS mode (release build, optimized)
 ```
 
 **Bevy Mode Features** (currently available):
@@ -100,20 +111,63 @@ just tui-bevy-release
 
 ### Backend Setup (Python Worker + ComfyUI)
 
+**Option 1: Integrated Development Mode** (Recommended)
 ```bash
-# Install Python dependencies
-cd python
-pip install -r requirements.txt
-
-# Start Python ZMQ worker
-python workers/generation_worker.py
-
-# Start ComfyUI (in separate terminal)
-cd comfyui
-python main.py --listen 127.0.0.1:8188
+# Starts both backend and TUI with live log monitoring
+just debug
 ```
 
-See [Implementation Plan](docs/06-implementation-plan.md) for detailed setup instructions.
+**Option 2: Manual Backend (for advanced debugging)**
+```bash
+# Start Python ZMQ worker (in first terminal)
+source venv/bin/activate
+python python/workers/generation_worker.py
+
+# Start TUI (in second terminal)
+just tui-bevy
+```
+
+**Option 3: Docker Deployment** (Production)
+```bash
+# Setup and start all services
+just docker-setup
+cd docker && docker compose up -d
+
+# View service status
+just docker-ps
+
+# View logs
+just docker-logs
+```
+
+### ComfyUI Setup
+
+ComfyUI is required for image generation:
+
+```bash
+# ComfyUI is cloned during docker-setup
+# To run manually:
+cd ComfyUI
+python main.py --listen 127.0.0.1 --port 8188
+
+# Or via Docker
+just docker-up  # ComfyUI runs as a service
+```
+
+### Quick Command Reference
+
+```bash
+just --list          # Show all available commands
+just init            # First-time setup
+just debug           # Run TUI + backend with debugging
+just docker-setup    # Setup Docker environment
+just docker-up       # Start Docker stack
+just validate-gpu    # Check GPU/hardware
+just hw-info         # Show hardware information
+just test            # Run all tests
+```
+
+See [Implementation Plan](docs/06-implementation-plan.md) and [justfile](justfile) for detailed setup instructions and all available commands.
 
 ## Architecture
 
