@@ -33,11 +33,13 @@ pub fn render_generation_screen(
         return;
     }
 
-    ratatui
-        .draw(|frame| {
-            render_frame(frame, &input_buffer, &theme, &app_state, &gallery, &jobs);
-        })
-        .ok();
+    trace!("Rendering generation screen");
+
+    if let Err(e) = ratatui.draw(|frame| {
+        render_frame(frame, &input_buffer, &theme, &app_state, &gallery, &jobs);
+    }) {
+        error!("Failed to render generation screen: {:?}", e);
+    }
 }
 
 /// Render the complete frame layout.
