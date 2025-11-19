@@ -51,6 +51,17 @@ impl Plugin for DgxPixelsPlugin {
         // T3: Settings state resource (needed by gallery screen)
         app.insert_resource(super::resources::SettingsState::default());
 
+        // T8: ZeroMQ client for backend communication (optional - graceful degradation if backend offline)
+        match crate::zmq_client::ZmqClient::new_default() {
+            Ok(client) => {
+                info!("ZMQ client connected to backend");
+                app.insert_resource(systems::zmq::ZmqClientResource::new(client));
+            }
+            Err(e) => {
+                warn!("Failed to connect to backend - jobs will be created but not processed: {}", e);
+            }
+        }
+
         // WS-03: Global input systems (run in PreUpdate schedule)
         // These systems handle cross-screen functionality like quit, help, and navigation
         app.add_systems(
