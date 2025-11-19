@@ -7,8 +7,8 @@ use std::path::PathBuf;
 mod helpers;
 use helpers::*;
 
-#[test]
-fn test_gallery_empty_state() {
+#[tokio::test]
+async fn test_gallery_empty_state() {
     let app = App::new();
 
     assert!(app.gallery_images.is_empty());
@@ -16,8 +16,8 @@ fn test_gallery_empty_state() {
     assert!(app.selected_gallery_image().is_none());
 }
 
-#[test]
-fn test_add_single_image_to_gallery() {
+#[tokio::test]
+async fn test_add_single_image_to_gallery() {
     let mut app = App::new();
     let path = PathBuf::from("/test/sprite_001.png");
 
@@ -28,8 +28,8 @@ fn test_add_single_image_to_gallery() {
     assert_eq!(app.selected_gallery_image(), Some(&path));
 }
 
-#[test]
-fn test_add_multiple_images_to_gallery() {
+#[tokio::test]
+async fn test_add_multiple_images_to_gallery() {
     let mut app = App::new();
 
     let paths: Vec<PathBuf> = (1..=5)
@@ -44,8 +44,8 @@ fn test_add_multiple_images_to_gallery() {
     assert_eq!(app.gallery_images, paths);
 }
 
-#[test]
-fn test_add_duplicate_image_to_gallery() {
+#[tokio::test]
+async fn test_add_duplicate_image_to_gallery() {
     let mut app = App::new();
     let path = PathBuf::from("/test/sprite_001.png");
 
@@ -56,13 +56,14 @@ fn test_add_duplicate_image_to_gallery() {
     assert_eq!(app.gallery_images.len(), 1);
 }
 
+#[tokio::test]
 #[rstest]
 #[case(0, 0, 0)] // Empty gallery - can't navigate
 #[case(1, 0, 0)] // Single image - stays at 0
 #[case(3, 0, 1)] // Navigate forward from first
 #[case(3, 1, 2)] // Navigate forward from middle
 #[case(3, 2, 0)] // Navigate forward from last (wraps to beginning)
-fn test_gallery_next_navigation(
+async fn test_gallery_next_navigation(
     #[case] num_images: usize,
     #[case] start_index: usize,
     #[case] expected_index: usize,
@@ -80,13 +81,14 @@ fn test_gallery_next_navigation(
     assert_eq!(app.selected_gallery_index, expected_index);
 }
 
+#[tokio::test]
 #[rstest]
 #[case(0, 0, 0)] // Empty gallery - can't navigate
 #[case(1, 0, 0)] // Single image - stays at 0
 #[case(3, 2, 1)] // Navigate backward from last
 #[case(3, 1, 0)] // Navigate backward from middle
 #[case(3, 0, 2)] // Navigate backward from first (wraps to end)
-fn test_gallery_previous_navigation(
+async fn test_gallery_previous_navigation(
     #[case] num_images: usize,
     #[case] start_index: usize,
     #[case] expected_index: usize,
@@ -104,8 +106,8 @@ fn test_gallery_previous_navigation(
     assert_eq!(app.selected_gallery_index, expected_index);
 }
 
-#[test]
-fn test_selected_gallery_image() {
+#[tokio::test]
+async fn test_selected_gallery_image() {
     let mut app = App::new();
 
     let path1 = PathBuf::from("/test/img1.png");
@@ -128,8 +130,8 @@ fn test_selected_gallery_image() {
     assert_eq!(app.selected_gallery_image(), Some(&path3));
 }
 
-#[test]
-fn test_load_gallery_from_outputs() {
+#[tokio::test]
+async fn test_load_gallery_from_outputs() {
     let (_temp_dir, test_paths) = create_test_gallery();
     let mut app = App::new();
 
@@ -150,8 +152,8 @@ fn test_load_gallery_from_outputs() {
     }
 }
 
-#[test]
-fn test_load_gallery_from_nonexistent_directory() {
+#[tokio::test]
+async fn test_load_gallery_from_nonexistent_directory() {
     let mut app = App::new();
 
     // Try to load from nonexistent directory - should not crash
@@ -161,8 +163,8 @@ fn test_load_gallery_from_nonexistent_directory() {
     assert!(app.gallery_images.is_empty());
 }
 
-#[test]
-fn test_navigate_to_gallery_screen() {
+#[tokio::test]
+async fn test_navigate_to_gallery_screen() {
     let mut app = App::new();
 
     // Start at Generation screen
@@ -176,8 +178,8 @@ fn test_navigate_to_gallery_screen() {
     assert_eq!(app.screen_history[0], Screen::Generation);
 }
 
-#[test]
-fn test_navigate_back_from_gallery() {
+#[tokio::test]
+async fn test_navigate_back_from_gallery() {
     let mut app = App::new();
 
     // Navigate Generation -> Gallery
@@ -191,8 +193,8 @@ fn test_navigate_back_from_gallery() {
     assert!(app.screen_history.is_empty());
 }
 
-#[test]
-fn test_gallery_bounds_checking() {
+#[tokio::test]
+async fn test_gallery_bounds_checking() {
     let mut app = App::new();
 
     // Add 3 images
@@ -207,8 +209,8 @@ fn test_gallery_bounds_checking() {
     assert!(app.selected_gallery_image().is_none());
 }
 
-#[test]
-fn test_gallery_selection_persistence() {
+#[tokio::test]
+async fn test_gallery_selection_persistence() {
     let mut app = App::new();
 
     // Add images
@@ -229,8 +231,8 @@ fn test_gallery_selection_persistence() {
     assert_eq!(app.selected_gallery_index, 3);
 }
 
-#[test]
-fn test_current_preview_not_set_by_gallery_add() {
+#[tokio::test]
+async fn test_current_preview_not_set_by_gallery_add() {
     let mut app = App::new();
 
     let path = PathBuf::from("/test/new_sprite.png");
@@ -241,8 +243,8 @@ fn test_current_preview_not_set_by_gallery_add() {
     assert_eq!(app.current_preview, None);
 }
 
-#[test]
-fn test_needs_redraw_on_gallery_changes() {
+#[tokio::test]
+async fn test_needs_redraw_on_gallery_changes() {
     let mut app = App::new();
     app.needs_redraw = false;
 
