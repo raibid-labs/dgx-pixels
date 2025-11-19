@@ -65,6 +65,21 @@ criterion = "0.5"
 proptest = "1.4"
 tempfile = "3.8"
 
+# Snapshot testing (official ratatui support)
+insta = { version = "1.40", features = ["redactions", "yaml"] }
+
+# Parameterized tests
+rstest = "0.18"
+
+# Async testing utilities
+tokio-test = "0.4"
+
+# Better assertions
+pretty_assertions = "1.4"
+
+# Mock building
+mockall = "0.11"
+
 [features]
 default = []
 bevy_migration_foundation = ["dep:bevy", "dep:bevy_ratatui"]
