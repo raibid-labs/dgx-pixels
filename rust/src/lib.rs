@@ -152,8 +152,17 @@ async fn run_classic_event_loop<B: ratatui::backend::Backend>(
 
         // Process preview results from async worker
         while let Some(preview_result) = app.preview_manager.try_recv_result() {
-            if preview_result.entry.is_some() {
+            // Remove from pending requests
+            app.preview_manager.request_timestamps.remove(&preview_result.path);
+
+            if let Some(error) = preview_result.error {
+                warn!("Preview failed for {:?}: {}", preview_result.path, error);
+                app.preview_manager.preview_errors.insert(preview_result.path.clone(), error);
+                app.needs_redraw = true;
+            } else if preview_result.entry.is_some() {
                 info!("Preview ready: {:?}", preview_result.path);
+                // Clear any previous error
+                app.preview_manager.preview_errors.remove(&preview_result.path);
                 app.needs_redraw = true;
             }
         }

@@ -40,10 +40,25 @@ pub struct ImageRenderer {
 
 impl ImageRenderer {
     /// Create a new image renderer
-    pub fn new() -> Self {
-        let config = Config::default();
+    pub fn new() -> Result<Self> {
+        // Validate img2sixel is available
+        let check = Command::new("img2sixel")
+            .arg("--version")
+            .output();
 
-        Self { _config: config }
+        match check {
+            Ok(output) if output.status.success() => {
+                debug!("img2sixel found: {:?}",
+                    String::from_utf8_lossy(&output.stdout));
+            }
+            _ => {
+                return Err(anyhow::anyhow!(
+                    "img2sixel not found in PATH. Install with: apt install libsixel-bin"
+                ));
+            }
+        }
+
+        Ok(Self { _config: Config::default() })
     }
 
     /// Render an image file to the terminal using Sixel
@@ -189,7 +204,7 @@ impl ImageRenderer {
 
 impl Default for ImageRenderer {
     fn default() -> Self {
-        Self::new()
+        Self::new().expect("img2sixel must be installed")
     }
 }
 
@@ -208,14 +223,17 @@ mod tests {
 
     #[test]
     fn test_image_renderer_creation() {
-        let renderer = ImageRenderer::new();
-        // Just verify it can be created
-        assert!(true);
+        let _renderer = ImageRenderer::new();
+        // Just verify it can be created (or fails gracefully if img2sixel not installed)
     }
 
     #[test]
     fn test_resize_aspect_ratio() {
-        let renderer = ImageRenderer::new();
+        // Skip test if img2sixel not installed
+        if ImageRenderer::new().is_err() {
+            return;
+        }
+        let renderer = ImageRenderer::new().unwrap();
 
         // Create a test image (100x200)
         let img = DynamicImage::new_rgb8(100, 200);

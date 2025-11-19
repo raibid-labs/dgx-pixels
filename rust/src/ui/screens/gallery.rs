@@ -9,6 +9,7 @@ use ratatui::{
     Frame,
 };
 use crate::ui::widgets::sixel_image::SixelImage;
+use std::time::{Duration, Instant};
 use tracing::debug;
 
 pub fn render(f: &mut Frame, app: &App) {
@@ -73,6 +74,12 @@ fn render_main_preview(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
     debug!("Terminal capability: {:?}", app.terminal_capability);
 
     if let Some(selected_path) = app.selected_gallery_image() {
+        // Check if there's an error for this path
+        if let Some(error) = app.preview_manager.preview_errors.get(selected_path) {
+            render_preview_error(f, inner, &error.value().clone());
+            return;
+        }
+
         match app.terminal_capability {
             TerminalCapability::Sixel => {
                 debug!("Terminal capability is Sixel.");
@@ -81,6 +88,18 @@ fn render_main_preview(f: &mut Frame, area: ratatui::layout::Rect, app: &App) {
                     debug!("Preview found in cache for path: {:?}", selected_path);
                     render_sixel_large_preview(f, inner, &preview_entry.sixel_data, selected_path);
                 } else {
+                    // Check if request timed out (5 seconds)
+                    let now = Instant::now();
+                    let timed_out = app.preview_manager.request_timestamps
+                        .get(selected_path)
+                        .map(|entry| now.duration_since(*entry.value()) > Duration::from_secs(5))
+                        .unwrap_or(false);
+
+                    if timed_out {
+                        render_preview_error(f, inner, "Preview timed out (5s)");
+                        return;
+                    }
+
                     debug!("Preview not found in cache for path: {:?}. Requesting preview.", selected_path);
                     // Request preview
                     let options = RenderOptions {
@@ -236,6 +255,21 @@ fn render_no_selection(f: &mut Frame, area: ratatui::layout::Rect) {
 
     let paragraph = Paragraph::new(lines).alignment(ratatui::layout::Alignment::Center);
 
+    f.render_widget(paragraph, area);
+}
+
+fn render_preview_error(f: &mut Frame, area: ratatui::layout::Rect, error: &str) {
+    let lines = vec![
+        Line::from(""),
+        Line::from(""),
+        Line::from(Span::styled("❌ Preview Failed", Theme::error())),
+        Line::from(""),
+        Line::from(Span::styled(error, Theme::muted())),
+        Line::from(""),
+        Line::from("Press 'r' to retry"),
+    ];
+
+    let paragraph = Paragraph::new(lines).alignment(ratatui::layout::Alignment::Center);
     f.render_widget(paragraph, area);
 }
 

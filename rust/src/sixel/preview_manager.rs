@@ -45,6 +45,10 @@ pub struct PreviewManager {
     request_tx: mpsc::UnboundedSender<PreviewRequest>,
     /// Channel for preview results
     result_rx: Arc<RwLock<mpsc::UnboundedReceiver<PreviewResult>>>,
+    /// Track preview request timestamps for timeout detection
+    pub request_timestamps: Arc<DashMap<PathBuf, Instant>>,
+    /// Track preview errors for display
+    pub preview_errors: Arc<DashMap<PathBuf, String>>,
 }
 
 // Manual Debug implementation for PreviewManager
@@ -81,9 +85,12 @@ impl PreviewManager {
         let (request_tx, request_rx) = mpsc::unbounded_channel();
         let (result_tx, result_rx) = mpsc::unbounded_channel();
 
-        let renderer = Arc::new(ImageRenderer::new());
+        let renderer = Arc::new(ImageRenderer::new()
+            .expect("Failed to initialize image renderer - img2sixel not found"));
         let cache = Arc::new(DashMap::new());
         let cache_size = Arc::new(RwLock::new(0));
+        let request_timestamps = Arc::new(DashMap::new());
+        let preview_errors = Arc::new(DashMap::new());
 
         // Spawn worker task for async preview rendering
         let worker_renderer = Arc::clone(&renderer);
@@ -113,6 +120,8 @@ impl PreviewManager {
             max_cache_size: MAX_CACHE_SIZE_MB * 1024 * 1024,
             request_tx,
             result_rx: Arc::new(RwLock::new(result_rx)),
+            request_timestamps,
+            preview_errors,
         }
     }
 
@@ -128,6 +137,9 @@ impl PreviewManager {
             self.cache.insert(path, entry);
             return Ok(());
         }
+
+        // Track request timestamp
+        self.request_timestamps.insert(path.clone(), Instant::now());
 
         // Send async request
         self.request_tx

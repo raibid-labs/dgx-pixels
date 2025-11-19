@@ -31,7 +31,7 @@ impl<'a> Widget for SixelImage<'a> {
         // Clear the area first by writing spaces
         // This ensures old Sixel images don't persist when navigating
         for line in 0..area.height {
-            let line_row = row + line as u16;
+            let line_row = row + line;
             let _ = write!(stdout, "\x1b[{};{}H", line_row, col);
             let _ = write!(stdout, "{}", " ".repeat(area.width as usize));
         }
