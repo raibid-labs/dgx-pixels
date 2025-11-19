@@ -19,21 +19,24 @@ pub fn handle_zmq_responses(
     for event in complete_events.read() {
         info!("Processing job completion: {}", event.job_id);
 
-        // Convert absolute path from backend to relative path for gallery
-        // Backend sends: /path/to/dgx-pixels/outputs/job-xxx.png
-        // Gallery expects: ../outputs/job-xxx.png
+        // Use absolute paths directly to avoid Bevy AssetServer path resolution issues.
+        // Backend sends absolute paths like: /path/to/dgx-pixels/outputs/job-xxx.png
+        // We keep them absolute instead of converting to relative paths.
         let gallery_path = if event.image_path.is_absolute() {
-            // Extract just the filename and prepend ../outputs/
-            if let Some(filename) = event.image_path.file_name() {
-                std::path::PathBuf::from("../outputs").join(filename)
-            } else {
-                event.image_path.clone()
-            }
-        } else {
+            // Keep absolute path as-is
             event.image_path.clone()
+        } else {
+            // If backend sends relative path, convert to absolute
+            match std::fs::canonicalize(&event.image_path) {
+                Ok(abs_path) => abs_path,
+                Err(e) => {
+                    warn!("Failed to canonicalize path {:?}: {}", event.image_path, e);
+                    event.image_path.clone()
+                }
+            }
         };
 
-        info!("Converted path: {:?} -> {:?}", event.image_path, gallery_path);
+        info!("Using gallery path: {:?}", gallery_path);
 
         // Find and update the job entity
         let mut job_found = false;

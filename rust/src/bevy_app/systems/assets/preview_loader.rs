@@ -93,20 +93,23 @@ pub fn scan_gallery_directory(
         return;
     }
 
-    // Check if directory exists
-    if !scan_state.gallery_dir.exists() {
-        debug!(
-            "Gallery directory does not exist: {:?}",
-            scan_state.gallery_dir
-        );
-        scan_state.mark_scanned();
-        return;
-    }
+    // Convert relative path to absolute to avoid Bevy AssetServer path resolution issues
+    let gallery_dir = match fs::canonicalize(&scan_state.gallery_dir) {
+        Ok(abs_path) => abs_path,
+        Err(e) => {
+            debug!(
+                "Gallery directory does not exist or cannot be canonicalized: {:?} (error: {})",
+                scan_state.gallery_dir, e
+            );
+            scan_state.mark_scanned();
+            return;
+        }
+    };
 
-    debug!("Scanning gallery directory: {:?}", scan_state.gallery_dir);
+    debug!("Scanning gallery directory: {:?}", gallery_dir);
 
-    // Scan directory
-    match scan_image_directory(&scan_state.gallery_dir) {
+    // Scan directory (now with absolute path)
+    match scan_image_directory(&gallery_dir) {
         Ok(discovered_images) => {
             let mut new_images = 0;
 
@@ -241,7 +244,9 @@ pub fn preload_gallery_directory(
     cache: &mut ImageCache,
     dir: &Path,
 ) -> Result<usize, std::io::Error> {
-    let images = scan_image_directory(dir)?;
+    // Convert to absolute path to avoid Bevy AssetServer path resolution issues
+    let abs_dir = fs::canonicalize(dir)?;
+    let images = scan_image_directory(&abs_dir)?;
     let count = images.len();
 
     for image_path in images {
@@ -261,7 +266,7 @@ pub fn preload_gallery_directory(
         });
     }
 
-    info!("Preloaded {} images from directory: {:?}", count, dir);
+    info!("Preloaded {} images from directory: {:?}", count, abs_dir);
     Ok(count)
 }
 
