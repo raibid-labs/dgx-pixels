@@ -51,6 +51,9 @@ impl Plugin for DgxPixelsPlugin {
         // T3: Settings state resource (needed by gallery screen)
         app.insert_resource(super::resources::SettingsState::default());
 
+        // T9: Sixel preview cache resource (for gallery image previews)
+        app.insert_resource(systems::assets::SixelPreviewCache::default());
+
         // T8: ZeroMQ client for backend communication (optional - graceful degradation if backend offline)
         match crate::zmq_client::ZmqClient::new_default() {
             Ok(client) => {

@@ -19,19 +19,35 @@ pub fn handle_zmq_responses(
     for event in complete_events.read() {
         info!("Processing job completion: {}", event.job_id);
 
+        // Convert absolute path from backend to relative path for gallery
+        // Backend sends: /path/to/dgx-pixels/outputs/job-xxx.png
+        // Gallery expects: ../outputs/job-xxx.png
+        let gallery_path = if event.image_path.is_absolute() {
+            // Extract just the filename and prepend ../outputs/
+            if let Some(filename) = event.image_path.file_name() {
+                std::path::PathBuf::from("../outputs").join(filename)
+            } else {
+                event.image_path.clone()
+            }
+        } else {
+            event.image_path.clone()
+        };
+
+        info!("Converted path: {:?} -> {:?}", event.image_path, gallery_path);
+
         // Find and update the job entity
         let mut job_found = false;
         for mut job in job_query.iter_mut() {
             if job.id == event.job_id {
                 let duration_s = job.elapsed().as_secs_f32();
                 job.status = JobStatus::Complete {
-                    image_path: event.image_path.clone(),
+                    image_path: gallery_path.clone(),
                     duration_s,
                 };
                 job_found = true;
 
-                // Add to gallery
-                gallery.add_image(event.image_path.clone());
+                // Add to gallery with converted path
+                gallery.add_image(gallery_path.clone());
 
                 // Update tracker
                 job_tracker.complete_job();
