@@ -306,13 +306,23 @@ impl App {
     pub fn load_gallery_from_outputs(&mut self, outputs_dir: &str) {
         use std::fs;
 
-        if let Ok(entries) = fs::read_dir(outputs_dir) {
+        // Convert to absolute path to avoid path resolution issues
+        let abs_path = match fs::canonicalize(outputs_dir) {
+            Ok(p) => p,
+            Err(_) => {
+                // If canonicalize fails (dir doesn't exist yet), just use the original path
+                return;
+            }
+        };
+
+        if let Ok(entries) = fs::read_dir(&abs_path) {
             for entry in entries.flatten() {
                 let path = entry.path();
                 if path.is_file() {
                     if let Some(ext) = path.extension() {
                         let ext_str = ext.to_string_lossy().to_lowercase();
                         if ext_str == "png" || ext_str == "jpg" || ext_str == "jpeg" {
+                            // Path is now absolute from entry.path()
                             self.add_to_gallery(path);
                         }
                     }
