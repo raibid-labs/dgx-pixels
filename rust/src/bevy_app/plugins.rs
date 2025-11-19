@@ -22,10 +22,14 @@ impl Plugin for DgxPixelsPlugin {
         app.add_plugins(LogPlugin::default());
 
         // Add asset plugin for image loading (WS-06)
-        app.add_plugins(bevy::asset::AssetPlugin::default());
+        // Configure to use project root so we can load from outputs/ directory
+        app.add_plugins(bevy::asset::AssetPlugin {
+            file_path: "../".to_string(),
+            ..Default::default()
+        });
 
-        // Initialize Image asset type (required for AssetServer::load)
-        app.init_asset::<Image>();
+        // Add image plugin for PNG/JPG/WebP loaders
+        app.add_plugins(bevy::render::texture::ImagePlugin::default());
 
         // Ratatui terminal rendering
         app.add_plugins(RatatuiPlugins::default());

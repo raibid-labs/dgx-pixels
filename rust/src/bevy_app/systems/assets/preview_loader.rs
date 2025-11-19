@@ -93,8 +93,8 @@ pub fn scan_gallery_directory(
         return;
     }
 
-    // Convert relative path to absolute to avoid Bevy AssetServer path resolution issues
-    let gallery_dir = match fs::canonicalize(&scan_state.gallery_dir) {
+    // Convert relative path to absolute for scanning
+    let abs_gallery_dir = match fs::canonicalize(&scan_state.gallery_dir) {
         Ok(abs_path) => abs_path,
         Err(e) => {
             debug!(
@@ -106,14 +106,34 @@ pub fn scan_gallery_directory(
         }
     };
 
-    debug!("Scanning gallery directory: {:?}", gallery_dir);
+    debug!("Scanning gallery directory: {:?}", abs_gallery_dir);
 
-    // Scan directory (now with absolute path)
-    match scan_image_directory(&gallery_dir) {
+    // Get project root for converting paths to relative
+    let project_root = std::env::current_dir()
+        .ok()
+        .and_then(|cwd| cwd.parent().map(|p| p.to_path_buf()))
+        .unwrap_or_else(|| std::path::PathBuf::from(".."));
+
+    // Scan directory
+    match scan_image_directory(&abs_gallery_dir) {
         Ok(discovered_images) => {
             let mut new_images = 0;
 
-            for image_path in discovered_images {
+            for abs_image_path in discovered_images {
+                // Convert absolute path to relative path for AssetServer
+                // AssetPlugin is configured with file_path="../" so we need "outputs/job-xxx.png"
+                let image_path = abs_image_path
+                    .strip_prefix(&project_root)
+                    .map(|p| p.to_path_buf())
+                    .unwrap_or_else(|_| {
+                        // Fallback: extract filename and prepend "outputs/"
+                        if let Some(filename) = abs_image_path.file_name() {
+                            std::path::PathBuf::from("outputs").join(filename)
+                        } else {
+                            abs_image_path.clone()
+                        }
+                    });
+
                 // Skip if already in gallery
                 if gallery.images.contains(&image_path) {
                     continue;
@@ -128,12 +148,12 @@ pub fn scan_gallery_directory(
                     continue;
                 }
 
-                debug!("New image discovered: {:?}", image_path);
+                debug!("New image discovered: {:?} (asset path: {:?})", abs_image_path, image_path);
 
-                // Add to gallery state
+                // Add to gallery state (using relative path for AssetServer)
                 gallery.add_image(image_path.clone());
 
-                // Load image via AssetServer
+                // Load image via AssetServer (relative to project root)
                 let handle: Handle<Image> = asset_server.load(image_path.clone());
 
                 // Add to cache
@@ -244,16 +264,35 @@ pub fn preload_gallery_directory(
     cache: &mut ImageCache,
     dir: &Path,
 ) -> Result<usize, std::io::Error> {
-    // Convert to absolute path to avoid Bevy AssetServer path resolution issues
+    // Convert to absolute path for scanning
     let abs_dir = fs::canonicalize(dir)?;
     let images = scan_image_directory(&abs_dir)?;
     let count = images.len();
 
-    for image_path in images {
-        // Add to gallery
+    // Get project root for converting paths to relative
+    let project_root = std::env::current_dir()
+        .ok()
+        .and_then(|cwd| cwd.parent().map(|p| p.to_path_buf()))
+        .unwrap_or_else(|| std::path::PathBuf::from(".."));
+
+    for abs_image_path in images {
+        // Convert absolute path to relative path for AssetServer
+        let image_path = abs_image_path
+            .strip_prefix(&project_root)
+            .map(|p| p.to_path_buf())
+            .unwrap_or_else(|_| {
+                // Fallback: extract filename and prepend "outputs/"
+                if let Some(filename) = abs_image_path.file_name() {
+                    std::path::PathBuf::from("outputs").join(filename)
+                } else {
+                    abs_image_path.clone()
+                }
+            });
+
+        // Add to gallery (using relative path)
         gallery.add_image(image_path.clone());
 
-        // Load image
+        // Load image (relative to project root)
         let handle: Handle<Image> = asset_server.load(image_path.clone());
 
         // Add to cache

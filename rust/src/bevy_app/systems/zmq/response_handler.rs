@@ -19,24 +19,33 @@ pub fn handle_zmq_responses(
     for event in complete_events.read() {
         info!("Processing job completion: {}", event.job_id);
 
-        // Use absolute paths directly to avoid Bevy AssetServer path resolution issues.
-        // Backend sends absolute paths like: /path/to/dgx-pixels/outputs/job-xxx.png
-        // We keep them absolute instead of converting to relative paths.
+        // Convert path to be relative to project root for Bevy AssetServer.
+        // AssetPlugin is configured with file_path="../" so it expects paths like "outputs/job-xxx.png"
+        // Backend sends: /path/to/dgx-pixels/outputs/job-xxx.png
+        // We need: outputs/job-xxx.png
         let gallery_path = if event.image_path.is_absolute() {
-            // Keep absolute path as-is
-            event.image_path.clone()
+            // Try to make path relative to project root
+            let project_root = std::env::current_dir()
+                .ok()
+                .and_then(|cwd| cwd.parent().map(|p| p.to_path_buf()))
+                .unwrap_or_else(|| std::path::PathBuf::from(".."));
+
+            event.image_path
+                .strip_prefix(&project_root)
+                .map(|p| p.to_path_buf())
+                .unwrap_or_else(|_| {
+                    // If strip_prefix fails, try to extract outputs/filename
+                    if let Some(filename) = event.image_path.file_name() {
+                        std::path::PathBuf::from("outputs").join(filename)
+                    } else {
+                        event.image_path.clone()
+                    }
+                })
         } else {
-            // If backend sends relative path, convert to absolute
-            match std::fs::canonicalize(&event.image_path) {
-                Ok(abs_path) => abs_path,
-                Err(e) => {
-                    warn!("Failed to canonicalize path {:?}: {}", event.image_path, e);
-                    event.image_path.clone()
-                }
-            }
+            event.image_path.clone()
         };
 
-        info!("Using gallery path: {:?}", gallery_path);
+        info!("Converted to asset path: {:?}", gallery_path);
 
         // Find and update the job entity
         let mut job_found = false;
