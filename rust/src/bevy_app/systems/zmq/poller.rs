@@ -5,13 +5,16 @@
 use bevy::prelude::*;
 
 use super::ZmqClientResource;
+use crate::bevy_app::events::{GenerationComplete, JobProgressUpdate, JobStarted};
 
 /// Poll ZMQ client for responses and updates.
 ///
 /// Runs in PreUpdate schedule to process backend messages before main logic.
 pub fn poll_zmq(
     zmq_client: Option<Res<ZmqClientResource>>,
-    mut response_events: EventWriter<crate::bevy_app::events::GenerationComplete>,
+    mut response_events: EventWriter<GenerationComplete>,
+    mut progress_events: EventWriter<JobProgressUpdate>,
+    mut started_events: EventWriter<JobStarted>,
 ) {
     let Some(zmq_client) = zmq_client else {
         return; // No ZMQ client configured
@@ -44,7 +47,7 @@ pub fn poll_zmq(
                     job_id, image_path, duration_s
                 );
                 // Emit event for response handler
-                response_events.send(crate::bevy_app::events::GenerationComplete {
+                response_events.send(GenerationComplete {
                     job_id,
                     image_path: std::path::PathBuf::from(image_path),
                 });
@@ -66,7 +69,7 @@ pub fn poll_zmq(
         match update {
             ProgressUpdate::JobStarted { job_id, timestamp } => {
                 info!("Job {} started at {}", job_id, timestamp);
-                // TODO: Update job entity status to Generating
+                started_events.send(JobStarted { job_id });
             }
             ProgressUpdate::Progress {
                 job_id,
@@ -85,7 +88,15 @@ pub fn poll_zmq(
                     percent * 100.0,
                     eta_s
                 );
-                // TODO: Update job progress
+                // Emit progress update event
+                progress_events.send(JobProgressUpdate {
+                    job_id,
+                    stage,
+                    step,
+                    total_steps,
+                    percent,
+                    eta_s,
+                });
             }
             ProgressUpdate::Preview {
                 job_id,
@@ -136,7 +147,9 @@ mod tests {
     #[test]
     fn test_poll_without_zmq_client() {
         let mut app = App::new();
-        app.add_event::<crate::bevy_app::events::GenerationComplete>();
+        app.add_event::<GenerationComplete>();
+        app.add_event::<JobProgressUpdate>();
+        app.add_event::<JobStarted>();
         app.add_systems(Update, poll_zmq);
 
         // Should not panic without ZMQ client

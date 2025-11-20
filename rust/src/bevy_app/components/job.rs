@@ -62,6 +62,8 @@ pub enum JobStatus {
         /// Error message
         error: String,
     },
+    /// Job was cancelled by user
+    Cancelled,
 }
 
 impl Job {
@@ -85,9 +87,22 @@ impl Job {
         matches!(self.status, JobStatus::Failed { .. })
     }
 
-    /// Check if job is active (not complete or failed).
+    /// Check if job is cancelled.
+    pub fn is_cancelled(&self) -> bool {
+        matches!(self.status, JobStatus::Cancelled)
+    }
+
+    /// Check if job is active (not complete, failed, or cancelled).
     pub fn is_active(&self) -> bool {
-        !self.is_complete() && !self.is_failed()
+        !self.is_complete() && !self.is_failed() && !self.is_cancelled()
+    }
+
+    /// Check if job can be cancelled (Pending, Queued, or Generating).
+    pub fn is_cancellable(&self) -> bool {
+        matches!(
+            self.status,
+            JobStatus::Pending | JobStatus::Queued | JobStatus::Generating { .. }
+        )
     }
 
     /// Get elapsed time since submission.
@@ -116,6 +131,8 @@ mod tests {
         assert!(job.is_active());
         assert!(!job.is_complete());
         assert!(!job.is_failed());
+        assert!(!job.is_cancelled());
+        assert!(job.is_cancellable());
 
         // Complete
         job.status = JobStatus::Complete {
@@ -124,6 +141,7 @@ mod tests {
         };
         assert!(job.is_complete());
         assert!(!job.is_active());
+        assert!(!job.is_cancellable());
 
         // Failed
         job.status = JobStatus::Failed {
@@ -131,6 +149,13 @@ mod tests {
         };
         assert!(job.is_failed());
         assert!(!job.is_active());
+        assert!(!job.is_cancellable());
+
+        // Cancelled
+        job.status = JobStatus::Cancelled;
+        assert!(job.is_cancelled());
+        assert!(!job.is_active());
+        assert!(!job.is_cancellable());
     }
 
     #[test]
@@ -138,5 +163,43 @@ mod tests {
         let job = Job::new("job-001".to_string(), "test".to_string());
         std::thread::sleep(std::time::Duration::from_millis(10));
         assert!(job.elapsed().as_millis() >= 10);
+    }
+
+    #[test]
+    fn test_cancellable_statuses() {
+        let mut job = Job::new("job-001".to_string(), "test".to_string());
+
+        // Pending is cancellable
+        job.status = JobStatus::Pending;
+        assert!(job.is_cancellable());
+
+        // Queued is cancellable
+        job.status = JobStatus::Queued;
+        assert!(job.is_cancellable());
+
+        // Generating is cancellable
+        job.status = JobStatus::Generating {
+            stage: "Sampling".to_string(),
+            progress: 0.5,
+            eta_s: 2.0,
+        };
+        assert!(job.is_cancellable());
+
+        // Complete is not cancellable
+        job.status = JobStatus::Complete {
+            image_path: PathBuf::from("/test.png"),
+            duration_s: 3.5,
+        };
+        assert!(!job.is_cancellable());
+
+        // Failed is not cancellable
+        job.status = JobStatus::Failed {
+            error: "test error".to_string(),
+        };
+        assert!(!job.is_cancellable());
+
+        // Cancelled is not cancellable
+        job.status = JobStatus::Cancelled;
+        assert!(!job.is_cancellable());
     }
 }

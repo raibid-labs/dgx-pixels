@@ -8,7 +8,8 @@ use bevy_ratatui::event::KeyEvent;
 use crossterm::event::{KeyCode, KeyModifiers};
 
 use crate::bevy_app::{
-    events::SubmitGenerationJob,
+    components::{Job, JobStatus},
+    events::{CancelJob, SubmitGenerationJob},
     resources::{AppState, CurrentScreen, InputBuffer, Screen},
 };
 
@@ -22,7 +23,9 @@ pub fn handle_generation_input(
     current_screen: Res<CurrentScreen>,
     mut input_buffer: ResMut<InputBuffer>,
     mut submit_events: EventWriter<SubmitGenerationJob>,
+    mut cancel_events: EventWriter<CancelJob>,
     mut app_state: ResMut<AppState>,
+    jobs: Query<&Job>,
 ) {
     if current_screen.0 != Screen::Generation {
         return;
@@ -55,6 +58,33 @@ pub fn handle_generation_input(
                         input_buffer.clear();
                         app_state.request_redraw();
                         info!("Generation job submitted via 'G' key");
+                    }
+                }
+                KeyCode::Char('x') | KeyCode::Char('X') => {
+                    // Cancel current running job (changed from 'c' to 'x' to avoid conflict with compare)
+                    // Find the most recent active job
+                    let active_jobs: Vec<&Job> = jobs.iter().filter(|j| j.is_active()).collect();
+                    if let Some(job) = active_jobs.last() {
+                        if job.is_cancellable() {
+                            cancel_events.send(CancelJob {
+                                job_id: job.id.clone(),
+                            });
+                            app_state.request_redraw();
+                            info!("Cancel request sent for job: {}", job.id);
+                        }
+                    }
+                }
+                KeyCode::Char('c') if event.modifiers.contains(KeyModifiers::CONTROL) => {
+                    // Ctrl+C: Cancel current running job (alternative hotkey)
+                    let active_jobs: Vec<&Job> = jobs.iter().filter(|j| j.is_active()).collect();
+                    if let Some(job) = active_jobs.last() {
+                        if job.is_cancellable() {
+                            cancel_events.send(CancelJob {
+                                job_id: job.id.clone(),
+                            });
+                            app_state.request_redraw();
+                            info!("Cancel request sent for job: {}", job.id);
+                        }
                     }
                 }
                 KeyCode::Char('c') | KeyCode::Char('C') => {
@@ -97,6 +127,7 @@ mod tests {
     fn create_test_app() -> App {
         let mut app = App::new();
         app.add_event::<SubmitGenerationJob>();
+        app.add_event::<CancelJob>();
         app.init_resource::<CurrentScreen>();
         app.init_resource::<InputBuffer>();
         app.init_resource::<AppState>();

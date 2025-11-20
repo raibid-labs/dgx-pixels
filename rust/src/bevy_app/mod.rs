@@ -41,7 +41,7 @@ pub use plugins::DgxPixelsPlugin;
 // Re-export commonly used types
 pub use components::{Job, JobStatus, PreviewImage};
 pub use events::{
-    CancelJob, DeleteImage, GenerationComplete, NavigateBack, NavigateToScreen, SelectNextImage,
-    SelectPreviousImage, SubmitGenerationJob,
+    CancelJob, DeleteImage, GenerationComplete, JobProgressUpdate, JobStarted, NavigateBack,
+    NavigateToScreen, SelectNextImage, SelectPreviousImage, SubmitGenerationJob,
 };
 pub use resources::{AppState, CurrentScreen, GalleryState, InputBuffer, JobTracker, Screen};

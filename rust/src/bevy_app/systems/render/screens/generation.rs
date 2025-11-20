@@ -16,7 +16,7 @@ use crate::bevy_app::{
     components::{Job, JobStatus, PreviewImage},
     resources::{AppState, AppTheme, CurrentScreen, GalleryState, InputBuffer, Screen, SettingsState},
     systems::assets::{SixelPreviewCache, SixelRenderOptions, render_image_sixel, supports_sixel},
-    systems::render::sixel_utils::render_sixel_to_area,
+    systems::render::{sixel_utils::render_sixel_to_area, widgets::{progress_bar_with_eta}},
 };
 
 /// Render the Generation screen.
@@ -181,7 +181,7 @@ fn render_main_content(
     );
 }
 
-/// Render generation controls and active job status.
+/// Render generation controls and active job status with progress bar.
 fn render_controls(
     frame: &mut Frame,
     area: Rect,
@@ -211,6 +211,8 @@ fn render_controls(
 
     // Show active job progress if any
     let active_jobs: Vec<&Job> = jobs.iter().filter(|j| j.is_active()).collect();
+    let has_cancellable_job = active_jobs.iter().any(|j| j.is_cancellable());
+    
     if let Some(job) = active_jobs.first() {
         lines.push(Line::from(""));
         lines.push(Line::from(vec![
@@ -230,15 +232,22 @@ fn render_controls(
                 progress,
                 eta_s,
             } => {
+                // Stage label with color coding
+                let stage_style = if stage.contains("Sampling") {
+                    theme.highlight()
+                } else {
+                    theme.text()
+                };
+
                 lines.push(Line::from(vec![
                     Span::raw("Stage: "),
-                    Span::styled(stage, theme.text()),
+                    Span::styled(stage, stage_style),
                 ]));
-                lines.push(Line::from(vec![
-                    Span::raw("Progress: "),
-                    Span::styled(format!("{:.0}%", progress * 100.0), theme.highlight()),
-                    Span::raw(format!(" (ETA: {:.1}s)", eta_s)),
-                ]));
+
+                // Progress bar with ETA
+                let progress_bar_width = 30; // Adjust based on available width
+                let progress_line = progress_bar_with_eta(*progress, progress_bar_width, *eta_s, theme);
+                lines.push(progress_line);
             }
             JobStatus::Complete { duration_s, .. } => {
                 lines.push(Line::from(vec![
@@ -252,15 +261,28 @@ fn render_controls(
                     theme.error(),
                 )));
             }
+            JobStatus::Cancelled => {
+                lines.push(Line::from(Span::styled("Cancelled by user", theme.warning())));
+            }
         }
     }
 
     lines.push(Line::from(""));
-    lines.push(Line::from(vec![
-        Span::styled(" [G]enerate ", theme.button()),
-        Span::raw("  "),
-        Span::styled(" [C]ompare Models ", theme.button()),
-    ]));
+    
+    // Show cancel button if there's an active cancellable job, otherwise show generate
+    if has_cancellable_job {
+        lines.push(Line::from(vec![
+            Span::styled(" [X] Cancel Job ", theme.button()),
+            Span::raw("  "),
+            Span::styled(" [C]ompare Models ", theme.button()),
+        ]));
+    } else {
+        lines.push(Line::from(vec![
+            Span::styled(" [G]enerate ", theme.button()),
+            Span::raw("  "),
+            Span::styled(" [C]ompare Models ", theme.button()),
+        ]));
+    }
 
     let paragraph = Paragraph::new(lines).block(
         Block::default()

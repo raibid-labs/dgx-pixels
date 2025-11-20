@@ -55,6 +55,9 @@ impl Plugin for DgxPixelsPlugin {
         // T3: Settings state resource (needed by gallery screen)
         app.insert_resource(super::resources::SettingsState::default());
 
+        // Queue state resource (for job navigation in Queue screen)
+        app.insert_resource(super::resources::QueueState::default());
+
         // T9: Sixel preview cache resource (for gallery image previews)
         app.insert_resource(systems::assets::SixelPreviewCache::default());
 
@@ -95,7 +98,7 @@ impl Plugin for DgxPixelsPlugin {
                 systems::input::screens::handle_gallery_input,     // Arrow keys, d, Home/End
                 systems::input::screens::handle_comparison_input,  // Arrow keys, a, d, Enter
                 systems::input::screens::handle_models_input,      // Arrow keys, Enter, d, i
-                systems::input::screens::handle_queue_input,       // (Future: job navigation)
+                systems::input::screens::handle_queue_input,       // Arrow keys, Home/End, c (cancel)
                 systems::input::screens::handle_monitor_input,     // r, p (refresh/pause)
                 systems::input::screens::settings::handle_settings_input, // Settings toggles
                 systems::input::screens::handle_help_input,        // Read-only screen
@@ -165,6 +168,10 @@ impl Plugin for DgxPixelsPlugin {
         app.add_event::<super::events::SelectPreviousImage>();
         app.add_event::<super::events::DeleteImage>();
 
+        // Progress tracking events (NEW)
+        app.add_event::<super::events::JobProgressUpdate>();
+        app.add_event::<super::events::JobStarted>();
+
         // Event handlers (run in Update after input processing)
         app.add_systems(
             Update,
@@ -173,9 +180,10 @@ impl Plugin for DgxPixelsPlugin {
                 super::events::handle_generation_events,
                 super::events::handle_gallery_events,
                 systems::zmq::handle_zmq_responses,
+                systems::zmq::handle_zmq_updates, // NEW: Handle progress updates
             ),
         );
 
-        info!("DgxPixelsPlugin initialized with T10 Preview Manager and all 8 screens");
+        info!("DgxPixelsPlugin initialized with T10 Preview Manager, progress tracking, and all 8 screens");
     }
 }
