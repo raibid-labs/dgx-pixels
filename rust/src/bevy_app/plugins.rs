@@ -58,6 +58,9 @@ impl Plugin for DgxPixelsPlugin {
         // T9: Sixel preview cache resource (for gallery image previews)
         app.insert_resource(systems::assets::SixelPreviewCache::default());
 
+        // T9: Sixel render state for tracking screen changes and cleanup
+        app.insert_resource(systems::render::SixelRenderState::default());
+
         // T8: ZeroMQ client for backend communication (optional - graceful degradation if backend offline)
         match crate::zmq_client::ZmqClient::new_default() {
             Ok(client) => {
@@ -68,6 +71,9 @@ impl Plugin for DgxPixelsPlugin {
                 warn!("Failed to connect to backend - jobs will be created but not processed: {}", e);
             }
         }
+
+        // T9: Sixel cleanup system (run FIRST in PreUpdate to clear before rendering)
+        app.add_systems(PreUpdate, systems::render::clear_sixel_on_screen_change);
 
         // WS-03: Global input systems (run in PreUpdate schedule)
         // These systems handle cross-screen functionality like quit, help, and navigation

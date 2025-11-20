@@ -16,8 +16,8 @@ use crate::bevy_app::{
     components::{Job, JobStatus, PreviewImage},
     resources::{AppState, AppTheme, CurrentScreen, GalleryState, InputBuffer, Screen, SettingsState},
     systems::assets::{SixelPreviewCache, SixelRenderOptions, render_image_sixel, supports_sixel},
+    systems::render::sixel_utils::render_sixel_to_area,
 };
-use std::io::{self, Write};
 
 /// Render the Generation screen.
 ///
@@ -461,12 +461,12 @@ fn render_sixel_or_placeholder(
             }
         };
 
-        // Write Sixel to stdout
-        let mut stdout = io::stdout();
-        let row = area.y + 1;
-        let col = area.x + 1;
-        let _ = write!(stdout, "\x1b[{};{}H{}", row, col, sixel_data);
-        let _ = stdout.flush();
+        // Render Sixel using utility function (handles proper positioning and clearing)
+        if let Err(e) = render_sixel_to_area(area, &sixel_data) {
+            warn!("Failed to render Sixel: {}", e);
+            render_simple_placeholder(frame, area, theme, &format!("Sixel render failed: {}", e));
+            return;
+        }
     } else {
         // Fallback: show image info
         let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown");

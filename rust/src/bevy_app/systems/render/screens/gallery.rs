@@ -14,7 +14,6 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, Widget},
     Frame,
 };
-use std::io::{self, Write};
 use tracing::{debug, warn};
 
 use crate::bevy_app::components::PreviewImage;
@@ -25,6 +24,7 @@ use crate::bevy_app::systems::assets::render::{
 use crate::bevy_app::systems::assets::{
     SixelPreviewCache, SixelRenderOptions, render_image_sixel, supports_sixel,
 };
+use crate::bevy_app::systems::render::sixel_utils::render_sixel_to_area;
 
 /// Main gallery screen render system.
 ///
@@ -371,24 +371,12 @@ impl<'a> Widget for SixelImageWidget<'a> {
         debug!("SixelImageWidget rendering at {:?}", area);
         debug!("Sixel data length: {} bytes", self.sixel_data.len());
 
-        let mut stdout = io::stdout();
-
-        // Position cursor at top-left of render area
-        let row = area.y + 1; // Convert to 1-indexed
-        let col = area.x + 1;
-
-        // Clear the area first
-        for line in 0..area.height {
-            let line_row = row + line as u16;
-            let _ = write!(stdout, "\x1b[{};{}H", line_row, col);
-            let _ = write!(stdout, "{}", " ".repeat(area.width as usize));
+        // Use utility function for proper rendering and clearing
+        if let Err(e) = render_sixel_to_area(area, self.sixel_data) {
+            warn!("Failed to render Sixel to area {:?}: {}", area, e);
+        } else {
+            debug!("Sixel data rendered successfully to area {:?}", area);
         }
-
-        // Write Sixel data
-        let _ = write!(stdout, "\x1b[{};{}H{}", row, col, self.sixel_data);
-        let _ = stdout.flush();
-
-        debug!("Sixel data written to stdout at ({}, {})", row, col);
     }
 }
 
