@@ -47,6 +47,9 @@ bevy = { version = "0.15", default-features = false, features = [
     "bevy_core_pipeline",
     "bevy_render",
     "multi_threaded",
+    "png",  # PNG image format support
+    "jpeg", # JPEG image format support
+    "webp", # WebP image format support
 ], optional = true }
 bevy_ratatui = { version = "0.7", optional = true }
 
