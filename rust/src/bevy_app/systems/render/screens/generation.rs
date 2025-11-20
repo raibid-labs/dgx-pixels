@@ -13,9 +13,11 @@ use ratatui::{
 };
 
 use crate::bevy_app::{
-    components::{Job, JobStatus},
-    resources::{AppState, AppTheme, CurrentScreen, GalleryState, InputBuffer, Screen},
+    components::{Job, JobStatus, PreviewImage},
+    resources::{AppState, AppTheme, CurrentScreen, GalleryState, InputBuffer, Screen, SettingsState},
+    systems::assets::{SixelPreviewCache, SixelRenderOptions, render_image_sixel, supports_sixel},
 };
+use std::io::{self, Write};
 
 /// Render the Generation screen.
 ///
@@ -27,7 +29,12 @@ pub fn render_generation_screen(
     theme: Res<AppTheme>,
     app_state: Res<AppState>,
     gallery: Res<GalleryState>,
+    settings: Res<SettingsState>,
     jobs: Query<&Job>,
+    preview_query: Query<&PreviewImage>,
+    images: Option<Res<Assets<Image>>>,
+    asset_server: Option<Res<AssetServer>>,
+    sixel_cache: Option<Res<SixelPreviewCache>>,
 ) {
     if current_screen.0 != Screen::Generation {
         return;
@@ -36,7 +43,19 @@ pub fn render_generation_screen(
     trace!("Rendering generation screen");
 
     if let Err(e) = ratatui.draw(|frame| {
-        render_frame(frame, &input_buffer, &theme, &app_state, &gallery, &jobs);
+        render_frame(
+            frame,
+            &input_buffer,
+            &theme,
+            &app_state,
+            &gallery,
+            &settings,
+            &jobs,
+            &preview_query,
+            images.as_deref(),
+            asset_server.as_deref(),
+            sixel_cache.as_deref(),
+        );
     }) {
         error!("Failed to render generation screen: {:?}", e);
     }
@@ -49,7 +68,12 @@ fn render_frame(
     theme: &AppTheme,
     app_state: &AppState,
     gallery: &GalleryState,
+    settings: &SettingsState,
     jobs: &Query<&Job>,
+    preview_query: &Query<&PreviewImage>,
+    images: Option<&Assets<Image>>,
+    asset_server: Option<&AssetServer>,
+    sixel_cache: Option<&SixelPreviewCache>,
 ) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -64,7 +88,18 @@ fn render_frame(
 
     render_prompt_input(frame, chunks[0], input_buffer, theme);
     render_options_row(frame, chunks[1], theme);
-    render_main_content(frame, chunks[2], app_state, theme, jobs);
+    render_main_content(
+        frame,
+        chunks[2],
+        app_state,
+        settings,
+        theme,
+        jobs,
+        preview_query,
+        images,
+        asset_server,
+        sixel_cache,
+    );
     render_recent_generations(frame, chunks[3], gallery, theme);
 }
 
@@ -116,8 +151,13 @@ fn render_main_content(
     frame: &mut Frame,
     area: Rect,
     app_state: &AppState,
+    settings: &SettingsState,
     theme: &AppTheme,
     jobs: &Query<&Job>,
+    preview_query: &Query<&PreviewImage>,
+    images: Option<&Assets<Image>>,
+    asset_server: Option<&AssetServer>,
+    sixel_cache: Option<&SixelPreviewCache>,
 ) {
     let main_chunks = Layout::default()
         .direction(Direction::Horizontal)
@@ -128,7 +168,17 @@ fn render_main_content(
         .split(area);
 
     render_controls(frame, main_chunks[0], app_state, theme, jobs);
-    render_preview(frame, main_chunks[1], app_state, theme);
+    render_preview(
+        frame,
+        main_chunks[1],
+        app_state,
+        settings,
+        theme,
+        preview_query,
+        images,
+        asset_server,
+        sixel_cache,
+    );
 }
 
 /// Render generation controls and active job status.
@@ -223,7 +273,17 @@ fn render_controls(
 }
 
 /// Render preview area with tabs support for debug mode.
-fn render_preview(frame: &mut Frame, area: Rect, app_state: &AppState, theme: &AppTheme) {
+fn render_preview(
+    frame: &mut Frame,
+    area: Rect,
+    app_state: &AppState,
+    settings: &SettingsState,
+    theme: &AppTheme,
+    preview_query: &Query<&PreviewImage>,
+    images: Option<&Assets<Image>>,
+    asset_server: Option<&AssetServer>,
+    sixel_cache: Option<&SixelPreviewCache>,
+) {
     // Create title with tab support if debug mode
     let title_string = if app_state.debug_mode {
         let tab_titles = vec!["Preview", "Backend Logs"];
@@ -255,49 +315,88 @@ fn render_preview(frame: &mut Frame, area: Rect, app_state: &AppState, theme: &A
     // Render content based on selected tab
     if app_state.debug_mode && app_state.preview_tab == 1 {
         render_backend_logs(frame, inner, app_state, theme);
+    } else if let (Some(images), Some(asset_server)) = (images, asset_server) {
+        render_preview_content(
+            frame,
+            inner,
+            app_state,
+            settings,
+            theme,
+            preview_query,
+            images,
+            asset_server,
+            sixel_cache,
+        );
     } else {
-        render_preview_content(frame, inner, app_state, theme);
+        // Assets not loaded yet
+        render_loading_preview(frame, inner, theme);
     }
 }
 
-/// Render preview content (image info or placeholder).
-fn render_preview_content(frame: &mut Frame, area: Rect, app_state: &AppState, theme: &AppTheme) {
+/// Render loading placeholder when assets aren't ready.
+fn render_loading_preview(frame: &mut Frame, area: Rect, theme: &AppTheme) {
+    let lines = vec![
+        Line::from(""),
+        Line::from(""),
+        Line::from(Span::styled("Loading assets...", theme.muted())),
+    ];
+    let paragraph = Paragraph::new(lines).alignment(Alignment::Center);
+    frame.render_widget(paragraph, area);
+}
+
+/// Render preview content with actual image loading.
+fn render_preview_content(
+    frame: &mut Frame,
+    area: Rect,
+    app_state: &AppState,
+    settings: &SettingsState,
+    theme: &AppTheme,
+    preview_query: &Query<&PreviewImage>,
+    images: &Assets<Image>,
+    asset_server: &AssetServer,
+    sixel_cache: Option<&SixelPreviewCache>,
+) {
     if let Some(preview_path) = &app_state.current_preview {
-        let filename = preview_path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("unknown");
+        // Find PreviewImage component for this path
+        let preview = preview_query
+            .iter()
+            .find(|p| &p.path == preview_path);
 
-        let size_str = if let Ok(metadata) = std::fs::metadata(preview_path) {
-            let size_kb = metadata.len() / 1024;
-            format!("{} KB", size_kb)
+        if let Some(preview) = preview {
+            // Check if image asset is loaded
+            if let Some(handle) = &preview.asset_handle {
+                match asset_server.load_state(handle) {
+                    bevy::asset::LoadState::Loaded => {
+                        // Image is loaded, render it
+                        if let Some(image) = images.get(handle) {
+                            render_sixel_or_placeholder(
+                                frame,
+                                area,
+                                image,
+                                preview_path,
+                                theme,
+                                settings,
+                                sixel_cache,
+                            );
+                        } else {
+                            render_simple_placeholder(frame, area, theme, "Image asset not found");
+                        }
+                    }
+                    bevy::asset::LoadState::Failed(err) => {
+                        render_simple_placeholder(frame, area, theme, &format!("Load failed: {}", err));
+                    }
+                    _ => {
+                        // Still loading
+                        render_simple_placeholder(frame, area, theme, "Loading image...");
+                    }
+                }
+            } else {
+                render_simple_placeholder(frame, area, theme, "No asset handle");
+            }
         } else {
-            "Unknown size".to_string()
-        };
-
-        let lines = vec![
-            Line::from(""),
-            Line::from(Span::styled("✓ Generation Complete", theme.success())),
-            Line::from(""),
-            Line::from(format!("File: {}", filename)),
-            Line::from(format!("Size: {}", size_str)),
-            Line::from(""),
-            Line::from(Span::styled(
-                "Preview: Sixel rendering coming soon!",
-                theme.muted(),
-            )),
-            Line::from(""),
-            Line::from(Span::styled(
-                "For now, check outputs/ folder",
-                theme.muted(),
-            )),
-        ];
-
-        let paragraph = Paragraph::new(lines)
-            .style(theme.text())
-            .alignment(Alignment::Center);
-
-        frame.render_widget(paragraph, area);
+            // No PreviewImage component found
+            render_simple_placeholder(frame, area, theme, "Preview not loaded");
+        }
     } else {
         // No preview available
         let lines = vec![
@@ -305,16 +404,90 @@ fn render_preview_content(frame: &mut Frame, area: Rect, app_state: &AppState, t
             Line::from("    [Preview Area]"),
             Line::from(""),
             Line::from("  Image preview will"),
-            Line::from("  appear here after"),
-            Line::from("  generation"),
+            Line::from("   appear here after"),
+            Line::from("     generation"),
         ];
-
         let paragraph = Paragraph::new(lines)
             .style(theme.muted())
             .alignment(Alignment::Center);
-
         frame.render_widget(paragraph, area);
     }
+}
+
+/// Render image with Sixel support or fallback to placeholder.
+fn render_sixel_or_placeholder(
+    frame: &mut Frame,
+    area: Rect,
+    image: &Image,
+    path: &std::path::Path,
+    theme: &AppTheme,
+    settings: &SettingsState,
+    sixel_cache: Option<&SixelPreviewCache>,
+) {
+    // Check if Sixel is enabled and supported
+    let use_sixel = settings.ui.show_image_previews && supports_sixel();
+
+    if use_sixel && sixel_cache.is_some() {
+        // Try to render Sixel
+        let cache = sixel_cache.unwrap();
+        let sixel_data = if let Some(entry) = cache.get(path) {
+            entry.sixel_data
+        } else {
+            // Render and cache
+            let options = SixelRenderOptions {
+                width: area.width.saturating_sub(4),
+                height: area.height.saturating_sub(4),
+                preserve_aspect: true,
+                high_quality: true,
+            };
+
+            match render_image_sixel(image, &options) {
+                Ok(data) => {
+                    // Cache it
+                    let entry = crate::bevy_app::systems::assets::SixelCacheEntry {
+                        path: path.to_path_buf(),
+                        sixel_data: data.clone(),
+                        size_bytes: data.len(),
+                        last_access: std::time::Instant::now(),
+                        dimensions: (image.width(), image.height()),
+                    };
+                    cache.insert(entry);
+                    data
+                }
+                Err(e) => {
+                    render_simple_placeholder(frame, area, theme, &format!("Sixel failed: {}", e));
+                    return;
+                }
+            }
+        };
+
+        // Write Sixel to stdout
+        let mut stdout = io::stdout();
+        let row = area.y + 1;
+        let col = area.x + 1;
+        let _ = write!(stdout, "\x1b[{};{}H{}", row, col, sixel_data);
+        let _ = stdout.flush();
+    } else {
+        // Fallback: show image info
+        let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown");
+        let info = format!(
+            "✓ Generation Complete\n\n{}\n{}x{} pixels",
+            filename,
+            image.width(),
+            image.height()
+        );
+        render_simple_placeholder(frame, area, theme, &info);
+    }
+}
+
+/// Render a simple placeholder with a message.
+fn render_simple_placeholder(frame: &mut Frame, area: Rect, theme: &AppTheme, message: &str) {
+    let lines: Vec<Line> = message
+        .lines()
+        .map(|line| Line::from(Span::styled(line, theme.muted())))
+        .collect();
+    let paragraph = Paragraph::new(lines).alignment(Alignment::Center);
+    frame.render_widget(paragraph, area);
 }
 
 /// Render backend logs (debug mode, tab 1).
